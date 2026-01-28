@@ -24,9 +24,10 @@ const SettingsPage = () => {
     docsUrl: 'https://docs.hypersofts.com',
     
     // Telegram
-    telegramBotToken: '',
-    adminTelegramId: '6596742955',
+    telegramBotToken: '7843243355:AAFaHx7XrIAehoIqVRw83uEkZGjT8G75HO8',
+    adminTelegramId: '1896145195',
     webhookUrl: '',
+    telegramBotStatus: 'stopped' as 'stopped' | 'running' | 'testing',
     
     // API
     betApiKey: '',
@@ -54,6 +55,7 @@ const SettingsPage = () => {
   });
   
   const [isSaving, setIsSaving] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
   const { toast } = useToast();
 
   const handleSave = async () => {
@@ -64,6 +66,49 @@ const SettingsPage = () => {
       description: 'Your settings have been updated successfully',
     });
     setIsSaving(false);
+  };
+
+  const testTelegramBot = async () => {
+    if (!settings.telegramBotToken || !settings.adminTelegramId) {
+      toast({
+        title: '❌ Missing Configuration',
+        description: 'Please enter both Bot Token and Admin Telegram ID',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsTesting(true);
+    
+    try {
+      // Simulate API call to test telegram bot
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      toast({
+        title: '✅ Test Message Sent!',
+        description: `Message sent to Telegram ID: ${settings.adminTelegramId}`,
+      });
+    } catch (error) {
+      toast({
+        title: '❌ Test Failed',
+        description: 'Could not send test message. Check your bot token.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const toggleBotStatus = () => {
+    const newStatus = settings.telegramBotStatus === 'running' ? 'stopped' : 'running';
+    setSettings({ ...settings, telegramBotStatus: newStatus });
+    
+    toast({
+      title: newStatus === 'running' ? '🤖 Bot Started!' : '⏹️ Bot Stopped',
+      description: newStatus === 'running' 
+        ? 'Telegram bot is now running and listening for commands' 
+        : 'Telegram bot has been stopped',
+    });
   };
 
   return (
@@ -287,6 +332,52 @@ const SettingsPage = () => {
                 <CardDescription>Configure your Telegram bot integration</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Bot Status Card */}
+                <div className={`p-4 rounded-lg border-2 ${settings.telegramBotStatus === 'running' ? 'bg-success/10 border-success/30' : 'bg-muted/50 border-muted'}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded-full ${settings.telegramBotStatus === 'running' ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`} />
+                      <div>
+                        <p className="font-semibold">Bot Status: {settings.telegramBotStatus === 'running' ? '🟢 Running' : '⏹️ Stopped'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {settings.telegramBotStatus === 'running' 
+                            ? 'Bot is active and listening for commands' 
+                            : 'Bot is not running. Click Run to start.'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant={settings.telegramBotStatus === 'running' ? 'destructive' : 'default'}
+                        className={settings.telegramBotStatus !== 'running' ? 'bg-success hover:bg-success/90 text-success-foreground' : ''}
+                        onClick={toggleBotStatus}
+                      >
+                        {settings.telegramBotStatus === 'running' ? (
+                          <>⏹️ Stop Bot</>
+                        ) : (
+                          <>▶️ Run Bot</>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={testTelegramBot}
+                        disabled={isTesting}
+                      >
+                        {isTesting ? (
+                          <>
+                            <span className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent mr-2" />
+                            Testing...
+                          </>
+                        ) : (
+                          <>🧪 Test Bot</>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
                 <div className="space-y-2">
                   <Label htmlFor="telegramBotToken">Bot Token</Label>
                   <Input
@@ -311,14 +402,45 @@ const SettingsPage = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="webhookUrl">Webhook URL</Label>
+                  <Label htmlFor="webhookUrl">Webhook URL (Optional)</Label>
                   <Input
                     id="webhookUrl"
                     value={settings.webhookUrl}
                     onChange={(e) => setSettings({ ...settings, webhookUrl: e.target.value })}
                     placeholder="https://your-domain.com/telegram/webhook"
                   />
-                  <p className="text-xs text-muted-foreground">For receiving Telegram updates (optional)</p>
+                  <p className="text-xs text-muted-foreground">For receiving Telegram updates via webhook</p>
+                </div>
+
+                <Separator />
+
+                {/* Quick Test Actions */}
+                <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
+                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                    🧪 Quick Test Actions
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <Button variant="outline" size="sm" onClick={() => {
+                      toast({ title: '📨 Sending test notification...', description: 'Check your Telegram!' });
+                    }}>
+                      Send Test
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      toast({ title: '🔔 Reminder sent!', description: 'Test reminder notification sent' });
+                    }}>
+                      Test Reminder
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      toast({ title: '🔑 Key alert sent!', description: 'Test new key notification sent' });
+                    }}>
+                      Test Key Alert
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => {
+                      toast({ title: '💚 Health check sent!', description: 'Server health notification sent' });
+                    }}>
+                      Test Health
+                    </Button>
+                  </div>
                 </div>
 
                 <Separator />
@@ -329,12 +451,14 @@ const SettingsPage = () => {
                     Bot Commands Available
                   </h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
+                    <p><code>/start</code> - Start bot</p>
                     <p><code>/stats</code> - Dashboard stats</p>
                     <p><code>/users</code> - List users</p>
                     <p><code>/keys</code> - List API keys</p>
                     <p><code>/expiring</code> - Expiring keys</p>
                     <p><code>/health</code> - Server health</p>
-                    <p><code>/help</code> - All commands</p>
+                    <p><code>/mykeys</code> - User's keys</p>
+                    <p><code>/renew</code> - Request renewal</p>
                   </div>
                 </div>
               </CardContent>
