@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Moon, Sun, Lock, User, Zap, Eye, EyeOff, ArrowRight, Shield } from 'lucide-react';
 
 // Network Particle Animation Component
-const NetworkBackground: React.FC = () => {
+const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -30,21 +30,25 @@ const NetworkBackground: React.FC = () => {
       radius: number;
     }> = [];
 
+    // Use actual color values based on theme
+    const particleColor = isDark ? '168, 85, 247' : '139, 92, 246'; // purple shades
+    const lineColor = isDark ? '168, 85, 247' : '139, 92, 246';
+
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
 
     const createParticles = () => {
-      const numParticles = Math.min(80, Math.floor((canvas.width * canvas.height) / 15000));
+      const numParticles = Math.min(60, Math.floor((canvas.width * canvas.height) / 20000));
       particles = [];
       for (let i = 0; i < numParticles; i++) {
         particles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          radius: Math.random() * 2 + 1,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: (Math.random() - 0.5) * 0.4,
+          radius: Math.random() * 1.5 + 0.5,
         });
       }
     };
@@ -59,11 +63,11 @@ const NetworkBackground: React.FC = () => {
           const dy = particles[i].y - particles[j].y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < 150) {
-            const opacity = (1 - distance / 150) * 0.3;
+          if (distance < 120) {
+            const opacity = (1 - distance / 120) * 0.15;
             ctx.beginPath();
-            ctx.strokeStyle = `hsla(var(--primary), ${opacity})`;
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = `rgba(${lineColor}, ${opacity})`;
+            ctx.lineWidth = 0.5;
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
             ctx.stroke();
@@ -75,13 +79,7 @@ const NetworkBackground: React.FC = () => {
       particles.forEach((particle) => {
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'hsl(var(--primary) / 0.6)';
-        ctx.fill();
-
-        // Glow effect
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.radius * 2, 0, Math.PI * 2);
-        ctx.fillStyle = 'hsl(var(--primary) / 0.1)';
+        ctx.fillStyle = `rgba(${particleColor}, 0.4)`;
         ctx.fill();
       });
     };
@@ -115,13 +113,12 @@ const NetworkBackground: React.FC = () => {
       cancelAnimationFrame(animationId);
       window.removeEventListener('resize', resizeCanvas);
     };
-  }, []);
+  }, [isDark]);
 
   return (
     <canvas
       ref={canvasRef}
       className="absolute inset-0 pointer-events-none z-0"
-      style={{ opacity: 0.7 }}
     />
   );
 };
@@ -136,6 +133,8 @@ const Login = () => {
   const { config } = useConfig();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const isDark = theme === 'dark';
 
   // Update favicon dynamically
   useEffect(() => {
@@ -186,40 +185,26 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
       {/* Network Particle Animation Background */}
-      <NetworkBackground />
-
-      {/* Gradient Overlays */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-[1]">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-[100px]" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-[100px]" />
-      </div>
+      <NetworkBackground isDark={isDark} />
 
       {/* Theme Toggle */}
       <Button
         variant="outline"
         size="icon"
-        className="absolute top-4 right-4 z-50 rounded-full border-border/30 bg-background/50 backdrop-blur-xl hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-lg"
+        className="absolute top-4 right-4 z-50 rounded-full bg-card border-border hover:bg-accent hover:text-accent-foreground transition-all"
         onClick={toggleTheme}
       >
-        {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </Button>
 
       {/* Login Card */}
-      <Card className="w-full max-w-md mx-4 relative z-10 border-border/30 bg-card/80 backdrop-blur-2xl shadow-2xl animate-fade-in overflow-hidden">
-        {/* Gradient Border Effect */}
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/20 via-transparent to-accent/20 -z-10" />
-        <div className="absolute -inset-[1px] bg-gradient-to-br from-primary/30 via-accent/10 to-primary/30 rounded-xl blur-sm -z-20 opacity-50" />
-        
-        {/* Top Accent Bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent" />
-
-        <CardHeader className="text-center pb-2 pt-10">
+      <Card className="w-full max-w-md mx-4 relative z-10 border-border bg-card shadow-xl animate-fade-in">
+        <CardHeader className="text-center pb-2 pt-8">
           {/* Logo */}
-          <div className="flex justify-center mb-5">
+          <div className="flex justify-center mb-4">
             <div className="relative">
               {config.logoUrl ? (
-                <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-2xl shadow-primary/20 animate-scale-in ring-2 ring-primary/20">
+                <div className="w-20 h-20 rounded-xl overflow-hidden shadow-lg border border-border">
                   <img 
                     src={config.logoUrl} 
                     alt={config.siteName}
@@ -227,74 +212,68 @@ const Login = () => {
                   />
                 </div>
               ) : (
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary via-primary to-accent flex items-center justify-center shadow-2xl shadow-primary/30 animate-scale-in ring-2 ring-border/20">
-                  <Zap className="w-12 h-12 text-primary-foreground" />
+                <div className="w-20 h-20 rounded-xl bg-primary flex items-center justify-center shadow-lg">
+                  <Zap className="w-10 h-10 text-primary-foreground" />
                 </div>
               )}
               {/* Status Indicator */}
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full border-4 border-card flex items-center justify-center">
-                <Shield className="w-3 h-3 text-primary-foreground" />
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-success rounded-full border-2 border-card flex items-center justify-center">
+                <Shield className="w-2.5 h-2.5 text-success-foreground" />
               </div>
             </div>
           </div>
           
-          <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text">
+          <CardTitle className="text-2xl font-bold text-foreground">
             {config.siteName}
           </CardTitle>
-          <p className="text-primary font-semibold text-sm mt-1">{config.siteDescription}</p>
-          <CardDescription className="mt-3 text-muted-foreground/80">
+          <p className="text-primary font-medium text-sm mt-1">{config.siteDescription}</p>
+          <CardDescription className="mt-2 text-muted-foreground">
             Sign in to access your dashboard
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="pb-10 px-6 sm:px-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
+        <CardContent className="pb-8 px-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Username Field */}
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-sm font-medium flex items-center gap-2">
-                <User className="w-3.5 h-3.5 text-primary" />
+              <Label htmlFor="username" className="text-sm font-medium text-foreground">
                 Username
               </Label>
-              <div className="relative group">
+              <div className="relative">
                 <Input
                   id="username"
                   type="text"
                   placeholder="Enter username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="pl-11 h-12 bg-background/50 border-border/40 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all rounded-xl"
+                  className="pl-10 h-11 bg-background border-input focus:border-primary"
                   required
                 />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center group-focus-within:bg-primary/20 transition-colors">
-                  <User className="h-3.5 w-3.5 text-primary" />
-                </div>
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               </div>
             </div>
 
             {/* Password Field */}
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 text-primary" />
+              <Label htmlFor="password" className="text-sm font-medium text-foreground">
                 Password
               </Label>
-              <div className="relative group">
+              <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-11 pr-12 h-12 bg-background/50 border-border/40 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all rounded-xl"
+                  className="pl-10 pr-10 h-11 bg-background border-input focus:border-primary"
                   required
                 />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center group-focus-within:bg-primary/20 transition-colors">
-                  <Lock className="h-3.5 w-3.5 text-primary" />
-                </div>
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 hover:bg-primary/10 rounded-lg"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-muted"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
@@ -305,7 +284,7 @@ const Login = () => {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-12 bg-gradient-to-r from-primary via-primary to-accent hover:opacity-90 text-primary-foreground font-semibold rounded-xl shadow-lg shadow-primary/30 transition-all duration-300 group mt-2"
+              className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all group mt-2"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -316,22 +295,22 @@ const Login = () => {
               ) : (
                 <span className="flex items-center gap-2">
                   Sign In
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </span>
               )}
             </Button>
           </form>
 
           {/* Secure Badge */}
-          <div className="flex items-center justify-center gap-2 mt-6 text-xs text-muted-foreground">
-            <Shield className="w-3 h-3 text-primary/60" />
+          <div className="flex items-center justify-center gap-2 mt-5 text-xs text-muted-foreground">
+            <Shield className="w-3 h-3" />
             <span>Secured with 256-bit encryption</span>
           </div>
         </CardContent>
       </Card>
 
       {/* Footer Text */}
-      <p className="absolute bottom-4 text-xs text-muted-foreground/50 z-10">
+      <p className="absolute bottom-4 text-xs text-muted-foreground z-10">
         © {new Date().getFullYear()} {config.siteName}. All rights reserved.
       </p>
     </div>
