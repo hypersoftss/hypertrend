@@ -85,19 +85,8 @@ const adminNavGroups: NavGroup[] = [
   },
 ];
 
-// User grouped nav items
-const userNavGroups: NavGroup[] = [
-  {
-    title: 'My Dashboard',
-    icon: TrendingUp,
-    userOnly: true,
-    items: [
-      { title: 'My Keys', href: '/user/keys', icon: Key },
-      { title: 'Call Logs', href: '/user/logs', icon: History },
-      { title: 'Analytics', href: '/user/analytics', icon: BarChart3 },
-    ],
-  },
-];
+// User navigation - no groups, simple flat list
+const userNavGroups: NavGroup[] = [];
 
 // Standalone nav items for admin
 const adminStandaloneItems: NavItem[] = [
@@ -111,10 +100,12 @@ const adminStandaloneItems: NavItem[] = [
   { title: 'Documentation', href: '/docs', icon: BookOpen },
 ];
 
-// Standalone nav items for user
+// Standalone nav items for user - simple flat structure
 const userStandaloneItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { title: 'My Keys', href: '/user/keys', icon: Key },
+  { title: 'Call Logs', href: '/user/logs', icon: History },
+  { title: 'Analytics', href: '/user/analytics', icon: BarChart3 },
   { title: 'Documentation', href: '/docs', icon: BookOpen },
 ];
 
