@@ -21,14 +21,15 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
 // Get unread notifications count (if table exists)
 $notification_count = 0;
 try {
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-    $result = $conn->query("SELECT COUNT(*) as count FROM activity_logs WHERE is_read = 0 AND user_id = " . ($current_user['id'] ?? 0) . " LIMIT 10");
+    $db = getDB();
+    $stmt = $db->prepare("SELECT COUNT(*) as count FROM activity_logs WHERE is_read = 0 AND user_id = ? LIMIT 10");
+    $stmt->execute([$current_user['id'] ?? 0]);
+    $result = $stmt->fetch();
     if ($result) {
-        $notification_count = min(9, $result->fetch_assoc()['count'] ?? 0);
+        $notification_count = min(9, (int)($result['count'] ?? 0));
     }
-    $conn->close();
 } catch (Exception $e) {
-    // Ignore if table doesn't exist
+    // Ignore if table doesn't exist or column is missing
 }
 ?>
 <!DOCTYPE html>
