@@ -1,201 +1,361 @@
-# 🚀 Hyper Softs Trend - Backend Server
+# 🚀 Hyper Softs Trend API - Complete PHP Backend
 
-Professional API Management System with Express.js, MySQL, and Telegram Bot integration.
+**All-in-one PHP backend** for API Management System - works on cPanel shared hosting, VPS, or any PHP server!
 
-## 📋 Features
+## ✨ Key Features
 
-- ✅ **RESTful API** - Express.js powered API server
-- ✅ **IP/Domain Whitelisting** - Secure API access control
-- ✅ **JWT Authentication** - Secure admin/user authentication
-- ✅ **MySQL Database** - Robust data storage
-- ✅ **Telegram Bot** - Notifications & commands
-- ✅ **Auto Reminders** - Scheduled key expiry notifications
-- ✅ **Rate Limiting** - DDoS protection
-- ✅ **Comprehensive Logging** - API, Telegram, Activity logs
+- **🔒 Hidden Upstream API**: Your real data source (betapi.space) is completely hidden
+- **⚡ One-Click Install**: Automated `install.php` wizard handles everything
+- **📁 Single config.php**: All settings in one place
+- **🌐 cPanel Compatible**: Works on shared hosting - no Node.js required
+- **🔐 IP/Domain Whitelisting**: Secure access control
+- **🤖 Telegram Bot**: Admin notifications & user commands
+- **📊 Full Logging**: Every API call tracked
 
-## 🛠️ Installation
+---
 
-### Prerequisites
+## 📋 Requirements
 
-- Node.js 18+ 
-- MySQL 8.0+
-- Telegram Bot Token (from @BotFather)
+- **PHP 7.4+** (PHP 8.0+ recommended)
+- **MySQL 5.7+** or MariaDB 10.3+
+- **Apache** with mod_rewrite enabled
+- **cURL extension** enabled
 
-### Step 1: Clone/Copy Files
+---
 
-Copy all files from this `backend` folder to your VPS.
+## 🛠️ Quick Installation (Recommended)
 
-### Step 2: Setup Database
+### Step 1: Upload Files
 
-```bash
-# Login to MySQL
-mysql -u root -p
+1. Download the backend ZIP package from admin panel
+2. Upload to your server via cPanel File Manager or FTP
+3. Extract to your desired directory (e.g., `public_html/api/`)
 
-# Run the database setup script
-source database.sql
-```
+### Step 2: Run Automated Installer
 
-### Step 3: Configure Environment
+1. Open browser and visit: `https://yourdomain.com/api/install.php`
+2. Follow the 3-step wizard:
+   - **Step 1**: Enter database credentials and test connection
+   - **Step 2**: System automatically creates tables and admin account
+   - **Step 3**: Configure Telegram bot and other settings
 
-```bash
-# Copy example env file
-cp .env.example .env
+### Step 3: Done! 🎉
 
-# Edit with your values
-nano .env
-```
+The installer will:
+- ✅ Test database connectivity
+- ✅ Create all required tables
+- ✅ Set up admin account
+- ✅ Generate `config.php` with your settings
+- ✅ Secure the installation
 
-### Step 4: Install Dependencies
-
-```bash
-npm install
-```
-
-### Step 5: Start Server
-
-```bash
-# Production
-npm start
-
-# Development (with auto-reload)
-npm run dev
-
-# Start both API server and Telegram bot
-npm run start:all
-```
+---
 
 ## 📁 File Structure
 
 ```
-backend/
-├── server.js          # Main Express API server
-├── telegram-bot.js    # Standalone Telegram bot
-├── database.sql       # MySQL schema
-├── package.json       # Dependencies
-├── .env.example       # Environment template
-└── README.md          # This file
+php/
+├── install.php             # 🔧 Automated installer (delete after setup!)
+├── config.php              # 🔒 Generated configuration file
+├── helpers.php             # 🛠️ Common utility functions
+├── database.sql            # 🗄️ MySQL schema (reference)
+├── .htaccess               # 🔐 Apache security rules
+├── index.php               # 🏠 Default page
+│
+├── admin/                  # 👨‍💼 Admin Panel
+│   ├── login.php           # Admin login page
+│   ├── dashboard.php       # Main dashboard
+│   ├── users.php           # User management
+│   ├── api-keys.php        # API key management
+│   ├── api-logs.php        # API request logs
+│   ├── telegram-logs.php   # Telegram logs
+│   ├── activity-logs.php   # Activity logs
+│   ├── ip-whitelist.php    # IP whitelist management
+│   ├── settings.php        # System settings
+│   ├── profile.php         # Admin profile
+│   ├── documentation.php   # API documentation
+│   └── logout.php          # Logout handler
+│
+├── api/                    # 🔌 API Endpoints
+│   ├── wingo.php           # 🎰 WinGo API (30s, 1min, 3min, 5min)
+│   ├── k3.php              # 🎲 K3 API (1min, 3min, 5min, 10min)
+│   ├── 5d.php              # 🎯 5D API (1min, 3min, 5min, 10min)
+│   ├── trx.php             # ⚡ TRX API (1min, 3min, 5min)
+│   ├── numeric.php         # 🔢 Numeric API (1min, 3min, 5min)
+│   ├── health.php          # 💚 Health Check (no key required)
+│   ├── telegram-bot.php    # 🤖 Telegram Bot Webhook
+│   └── telegram-setup.php  # 🔧 Bot Setup Page
+│
+└── includes/               # 📦 Shared Components
+    ├── auth.php            # Authentication functions
+    ├── header.php          # Admin panel header
+    └── footer.php          # Admin panel footer
 ```
 
-## 🔌 API Endpoints
+---
 
-### Public (with API Key)
+## 🔧 Manual Installation (Advanced)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/trend/:gameType/:typeId` | Get trend data |
-| GET | `/api/key/info` | Get API key information |
+If you prefer manual setup over the automated installer:
 
-### Authentication
+### Step 1: Create Database
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/login` | User/Admin login |
-| GET | `/api/auth/me` | Get current user |
+```sql
+-- Login to MySQL/phpMyAdmin
+CREATE DATABASE hyper_softs_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'hyper_user'@'localhost' IDENTIFIED BY 'your_password';
+GRANT ALL PRIVILEGES ON hyper_softs_db.* TO 'hyper_user'@'localhost';
+FLUSH PRIVILEGES;
+```
 
-### Admin Routes
+### Step 2: Import Schema
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/admin/users` | List all users |
-| POST | `/api/admin/users` | Create user |
-| PUT | `/api/admin/users/:id` | Update user |
-| DELETE | `/api/admin/users/:id` | Delete user |
-| GET | `/api/admin/keys` | List API keys |
-| POST | `/api/admin/keys` | Create API key |
-| PUT | `/api/admin/keys/:id` | Update API key |
-| DELETE | `/api/admin/keys/:id` | Delete API key |
-| GET | `/api/admin/logs/api` | API logs |
-| GET | `/api/admin/logs/telegram` | Telegram logs |
-| GET | `/api/admin/logs/activity` | Activity logs |
-| GET | `/api/admin/stats/dashboard` | Dashboard stats |
-| GET | `/api/admin/stats/chart` | Chart data |
-| GET | `/api/admin/stats/hourly` | Hourly stats |
-| GET | `/api/admin/live/requests` | Live API requests |
-| GET | `/api/admin/dns/:domain` | DNS lookup |
-| GET | `/api/admin/settings` | Get settings |
-| PUT | `/api/admin/settings` | Update settings |
-| POST | `/api/admin/reminder` | Send manual reminder |
+```bash
+mysql -u hyper_user -p hyper_softs_db < database.sql
+```
 
-### User Routes
+Or use phpMyAdmin → Import → Select `database.sql`
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/user/keys` | User's API keys |
-| POST | `/api/user/renewal-request` | Request renewal |
-| GET | `/api/user/logs` | User's API logs |
+### Step 3: Configure config.php
 
-### Health
+Create/edit `config.php`:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | Server health check |
+```php
+<?php
+// Database Configuration
+define('DB_HOST', 'localhost');
+define('DB_USER', 'hyper_user');
+define('DB_PASS', 'your_password');
+define('DB_NAME', 'hyper_softs_db');
+
+// Site Configuration
+define('SITE_NAME', 'Hyper Softs Trend');
+define('YOUR_DOMAIN', 'https://api.yourdomain.com');
+
+// Telegram Bot Configuration
+define('TELEGRAM_BOT_TOKEN', 'your_bot_token_from_botfather');
+define('ADMIN_TELEGRAM_ID', 'your_telegram_user_id');
+
+// Upstream API (Hidden from users)
+define('UPSTREAM_API_URL', 'https://betapi.space/api');
+define('UPSTREAM_API_KEY', 'your_betapi_key');
+
+// Security
+define('JWT_SECRET', 'your-random-secret-key-here');
+define('RATE_LIMIT_PER_MINUTE', 100);
+define('RATE_LIMIT_PER_DAY', 10000);
+```
+
+### Step 4: Set Permissions
+
+```bash
+chmod 644 config.php helpers.php
+chmod 755 api/ admin/ includes/
+chmod 644 api/*.php admin/*.php includes/*.php
+```
+
+### Step 5: Setup Telegram Webhook
+
+Visit: `https://yourdomain.com/api/telegram-setup.php`
+
+---
+
+## 📡 API Endpoints
+
+### Base URL
+```
+https://yourdomain.com/api/
+```
+
+### Available Endpoints
+
+| Game | Endpoint | Durations |
+|------|----------|-----------|
+| WinGo | `/api/wingo.php` | 30s, 1min, 3min, 5min |
+| K3 | `/api/k3.php` | 1min, 3min, 5min, 10min |
+| 5D | `/api/5d.php` | 1min, 3min, 5min, 10min |
+| TRX | `/api/trx.php` | 1min, 3min, 5min |
+| Numeric | `/api/numeric.php` | 1min, 3min, 5min |
+| Health | `/api/health.php` | - (no key needed) |
+
+### Request Examples
+
+```bash
+# WinGo 1 minute data
+curl "https://yourdomain.com/api/wingo.php?api_key=YOUR_KEY&duration=1min"
+
+# K3 3 minute data
+curl "https://yourdomain.com/api/k3.php?api_key=YOUR_KEY&duration=3min"
+
+# Health check
+curl "https://yourdomain.com/api/health.php"
+```
+
+### Response Format
+
+```json
+{
+  "success": true,
+  "game": "wingo",
+  "duration": "1min",
+  "game_name": "WinGo 1 Minute",
+  "data": { ... },
+  "meta": {
+    "response_time_ms": 45,
+    "timestamp": "2024-01-15T10:30:00+05:30",
+    "powered_by": "Hyper Softs Trend API"
+  }
+}
+```
+
+---
 
 ## 🤖 Telegram Bot Commands
-
-### Admin Commands
-
-| Command | Description |
-|---------|-------------|
-| `/start` | Welcome message |
-| `/stats` | Dashboard statistics |
-| `/users` | List all users |
-| `/keys` | List active API keys |
-| `/expiring` | Keys expiring soon |
-| `/health` | Server health status |
-| `/logs` | Recent activity logs |
-| `/help` | All commands |
 
 ### User Commands
 
 | Command | Description |
 |---------|-------------|
-| `/mykeys` | Your API keys |
-| `/mystats` | Your usage stats |
+| `/start` | Start bot & show menu |
+| `/status` | Check account status |
+| `/keys` | View your API keys |
 | `/renew` | Request key renewal |
+| `/help` | Get help |
 
-## 🔒 Security
+### Admin Commands
 
-- **Helmet.js** - HTTP security headers
-- **CORS** - Cross-origin resource sharing
-- **Rate Limiting** - Request throttling
-- **JWT** - Secure authentication
-- **bcrypt** - Password hashing
-- **IP Whitelisting** - API access control
-- **Domain Whitelisting** - Domain verification
-
-## 📊 Game Types
-
-| Game | Type IDs | Duration Options |
-|------|----------|------------------|
-| Numeric | 1, 2, 3, 30 | 1min, 3min, 5min, 30min |
-| WinGo | wg1, wg3, wg5, wg30 | 1min, 3min, 5min, 30min |
-| K3 | k31, k33, k35, k310 | 1min, 3min, 5min, 10min |
-| 5D | 5d1, 5d3, 5d5, 5d10 | 1min, 3min, 5min, 10min |
-| TRX | trx1, trx3, trx5, trx10 | 1min, 3min, 5min, 10min |
-
-## 🔧 PM2 Production Setup
-
-```bash
-# Install PM2
-npm install -g pm2
-
-# Start API server
-pm2 start server.js --name "hyper-api"
-
-# Start Telegram bot
-pm2 start telegram-bot.js --name "hyper-bot"
-
-# Save PM2 config
-pm2 save
-
-# Enable startup on reboot
-pm2 startup
-```
-
-## 📞 Support
-
-For any issues, contact the admin via Telegram.
+| Command | Description |
+|---------|-------------|
+| `/stats` | System statistics |
+| `/users` | List all users |
+| `/expiring` | Keys expiring soon |
+| `/logs` | Recent activity |
 
 ---
 
-**Made with ❤️ by Hyper Softs**
+## 🔐 Error Codes
+
+| Code | Meaning | Solution |
+|------|---------|----------|
+| 200 | Success | - |
+| 400 | Invalid duration | Check duration parameter |
+| 401 | Missing/Invalid API key | Verify API key |
+| 403 | IP/Domain blocked or key expired | Check whitelist or renew key |
+| 429 | Rate limit exceeded | Wait and retry |
+| 502 | Upstream unavailable | Contact admin |
+
+---
+
+## 🛡️ Security Features
+
+1. **config.php protected** - `.htaccess` blocks direct access
+2. **PDO prepared statements** - SQL injection prevention
+3. **API key masking** - Keys hidden in logs
+4. **IP Whitelisting** - Per-key IP restrictions
+5. **Domain Whitelisting** - Origin header verification
+6. **Rate Limiting** - Per-minute and daily limits
+7. **Activity Logging** - All admin actions tracked
+8. **Secure Sessions** - Session fixation prevention
+
+---
+
+## 📊 Database Tables
+
+| Table | Purpose |
+|-------|---------|
+| `users` | User accounts |
+| `api_keys` | API key management |
+| `api_logs` | Request/response logs |
+| `allowed_ips` | Global IP whitelist |
+| `allowed_domains` | Global domain whitelist |
+| `telegram_logs` | Bot message logs |
+| `activity_logs` | Admin actions |
+| `settings` | Site configuration |
+
+---
+
+## ⚙️ Optional: Cron Jobs
+
+Add in cPanel → Cron Jobs for automated maintenance:
+
+```bash
+# Daily log cleanup (3 AM)
+0 3 * * * /usr/bin/php /home/user/public_html/api/cron/cleanup.php
+
+# Reset daily rate limit counters (midnight)
+0 0 * * * /usr/bin/php /home/user/public_html/api/cron/reset-counters.php
+
+# Check expiring keys and send reminders (9 AM)
+0 9 * * * /usr/bin/php /home/user/public_html/api/cron/expiry-reminder.php
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### "Access denied" error
+- Check if your IP is whitelisted in admin panel
+- Verify API key is active and not expired
+- Check domain whitelist if using from website
+
+### "Database connection failed"
+- Verify credentials in `config.php`
+- Check database exists in cPanel/MySQL
+- Ensure MySQL user has proper privileges
+
+### "Telegram bot not responding"
+- Visit `/api/telegram-setup.php` and re-set webhook
+- Verify bot token is correct
+- Check admin Telegram ID
+
+### "500 Internal Server Error"
+- Check PHP error logs in cPanel
+- Ensure all required PHP extensions are enabled
+- Verify file permissions
+
+---
+
+## 🚀 VPS Deployment (Alternative)
+
+For VPS with command line access:
+
+```bash
+# Navigate to web directory
+cd /var/www/html/api
+
+# Extract files
+unzip hyper-softs-backend.zip
+
+# Set ownership
+chown -R www-data:www-data .
+
+# Set permissions
+find . -type d -exec chmod 755 {} \;
+find . -type f -exec chmod 644 {} \;
+
+# Run installer in browser or configure manually
+```
+
+---
+
+## 📞 Support
+
+- **Email**: support@hypersofts.com
+- **Telegram**: @hypersofts
+- **Documentation**: Available in admin panel
+
+---
+
+## ⚠️ Important Notes
+
+1. **Delete `install.php`** after successful installation
+2. **Backup `config.php`** - Contains all your settings
+3. **Never expose `config.php`** - Already protected by `.htaccess`
+4. **Your data source is hidden** - Users only see YOUR domain
+
+---
+
+**⚡ Your real data source (betapi.space) is NEVER exposed to end users!**
+
+---
+
+© 2024 Hyper Softs - All Rights Reserved

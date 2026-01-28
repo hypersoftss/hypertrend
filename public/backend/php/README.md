@@ -2,14 +2,24 @@
 
 **All-in-one PHP backend** that works on cPanel shared hosting, VPS, or any PHP server!
 
-## 🔒 Key Features
+## ✨ Key Features
 
-- **Hidden Upstream API**: Your real data source is completely hidden from users
-- **Single config.php**: All settings in one place (like .env)
-- **cPanel Compatible**: Works on shared hosting - no Node.js required
-- **IP/Domain Whitelisting**: Secure access control
-- **Complete Telegram Bot**: Admin notifications & user commands
-- **Full Logging**: Every API call tracked
+- **🔒 Hidden Upstream API**: Your real data source is completely hidden from users
+- **⚡ Automated Installer**: `install.php` wizard handles database setup automatically
+- **📁 Single config.php**: All settings in one place
+- **🌐 cPanel Compatible**: Works on shared hosting - no Node.js required
+- **🔐 IP/Domain Whitelisting**: Secure access control
+- **🤖 Complete Telegram Bot**: Admin notifications & user commands
+- **📊 Full Logging**: Every API call tracked with PDO security
+
+---
+
+## 📋 Requirements
+
+- PHP 7.4+ (PHP 8.0+ recommended)
+- MySQL 5.7+ or MariaDB 10.3+
+- Apache with mod_rewrite
+- cURL PHP extension
 
 ---
 
@@ -17,11 +27,28 @@
 
 ```
 php/
+├── install.php             # 🔧 Automated 3-step installer
 ├── config.php              # 🔒 All settings (DATABASE, TELEGRAM, API)
-├── helpers.php             # 🛠️ Common functions
+├── helpers.php             # 🛠️ Common functions (PDO-based)
 ├── database.sql            # 🗄️ MySQL schema
 ├── .htaccess               # 🔐 Apache security
-├── api/
+├── index.php               # 🏠 Default page
+│
+├── admin/                  # 👨‍💼 Admin Panel Pages
+│   ├── login.php           # Login page
+│   ├── dashboard.php       # Main dashboard
+│   ├── users.php           # User management
+│   ├── api-keys.php        # API key management
+│   ├── api-logs.php        # API request logs
+│   ├── telegram-logs.php   # Telegram logs
+│   ├── activity-logs.php   # Activity logs
+│   ├── ip-whitelist.php    # IP management
+│   ├── settings.php        # System settings
+│   ├── profile.php         # Admin profile
+│   ├── documentation.php   # API docs page
+│   └── logout.php          # Logout handler
+│
+├── api/                    # 🔌 API Endpoints
 │   ├── wingo.php           # 🎰 WinGo (30s, 1min, 3min, 5min)
 │   ├── k3.php              # 🎲 K3 (1min, 3min, 5min, 10min)
 │   ├── 5d.php              # 🎯 5D (1min, 3min, 5min, 10min)
@@ -30,49 +57,40 @@ php/
 │   ├── health.php          # 💚 Health Check
 │   ├── telegram-bot.php    # 🤖 Telegram Bot Webhook
 │   └── telegram-setup.php  # 🔧 Bot Setup Page
-└── README.md               # 📖 This file
+│
+└── includes/               # 📦 Shared Components
+    ├── auth.php            # Authentication functions
+    ├── header.php          # Admin panel header
+    └── footer.php          # Admin panel footer
 ```
 
 ---
 
-## 🛠️ Installation (cPanel/Shared Hosting)
+## 🛠️ Quick Installation (Automated)
 
 ### Step 1: Upload Files
 
-1. Login to cPanel → File Manager
-2. Navigate to `public_html/api/` (or your domain folder)
-3. Upload and extract the ZIP
+1. Download ZIP from admin panel
+2. Upload to server via cPanel File Manager or FTP
+3. Extract to `public_html/api/` (or your preferred directory)
 
-### Step 2: Create Database
+### Step 2: Run Automated Installer
 
-1. cPanel → MySQL Databases → Create new database
-2. Create user and assign to database
-3. cPanel → phpMyAdmin → Import `database.sql`
+1. Visit: `https://yourdomain.com/api/install.php`
+2. Follow 3-step wizard:
+   - **Step 1**: Enter database credentials → Test connection
+   - **Step 2**: Tables created automatically → Admin account setup
+   - **Step 3**: Configure Telegram & other settings → Generate config.php
 
-### Step 3: Configure
-
-Edit `config.php`:
-
-```php
-// Database
-define('DB_HOST', 'localhost');
-define('DB_USER', 'your_cpanel_user');
-define('DB_PASS', 'your_db_password');
-define('DB_NAME', 'your_cpanel_dbname');
-
-// Telegram
-define('TELEGRAM_BOT_TOKEN', 'your_bot_token');
-define('ADMIN_TELEGRAM_ID', 'your_telegram_id');
-
-// Your Domain
-define('YOUR_DOMAIN', 'https://api.yourdomain.com');
-```
-
-### Step 4: Setup Telegram Bot
+### Step 3: Setup Telegram Bot
 
 1. Visit: `https://yourdomain.com/api/telegram-setup.php`
 2. Click "Set Webhook"
 3. Click "Send Test Message" to verify
+
+### Step 4: Delete install.php (Security)
+
+After successful setup, delete `install.php` from your server.
 
 ---
 
