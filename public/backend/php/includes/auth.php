@@ -171,7 +171,7 @@ function get_current_user(): ?array {
     $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
     if ($conn->connect_error) return null;
     
-    $stmt = $conn->prepare("SELECT id, username, email, role, status, telegram_id, phone, company_name, created_at FROM users WHERE id = ?");
+    $stmt = $conn->prepare("SELECT id, username, email, role, is_active, telegram_id, created_at FROM users WHERE id = ?");
     $stmt->bind_param("i", $_SESSION['user_id']);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -180,5 +180,21 @@ function get_current_user(): ?array {
     $stmt->close();
     $conn->close();
     
+    return $user;
+}
+
+/**
+ * Alias for get_current_user (compatibility)
+ */
+function get_current_user_data(): array {
+    $user = get_current_user();
+    if (!$user) {
+        return [
+            'id' => $_SESSION['user_id'] ?? 0,
+            'username' => $_SESSION['username'] ?? 'User',
+            'email' => $_SESSION['email'] ?? '',
+            'role' => $_SESSION['role'] ?? 'user'
+        ];
+    }
     return $user;
 }
