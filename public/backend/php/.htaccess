@@ -1,0 +1,93 @@
+# =====================================================
+# 🔒 HYPER SOFTS TREND API - APACHE CONFIGURATION
+# =====================================================
+
+# Enable URL Rewriting
+RewriteEngine On
+
+# Force HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Block direct access to config files
+<FilesMatch "^(config\.php|helpers\.php|\.env|\.htaccess)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Block access to SQL files
+<FilesMatch "\.sql$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Clean URLs for API endpoints
+# /api/trend?game=wingo_1min -> /api/trend.php?game=wingo_1min
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^api/([a-z0-9]+)$ api/$1.php [L,QSA]
+
+# Alternative clean URLs
+# /wingo/1min -> /api/wingo.php?duration=1min
+RewriteRule ^(wingo|k3|5d|trx|numeric)/([0-9]+min?)$ api/$1.php?duration=$2 [L,QSA]
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Content-Security-Policy "default-src 'self'"
+</IfModule>
+
+# Enable CORS for API
+<IfModule mod_headers.c>
+    SetEnvIf Origin "https://(.*\.)?yourdomain\.com$" CORS=$0
+    Header set Access-Control-Allow-Origin %{CORS}e env=CORS
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-API-Key"
+    Header set Access-Control-Max-Age "86400"
+</IfModule>
+
+# Handle OPTIONS preflight
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# PHP Configuration
+<IfModule mod_php7.c>
+    php_value max_execution_time 60
+    php_value memory_limit 128M
+    php_value post_max_size 10M
+    php_value upload_max_filesize 10M
+    php_flag display_errors Off
+    php_flag log_errors On
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+</IfModule>
+
+# Caching for static responses (optional)
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType application/json "access plus 0 seconds"
+</IfModule>
+
+# Rate Limiting (if mod_ratelimit is available)
+<IfModule mod_ratelimit.c>
+    SetOutputFilter RATE_LIMIT
+    SetEnv rate-limit 400
+</IfModule>
+
+# Block bad bots and scanners
+RewriteCond %{HTTP_USER_AGENT} ^.*(bot|crawl|spider|scan|hack).*$ [NC]
+RewriteRule .* - [F,L]
+
+# Protect against common exploits
+RewriteCond %{QUERY_STRING} (\<|%3C).*script.*(\>|%3E) [NC,OR]
+RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+RewriteRule .* - [F,L]
