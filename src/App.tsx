@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ConfigProvider } from "@/contexts/ConfigContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Pages
@@ -34,44 +35,46 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Navigate to="/login" replace />} />
-              <Route path="/login" element={<Login />} />
+      <ConfigProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="/login" element={<Login />} />
 
-              {/* Protected Routes - All Users */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/docs" element={<DocumentationPage />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/user/keys" element={<UserKeysPage />} />
-              </Route>
+                {/* Protected Routes - All Users */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/docs" element={<DocumentationPage />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/user/keys" element={<UserKeysPage />} />
+                </Route>
 
-              {/* Protected Routes - Admin Only */}
-              <Route element={<ProtectedRoute requiredRole="admin" />}>
-                <Route path="/admin/users" element={<UsersPage />} />
-                <Route path="/admin/keys" element={<ApiKeysPage />} />
-                <Route path="/admin/logs" element={<ApiLogsPage />} />
-                <Route path="/admin/live" element={<LiveMonitorPage />} />
-                <Route path="/admin/telegram" element={<TelegramLogsPage />} />
-                <Route path="/admin/dns" element={<DnsCheckerPage />} />
-                <Route path="/admin/health" element={<ServerHealthPage />} />
-                <Route path="/admin/reminder" element={<ManualReminderPage />} />
-                <Route path="/admin/activity" element={<ActivityLogsPage />} />
-                <Route path="/admin/settings" element={<SettingsPage />} />
-                <Route path="/admin/download" element={<BackendDownloadPage />} />
-              </Route>
+                {/* Protected Routes - Admin Only */}
+                <Route element={<ProtectedRoute requiredRole="admin" />}>
+                  <Route path="/admin/users" element={<UsersPage />} />
+                  <Route path="/admin/keys" element={<ApiKeysPage />} />
+                  <Route path="/admin/logs" element={<ApiLogsPage />} />
+                  <Route path="/admin/live" element={<LiveMonitorPage />} />
+                  <Route path="/admin/telegram" element={<TelegramLogsPage />} />
+                  <Route path="/admin/dns" element={<DnsCheckerPage />} />
+                  <Route path="/admin/health" element={<ServerHealthPage />} />
+                  <Route path="/admin/reminder" element={<ManualReminderPage />} />
+                  <Route path="/admin/activity" element={<ActivityLogsPage />} />
+                  <Route path="/admin/settings" element={<SettingsPage />} />
+                  <Route path="/admin/download" element={<BackendDownloadPage />} />
+                </Route>
 
-              {/* Catch-all */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
+                {/* Catch-all */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </ConfigProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useConfig } from '@/contexts/ConfigContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const DocumentationPage = () => {
   const { user, isAuthenticated } = useAuth();
+  const { config } = useConfig();
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -28,31 +30,35 @@ const DocumentationPage = () => {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  // Your actual API base URL
-  const API_BASE = 'https://betapi.space';
+  // Use API config from settings
+  const API_BASE = config.apiDomain;
+  const API_ENDPOINT = config.apiEndpoint;
+
+  // Build full URL helper
+  const buildUrl = (typeId: string) => `${API_BASE}${API_ENDPOINT}?typeId=${typeId}`;
 
   // All endpoints with actual URLs
   const allEndpoints = [
-    { game: 'Numeric', typeId: '1', label: '1 Minute', url: `${API_BASE}/Xdrtrend?typeId=1` },
-    { game: 'Numeric', typeId: '2', label: '3 Minutes', url: `${API_BASE}/Xdrtrend?typeId=2` },
-    { game: 'Numeric', typeId: '3', label: '5 Minutes', url: `${API_BASE}/Xdrtrend?typeId=3` },
-    { game: 'Numeric', typeId: '30', label: '30 Minutes', url: `${API_BASE}/Xdrtrend?typeId=30` },
-    { game: 'WinGo', typeId: 'wg1', label: '1 Minute', url: `${API_BASE}/Xdrtrend?typeId=wg1` },
-    { game: 'WinGo', typeId: 'wg3', label: '3 Minutes', url: `${API_BASE}/Xdrtrend?typeId=wg3` },
-    { game: 'WinGo', typeId: 'wg5', label: '5 Minutes', url: `${API_BASE}/Xdrtrend?typeId=wg5` },
-    { game: 'WinGo', typeId: 'wg30', label: '30 Seconds', url: `${API_BASE}/Xdrtrend?typeId=wg30` },
-    { game: 'K3', typeId: 'k31', label: '1 Minute', url: `${API_BASE}/Xdrtrend?typeId=k31` },
-    { game: 'K3', typeId: 'k33', label: '3 Minutes', url: `${API_BASE}/Xdrtrend?typeId=k33` },
-    { game: 'K3', typeId: 'k35', label: '5 Minutes', url: `${API_BASE}/Xdrtrend?typeId=k35` },
-    { game: 'K3', typeId: 'k310', label: '10 Minutes', url: `${API_BASE}/Xdrtrend?typeId=k310` },
-    { game: '5D', typeId: '5d1', label: '1 Minute', url: `${API_BASE}/Xdrtrend?typeId=5d1` },
-    { game: '5D', typeId: '5d3', label: '3 Minutes', url: `${API_BASE}/Xdrtrend?typeId=5d3` },
-    { game: '5D', typeId: '5d5', label: '5 Minutes', url: `${API_BASE}/Xdrtrend?typeId=5d5` },
-    { game: '5D', typeId: '5d10', label: '10 Minutes', url: `${API_BASE}/Xdrtrend?typeId=5d10` },
-    { game: 'TRX', typeId: 'trx1', label: '1 Minute', url: `${API_BASE}/Xdrtrend?typeId=trx1` },
-    { game: 'TRX', typeId: 'trx3', label: '3 Minutes', url: `${API_BASE}/Xdrtrend?typeId=trx3` },
-    { game: 'TRX', typeId: 'trx5', label: '5 Minutes', url: `${API_BASE}/Xdrtrend?typeId=trx5` },
-    { game: 'TRX', typeId: 'trx10', label: '10 Minutes', url: `${API_BASE}/Xdrtrend?typeId=trx10` },
+    { game: 'Numeric', typeId: '1', label: '1 Minute', url: buildUrl('1') },
+    { game: 'Numeric', typeId: '2', label: '3 Minutes', url: buildUrl('2') },
+    { game: 'Numeric', typeId: '3', label: '5 Minutes', url: buildUrl('3') },
+    { game: 'Numeric', typeId: '30', label: '30 Minutes', url: buildUrl('30') },
+    { game: 'WinGo', typeId: 'wg1', label: '1 Minute', url: buildUrl('wg1') },
+    { game: 'WinGo', typeId: 'wg3', label: '3 Minutes', url: buildUrl('wg3') },
+    { game: 'WinGo', typeId: 'wg5', label: '5 Minutes', url: buildUrl('wg5') },
+    { game: 'WinGo', typeId: 'wg30', label: '30 Seconds', url: buildUrl('wg30') },
+    { game: 'K3', typeId: 'k31', label: '1 Minute', url: buildUrl('k31') },
+    { game: 'K3', typeId: 'k33', label: '3 Minutes', url: buildUrl('k33') },
+    { game: 'K3', typeId: 'k35', label: '5 Minutes', url: buildUrl('k35') },
+    { game: 'K3', typeId: 'k310', label: '10 Minutes', url: buildUrl('k310') },
+    { game: '5D', typeId: '5d1', label: '1 Minute', url: buildUrl('5d1') },
+    { game: '5D', typeId: '5d3', label: '3 Minutes', url: buildUrl('5d3') },
+    { game: '5D', typeId: '5d5', label: '5 Minutes', url: buildUrl('5d5') },
+    { game: '5D', typeId: '5d10', label: '10 Minutes', url: buildUrl('5d10') },
+    { game: 'TRX', typeId: 'trx1', label: '1 Minute', url: buildUrl('trx1') },
+    { game: 'TRX', typeId: 'trx3', label: '3 Minutes', url: buildUrl('trx3') },
+    { game: 'TRX', typeId: 'trx5', label: '5 Minutes', url: buildUrl('trx5') },
+    { game: 'TRX', typeId: 'trx10', label: '10 Minutes', url: buildUrl('trx10') },
   ];
 
   // Group by game
@@ -64,26 +70,27 @@ const DocumentationPage = () => {
 
   const codeExamples = {
     curl: `# Numeric 1-Minute
-curl "${API_BASE}/Xdrtrend?typeId=1"
+curl "${API_BASE}${API_ENDPOINT}?typeId=1"
 
 # WinGo 30-Seconds
-curl "${API_BASE}/Xdrtrend?typeId=wg30"
+curl "${API_BASE}${API_ENDPOINT}?typeId=wg30"
 
 # K3 3-Minutes
-curl "${API_BASE}/Xdrtrend?typeId=k33"
+curl "${API_BASE}${API_ENDPOINT}?typeId=k33"
 
 # 5D 5-Minutes
-curl "${API_BASE}/Xdrtrend?typeId=5d5"
+curl "${API_BASE}${API_ENDPOINT}?typeId=5d5"
 
 # TRX 10-Minutes
-curl "${API_BASE}/Xdrtrend?typeId=trx10"`,
+curl "${API_BASE}${API_ENDPOINT}?typeId=trx10"`,
     
     javascript: `// JavaScript / Node.js Example
 const BASE_URL = '${API_BASE}';
+const ENDPOINT = '${API_ENDPOINT}';
 
 async function getTrendData(typeId) {
   try {
-    const response = await fetch(\`\${BASE_URL}/Xdrtrend?typeId=\${typeId}\`);
+    const response = await fetch(\`\${BASE_URL}\${ENDPOINT}?typeId=\${typeId}\`);
     if (!response.ok) throw new Error(\`HTTP \${response.status}\`);
     return await response.json();
   } catch (error) {
@@ -103,9 +110,10 @@ const trxData = await getTrendData('trx10');     // TRX 10-min`,
 import requests
 
 BASE_URL = "${API_BASE}"
+ENDPOINT = "${API_ENDPOINT}"
 
 def get_trend_data(type_id):
-    url = f"{BASE_URL}/Xdrtrend?typeId={type_id}"
+    url = f"{BASE_URL}{ENDPOINT}?typeId={type_id}"
     response = requests.get(url)
     response.raise_for_status()
     return response.json()
@@ -119,28 +127,29 @@ trx_10min = get_trend_data("trx10")     # TRX 10-min`,
     
     php: `<?php
 // PHP Example
-\$baseUrl = "${API_BASE}";
+$baseUrl = "${API_BASE}";
+$endpoint = "${API_ENDPOINT}";
 
-function getTrendData(\$typeId) {
-    global \$baseUrl;
-    \$url = "\$baseUrl/Xdrtrend?typeId=\$typeId";
+function getTrendData($typeId) {
+    global $baseUrl, $endpoint;
+    $url = "$baseUrl$endpoint?typeId=$typeId";
     
-    \$curl = curl_init(\$url);
-    curl_setopt(\$curl, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt(\$curl, CURLOPT_TIMEOUT, 30);
+    $curl = curl_init($url);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl, CURLOPT_TIMEOUT, 30);
     
-    \$response = curl_exec(\$curl);
-    curl_close(\$curl);
+    $response = curl_exec($curl);
+    curl_close($curl);
     
-    return json_decode(\$response, true);
+    return json_decode($response, true);
 }
 
 // Usage Examples
-\$numeric = getTrendData('1');      // Numeric 1-min
-\$wingo = getTrendData('wg30');     // WinGo 30-sec
-\$k3 = getTrendData('k33');         // K3 3-min
-\$fiveD = getTrendData('5d5');      // 5D 5-min
-\$trx = getTrendData('trx10');      // TRX 10-min
+$numeric = getTrendData('1');      // Numeric 1-min
+$wingo = getTrendData('wg30');     // WinGo 30-sec
+$k3 = getTrendData('k33');         // K3 3-min
+$fiveD = getTrendData('5d5');      // 5D 5-min
+$trx = getTrendData('trx10');      // TRX 10-min
 ?>`,
   };
 
@@ -204,13 +213,13 @@ function getTrendData(\$typeId) {
                   <Server className="w-8 h-8" />
                   <div>
                     <h2 className="text-xl font-bold">Base URL</h2>
-                    <code className="text-lg opacity-90">{API_BASE}/Xdrtrend?typeId=</code>
+                    <code className="text-lg opacity-90">{API_BASE}{API_ENDPOINT}?typeId=</code>
                   </div>
                 </div>
                 <Button 
                   variant="secondary" 
                   size="sm" 
-                  onClick={() => copyCode(`${API_BASE}/Xdrtrend?typeId=`, 'baseurl')}
+                  onClick={() => copyCode(`${API_BASE}${API_ENDPOINT}?typeId=`, 'baseurl')}
                 >
                   {copiedCode === 'baseurl' ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </Button>
