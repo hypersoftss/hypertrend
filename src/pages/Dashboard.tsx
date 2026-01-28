@@ -5,7 +5,8 @@ import StatsCard from '@/components/StatsCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { mockDashboardStats, mockApiKeys, mockApiLogs, formatDate, getDaysUntilExpiry } from '@/lib/mockData';
-import { Users, Key, Clock, Activity, TrendingUp, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Key, Clock, Activity, TrendingUp, AlertTriangle, CheckCircle, XCircle, BarChart3, PieChart } from 'lucide-react';
+import { ApiUsageAreaChart, HourlyBarChart, GameTypePieChart, ResponseTimeChart } from '@/components/charts/ApiUsageChart';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -83,6 +84,21 @@ const Dashboard = () => {
               icon={AlertTriangle}
               variant="warning"
             />
+          </div>
+        )}
+
+        {/* Charts Section - Admin Only */}
+        {isAdmin && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ApiUsageAreaChart />
+            <HourlyBarChart />
+          </div>
+        )}
+
+        {isAdmin && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <GameTypePieChart />
+            <ResponseTimeChart />
           </div>
         )}
 
