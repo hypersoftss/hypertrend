@@ -1354,140 +1354,226 @@ function updateLiveStats(data) {
 `;
 
   // Generate install script
-  const generateInstallScript = () => `<?php
+  const generateInstallScript = () => {
+    const siteName = config.siteName;
+    const apiDomain = config.apiDomain;
+    const apiEndpoint = config.apiEndpoint;
+    const telegramToken = config.telegramBotToken;
+    const telegramId = config.adminTelegramId;
+    
+    return `<?php
 /**
- * ${config.siteName} - Installation Script
- * Run this script once to set up the database
+ * ${siteName.toUpperCase()} - AUTOMATED INSTALLER
+ * One-click installation for cPanel/shared hosting
  */
 
-// Prevent direct access after installation
-$lockFile = __DIR__ . '/install.lock';
-if (file_exists($lockFile)) {
-    die('Installation already completed. Delete install.lock to reinstall.');
-}
+define('INSTALLER_VERSION', '1.0.0');
+session_start();
 
-require_once 'config.php';
+$configFile = __DIR__ . '/config.php';
+$isInstalled = false;
 
-$errors = [];
-$success = [];
-
-// Check PHP version
-if (version_compare(PHP_VERSION, '7.4.0', '<')) {
-    $errors[] = 'PHP 7.4 or higher is required. Current version: ' . PHP_VERSION;
-}
-
-// Check required extensions
-$requiredExtensions = ['pdo', 'pdo_mysql', 'curl', 'json', 'mbstring'];
-foreach ($requiredExtensions as $ext) {
-    if (!extension_loaded($ext)) {
-        $errors[] = "PHP extension '$ext' is not installed.";
+if (file_exists($configFile)) {
+    require_once $configFile;
+    if (defined('DB_HOST') && defined('DB_NAME')) {
+        try {
+            $testConn = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
+            $stmt = $testConn->query("SELECT COUNT(*) FROM users WHERE role = 'admin'");
+            if ($stmt->fetchColumn() > 0) $isInstalled = true;
+        } catch (PDOException $e) {}
     }
 }
 
-// Test database connection
-try {
-    $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
-        DB_USER,
-        DB_PASS,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-    );
-    $success[] = '✅ Database connection successful';
-} catch (PDOException $e) {
-    $errors[] = 'Database connection failed: ' . $e->getMessage();
-}
+$step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
+$error = '';
 
-// Import database schema
-if (empty($errors) && isset($pdo)) {
-    try {
-        $sql = file_get_contents(__DIR__ . '/database.sql');
-        $pdo->exec($sql);
-        $success[] = '✅ Database schema imported';
-    } catch (PDOException $e) {
-        $errors[] = 'Schema import failed: ' . $e->getMessage();
-    }
-}
-
-// Create admin user if not exists
-if (empty($errors) && isset($pdo)) {
-    try {
-        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = 'admin'");
-        $stmt->execute();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['test_connection'])) {
+        $dbHost = trim($_POST['db_host'] ?? '');
+        $dbName = trim($_POST['db_name'] ?? '');
+        $dbUser = trim($_POST['db_user'] ?? '');
+        $dbPass = $_POST['db_pass'] ?? '';
         
-        if (!$stmt->fetch()) {
-            $stmt = $pdo->prepare("INSERT INTO users (username, email, password, role, is_active) VALUES (?, ?, ?, 'admin', 1)");
-            $stmt->execute(['admin', ADMIN_EMAIL, password_hash('admin123', PASSWORD_DEFAULT)]);
-            $success[] = '✅ Admin user created (username: admin, password: admin123)';
-        } else {
-            $success[] = '✅ Admin user already exists';
+        try {
+            $testConn = new PDO("mysql:host={$dbHost}", $dbUser, $dbPass);
+            $testConn->exec("CREATE DATABASE IF NOT EXISTS {$dbName} CHARACTER SET utf8mb4");
+            $_SESSION['install_db'] = compact('dbHost', 'dbName', 'dbUser', 'dbPass');
+            header('Location: install.php?step=2');
+            exit;
+        } catch (PDOException $e) {
+            $error = 'Connection failed: ' . $e->getMessage();
         }
-    } catch (PDOException $e) {
-        $errors[] = 'Admin user creation failed: ' . $e->getMessage();
+    }
+    
+    if (isset($_POST['run_install'])) {
+        if (!isset($_SESSION['install_db'])) {
+            header('Location: install.php?step=1');
+            exit;
+        }
+        
+        extract($_SESSION['install_db']);
+        $adminUser = trim($_POST['admin_username'] ?? 'admin');
+        $adminEmail = trim($_POST['admin_email'] ?? '');
+        $adminPass = $_POST['admin_password'] ?? 'admin123';
+        $siteNameInput = trim($_POST['site_name'] ?? '${siteName}');
+        
+        try {
+            $pdo = new PDO("mysql:host={$dbHost};dbname={$dbName};charset=utf8mb4", $dbUser, $dbPass);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            $sqlFile = __DIR__ . '/database.sql';
+            if (!file_exists($sqlFile)) throw new Exception('database.sql not found!');
+            
+            $sql = file_get_contents($sqlFile);
+            $sql = preg_replace('/DELIMITER.*?DELIMITER\\s+;/s', '', $sql);
+            $sql = preg_replace('/SET\\s+GLOBAL.*?;/i', '', $sql);
+            
+            foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) {
+                if (!empty($stmt) && !preg_match('/^--/', $stmt)) {
+                    try { $pdo->exec($stmt); } catch (PDOException $e) {}
+                }
+            }
+            
+            $hashedPass = password_hash($adminPass, PASSWORD_DEFAULT);
+            $pdo->exec("DELETE FROM users WHERE username = 'admin'");
+            $stmt = $pdo->prepare("INSERT INTO users (username, email, password_hash, role, status) VALUES (?, ?, ?, 'admin', 'active')");
+            $stmt->execute([$adminUser, $adminEmail, $hashedPass]);
+            
+            $configContent = '<?php
+define("DB_HOST", "' . $dbHost . '");
+define("DB_NAME", "' . $dbName . '");
+define("DB_USER", "' . $dbUser . '");
+define("DB_PASS", "' . addslashes($dbPass) . '");
+define("SITE_NAME", "' . $siteNameInput . '");
+define("UPSTREAM_API_BASE", "${apiDomain}");
+define("UPSTREAM_API_ENDPOINT", "${apiEndpoint}");
+define("TELEGRAM_BOT_TOKEN", "${telegramToken}");
+define("ADMIN_TELEGRAM_ID", "${telegramId}");
+define("DEBUG_MODE", false);
+$GLOBALS["pdo"] = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4", DB_USER, DB_PASS);
+function getDB() { return $GLOBALS["pdo"]; }
+';
+            
+            file_put_contents($configFile, $configContent);
+            unset($_SESSION['install_db']);
+            $_SESSION['admin_user'] = $adminUser;
+            header('Location: install.php?step=3');
+            exit;
+        } catch (Exception $e) {
+            $error = 'Installation failed: ' . $e->getMessage();
+        }
     }
 }
-
-// Create lock file
-if (empty($errors)) {
-    file_put_contents($lockFile, date('Y-m-d H:i:s'));
-    $success[] = '✅ Installation completed!';
-}
-
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>${config.siteName} - Installation</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${siteName} Installer</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: system-ui, sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-        .container { max-width: 600px; width: 100%; }
-        h1 { font-size: 2rem; margin-bottom: 2rem; text-align: center; }
-        .card { background: #1e293b; border-radius: 12px; padding: 2rem; margin-bottom: 1.5rem; }
-        .success { color: #10b981; }
-        .error { color: #ef4444; }
-        ul { list-style: none; }
-        li { padding: 0.5rem 0; }
-        .btn { display: inline-block; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 8px; text-decoration: none; margin-top: 1rem; }
-        .btn:hover { opacity: 0.9; }
-        .warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 1rem; border-radius: 8px; margin-top: 1rem; color: #f59e0b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .card { background: rgba(255,255,255,0.95); border-radius: 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); max-width: 600px; width: 100%; overflow: hidden; }
+        .header { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .steps { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+        .step { width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .step.active { background: white; color: #667eea; }
+        .step.done { background: #10b981; color: white; }
+        .step.pending { background: rgba(255,255,255,0.3); color: white; }
+        .line { width: 40px; height: 3px; background: rgba(255,255,255,0.3); align-self: center; }
+        .line.done { background: #10b981; }
+        .body { padding: 40px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; color: #374151; margin-bottom: 8px; }
+        input { width: 100%; padding: 14px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 15px; }
+        input:focus { outline: none; border-color: #667eea; }
+        small { display: block; margin-top: 6px; color: #6b7280; font-size: 12px; }
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .alert { padding: 16px; border-radius: 10px; margin-bottom: 20px; }
+        .alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+        .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; }
+        .success-icon { font-size: 80px; text-align: center; margin-bottom: 20px; }
+        .success-msg { text-align: center; }
+        .success-msg h2 { color: #10b981; font-size: 28px; margin-bottom: 10px; }
+        .creds { background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 10px; padding: 20px; margin: 20px 0; }
+        .cred-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+        .cred-item:last-child { border-bottom: none; }
+        .warning { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 10px; padding: 16px; margin-top: 20px; font-size: 13px; color: #92400e; }
+        .title { font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🚀 ${config.siteName}</h1>
-        
-        <?php if (!empty($errors)): ?>
-        <div class="card">
-            <h2 class="error">❌ Installation Errors</h2>
-            <ul>
-                <?php foreach ($errors as $error): ?>
-                <li class="error"><?= htmlspecialchars($error) ?></li>
-                <?php endforeach; ?>
-            </ul>
+<div class="card">
+    <div class="header">
+        <h1>${siteName} Installer</h1>
+        <p>Automated Setup</p>
+        <div class="steps">
+            <div class="step <?php echo $step >= 1 ? ($step > 1 ? 'done' : 'active') : 'pending'; ?>">1</div>
+            <div class="line <?php echo $step > 1 ? 'done' : ''; ?>"></div>
+            <div class="step <?php echo $step >= 2 ? ($step > 2 ? 'done' : 'active') : 'pending'; ?>">2</div>
+            <div class="line <?php echo $step > 2 ? 'done' : ''; ?>"></div>
+            <div class="step <?php echo $step >= 3 ? 'active' : 'pending'; ?>">3</div>
         </div>
-        <?php endif; ?>
-        
-        <?php if (!empty($success)): ?>
-        <div class="card">
-            <h2 class="success">Installation Status</h2>
-            <ul>
-                <?php foreach ($success as $msg): ?>
-                <li class="success"><?= htmlspecialchars($msg) ?></li>
-                <?php endforeach; ?>
-            </ul>
-            
-            <?php if (empty($errors)): ?>
-            <div class="warning">
-                ⚠️ <strong>Important:</strong> Change the default admin password immediately after first login!
+    </div>
+    <div class="body">
+        <?php if ($isInstalled && $step !== 3): ?>
+            <div class="success-msg">
+                <div class="success-icon">✅</div>
+                <h2>Already Installed!</h2>
+                <a href="admin/login.php" class="btn btn-primary" style="text-decoration:none;display:inline-flex;width:auto;padding:14px 30px;justify-content:center;">Go to Login</a>
+                <div class="warning">Delete install.php for security!</div>
             </div>
-            <a href="admin/login.php" class="btn">Go to Admin Panel →</a>
+        <?php elseif ($step === 1): ?>
+            <h3 class="title">Step 1: Database Configuration</h3>
+            <?php if ($error): ?><div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
+            <form method="POST">
+                <div class="form-group"><label>Database Host</label><input type="text" name="db_host" value="localhost" required><small>Usually localhost</small></div>
+                <div class="form-group"><label>Database Name</label><input type="text" name="db_name" required></div>
+                <div class="form-group"><label>Database Username</label><input type="text" name="db_user" required></div>
+                <div class="form-group"><label>Database Password</label><input type="password" name="db_pass" required></div>
+                <button type="submit" name="test_connection" class="btn btn-primary">Test Connection & Continue</button>
+            </form>
+        <?php elseif ($step === 2): ?>
+            <h3 class="title">Step 2: Admin Account</h3>
+            <?php if ($error): ?><div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div><?php endif; ?>
+            <?php if (!isset($_SESSION['install_db'])): ?>
+                <div class="alert alert-error">Session expired.</div>
+                <a href="install.php?step=1" class="btn btn-primary">Back</a>
+            <?php else: ?>
+                <div class="alert alert-success">Database connected!</div>
+                <form method="POST">
+                    <div class="form-group"><label>Site Name</label><input type="text" name="site_name" value="${siteName}" required></div>
+                    <div class="form-group"><label>Admin Username</label><input type="text" name="admin_username" value="admin" required></div>
+                    <div class="form-group"><label>Admin Email</label><input type="email" name="admin_email" required></div>
+                    <div class="form-group"><label>Admin Password</label><input type="password" name="admin_password" required minlength="6"></div>
+                    <button type="submit" name="run_install" class="btn btn-success">Run Installation</button>
+                </form>
             <?php endif; ?>
-        </div>
+        <?php elseif ($step === 3): ?>
+            <div class="success-msg">
+                <div class="success-icon">🎉</div>
+                <h2>Installation Complete!</h2>
+                <?php if (isset($_SESSION['admin_user'])): ?>
+                    <div class="creds">
+                        <h3>Admin Credentials</h3>
+                        <div class="cred-item"><span>Username:</span><span style="font-weight:bold"><?php echo htmlspecialchars($_SESSION['admin_user']); ?></span></div>
+                        <div class="cred-item"><span>Login URL:</span><span style="font-weight:bold">admin/login.php</span></div>
+                    </div>
+                    <?php unset($_SESSION['admin_user']); ?>
+                <?php endif; ?>
+                <a href="admin/login.php" class="btn btn-primary" style="text-decoration:none;">Go to Admin Login</a>
+                <div class="warning">Delete install.php immediately for security!</div>
+            </div>
         <?php endif; ?>
     </div>
+</div>
 </body>
-</html>
-`;
+</html>`;
+  };
 
 
   const generateReadme = () => `# ${config.siteName} - Complete PHP Solution
