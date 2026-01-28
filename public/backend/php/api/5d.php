@@ -114,9 +114,41 @@ if (!empty($key_data['game_type']) && $key_data['game_type'] !== 'all') {
     }
 }
 
+// -------------------- KEY-SPECIFIC IP WHITELIST CHECK --------------------
+if (!check_key_ip_whitelist($client_ip, $key_data)) {
+    log_api_request([
+        'api_key_id' => $api_key_id,
+        'user_id' => $user_id,
+        'client_ip' => $client_ip,
+        'domain' => $request_domain,
+        'endpoint' => '/api/5d.php',
+        'game_type' => '5d',
+        'http_status' => 403,
+        'response_body' => json_encode(['error' => 'IP not whitelisted']),
+        'duration_ms' => 0
+    ]);
+    error_response('ip_blocked', 403);
+}
+
 // -------------------- DOMAIN WHITELIST CHECK --------------------
-if (!check_domain_whitelist($request_domain, $api_key_id)) {
+if (!check_domain_whitelist($request_domain, $key_data)) {
+    log_api_request([
+        'api_key_id' => $api_key_id,
+        'user_id' => $user_id,
+        'client_ip' => $client_ip,
+        'domain' => $request_domain,
+        'endpoint' => '/api/5d.php',
+        'game_type' => '5d',
+        'http_status' => 403,
+        'response_body' => json_encode(['error' => 'Domain blocked']),
+        'duration_ms' => 0
+    ]);
     error_response('domain_blocked', 403);
+}
+
+// -------------------- RATE LIMIT CHECK --------------------
+if (!check_rate_limit($key_data)) {
+    error_response('rate_limited', 429);
 }
 
 // -------------------- FETCH FROM UPSTREAM (COMPLETELY HIDDEN!) --------------------
