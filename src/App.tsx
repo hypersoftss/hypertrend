@@ -2,25 +2,71 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
+
+// Pages
+import Login from "@/pages/Login";
+import Dashboard from "@/pages/Dashboard";
+import DocumentationPage from "@/pages/DocumentationPage";
+import NotFound from "@/pages/NotFound";
+
+// Admin Pages
+import UsersPage from "@/pages/admin/UsersPage";
+import ApiKeysPage from "@/pages/admin/ApiKeysPage";
+import ApiLogsPage from "@/pages/admin/ApiLogsPage";
+import TelegramLogsPage from "@/pages/admin/TelegramLogsPage";
+import ServerHealthPage from "@/pages/admin/ServerHealthPage";
+import ManualReminderPage from "@/pages/admin/ManualReminderPage";
+import ActivityLogsPage from "@/pages/admin/ActivityLogsPage";
+import SettingsPage from "@/pages/admin/SettingsPage";
+
+// User Pages
+import UserKeysPage from "@/pages/user/UserKeysPage";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Navigate to="/login" replace />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/docs" element={<DocumentationPage />} />
+
+              {/* Protected Routes - All Users */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/user/keys" element={<UserKeysPage />} />
+              </Route>
+
+              {/* Protected Routes - Admin Only */}
+              <Route element={<ProtectedRoute requiredRole="admin" />}>
+                <Route path="/admin/users" element={<UsersPage />} />
+                <Route path="/admin/keys" element={<ApiKeysPage />} />
+                <Route path="/admin/logs" element={<ApiLogsPage />} />
+                <Route path="/admin/telegram" element={<TelegramLogsPage />} />
+                <Route path="/admin/health" element={<ServerHealthPage />} />
+                <Route path="/admin/reminder" element={<ManualReminderPage />} />
+                <Route path="/admin/activity" element={<ActivityLogsPage />} />
+                <Route path="/admin/settings" element={<SettingsPage />} />
+              </Route>
+
+              {/* Catch-all */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
