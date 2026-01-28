@@ -20,10 +20,10 @@ const gameTypesConfig: Record<GameType, { label: string; durations: { value: str
   wingo: {
     label: 'WinGo',
     durations: [
+      { value: '30sec', label: '30 Seconds', typeId: 'wg30s' },
       { value: '1min', label: '1 Minute', typeId: 'wg1' },
       { value: '3min', label: '3 Minutes', typeId: 'wg3' },
       { value: '5min', label: '5 Minutes', typeId: 'wg5' },
-      { value: '30min', label: '30 Minutes', typeId: 'wg30' },
     ]
   },
   k3: {
