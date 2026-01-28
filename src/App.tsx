@@ -22,6 +22,8 @@ import ServerHealthPage from "@/pages/admin/ServerHealthPage";
 import ManualReminderPage from "@/pages/admin/ManualReminderPage";
 import ActivityLogsPage from "@/pages/admin/ActivityLogsPage";
 import SettingsPage from "@/pages/admin/SettingsPage";
+import DnsCheckerPage from "@/pages/admin/DnsCheckerPage";
+import LiveMonitorPage from "@/pages/admin/LiveMonitorPage";
 
 // User Pages
 import UserKeysPage from "@/pages/user/UserKeysPage";
@@ -53,7 +55,9 @@ const App = () => (
                 <Route path="/admin/users" element={<UsersPage />} />
                 <Route path="/admin/keys" element={<ApiKeysPage />} />
                 <Route path="/admin/logs" element={<ApiLogsPage />} />
+                <Route path="/admin/live" element={<LiveMonitorPage />} />
                 <Route path="/admin/telegram" element={<TelegramLogsPage />} />
+                <Route path="/admin/dns" element={<DnsCheckerPage />} />
                 <Route path="/admin/health" element={<ServerHealthPage />} />
                 <Route path="/admin/reminder" element={<ManualReminderPage />} />
                 <Route path="/admin/activity" element={<ActivityLogsPage />} />

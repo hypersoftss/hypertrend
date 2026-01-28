@@ -20,6 +20,7 @@ import {
   Zap,
   MessageSquare,
   BookOpen,
+  Globe,
 } from 'lucide-react';
 
 interface NavItem {
@@ -35,7 +36,9 @@ const navItems: NavItem[] = [
   { title: 'API Keys', href: '/admin/keys', icon: Key, adminOnly: true },
   { title: 'My Keys', href: '/user/keys', icon: Key },
   { title: 'API Logs', href: '/admin/logs', icon: FileText, adminOnly: true },
+  { title: 'Live Monitor', href: '/admin/live', icon: Activity, adminOnly: true },
   { title: 'Telegram Logs', href: '/admin/telegram', icon: MessageSquare, adminOnly: true },
+  { title: 'DNS Checker', href: '/admin/dns', icon: Globe, adminOnly: true },
   { title: 'Server Health', href: '/admin/health', icon: Heart, adminOnly: true },
   { title: 'Manual Reminder', href: '/admin/reminder', icon: Bell, adminOnly: true },
   { title: 'Activity Logs', href: '/admin/activity', icon: Activity, adminOnly: true },
