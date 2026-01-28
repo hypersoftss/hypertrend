@@ -508,22 +508,22 @@ const SettingsPage = () => {
                 <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                   <h4 className="font-medium mb-4 flex items-center gap-2">
                     <Globe className="w-4 h-4 text-primary" />
-                    API Domain Settings
+                    Your API Domain Settings
                   </h4>
                   <p className="text-sm text-muted-foreground mb-4">
-                    These settings control the API URLs shown in documentation. Change them when you deploy to a new domain.
+                    Set YOUR custom API domain here. This will be shown in documentation. Your upstream source stays private.
                   </p>
                   
                   <div className="grid gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="apiDomain">API Domain</Label>
+                      <Label htmlFor="apiDomain">Your API Domain</Label>
                       <Input
                         id="apiDomain"
                         value={settings.apiDomain}
                         onChange={(e) => setSettings({ ...settings, apiDomain: e.target.value })}
-                        placeholder="https://betapi.space"
+                        placeholder="https://api.yourdomain.com"
                       />
-                      <p className="text-xs text-muted-foreground">Your API server domain (e.g., https://betapi.space)</p>
+                      <p className="text-xs text-muted-foreground">Your server domain (e.g., https://api.yourdomain.com)</p>
                     </div>
                     
                     <div className="space-y-2">
@@ -532,15 +532,15 @@ const SettingsPage = () => {
                         id="apiEndpoint"
                         value={settings.apiEndpoint}
                         onChange={(e) => setSettings({ ...settings, apiEndpoint: e.target.value })}
-                        placeholder="/Xdrtrend"
+                        placeholder="/api/trend"
                       />
-                      <p className="text-xs text-muted-foreground">Endpoint path (e.g., /Xdrtrend)</p>
+                      <p className="text-xs text-muted-foreground">Your endpoint path (e.g., /api/trend)</p>
                     </div>
                   </div>
                   
                   {/* Preview */}
                   <div className="mt-4 p-3 rounded-lg bg-muted">
-                    <p className="text-xs text-muted-foreground mb-2">Preview URL:</p>
+                    <p className="text-xs text-muted-foreground mb-2">Preview URL (shown to users):</p>
                     <code className="text-sm text-primary font-mono">
                       {settings.apiDomain}{settings.apiEndpoint}?typeId=wg1
                     </code>
@@ -555,9 +555,80 @@ const SettingsPage = () => {
                   </div>
                 </div>
 
+                <Separator />
+
+                {/* IP Whitelist Management */}
+                <div className="p-4 rounded-lg bg-warning/5 border border-warning/20">
+                  <h4 className="font-medium mb-4 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-warning" />
+                    Global IP Whitelist
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Manage default IPs that are allowed to access your API. Individual API keys can have additional whitelisted IPs.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="globalIpWhitelist">Default Whitelisted IPs</Label>
+                      <textarea
+                        id="globalIpWhitelist"
+                        className="w-full h-24 px-3 py-2 rounded-md border border-input bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                        placeholder="Enter IPs (one per line)&#10;Example:&#10;192.168.1.1&#10;10.0.0.1&#10;2001:db8::1"
+                        defaultValue=""
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        These IPs are automatically allowed for all new API keys. One IP per line.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-3 rounded-lg bg-muted/50 border">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 rounded-full bg-success"></div>
+                          <span className="text-sm font-medium">IPv4 Format</span>
+                        </div>
+                        <code className="text-xs text-muted-foreground">192.168.1.1, 10.0.0.1</code>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50 border">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 rounded-full bg-primary"></div>
+                          <span className="text-sm font-medium">IPv6 Format</span>
+                        </div>
+                        <code className="text-xs text-muted-foreground">2001:db8::1</code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Domain Whitelist */}
+                <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
+                  <h4 className="font-medium mb-4 flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-accent-foreground" />
+                    Global Domain Whitelist
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Default domains allowed to access your API via Origin header verification.
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="globalDomainWhitelist">Default Whitelisted Domains</Label>
+                    <textarea
+                      id="globalDomainWhitelist"
+                      className="w-full h-24 px-3 py-2 rounded-md border border-input bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                      placeholder="Enter domains (one per line)&#10;Example:&#10;yourdomain.com&#10;app.yourdomain.com&#10;*.yourdomain.com"
+                      defaultValue=""
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Supports wildcard subdomains with * prefix. One domain per line.
+                    </p>
+                  </div>
+                </div>
+
+                <Separator />
+
                 {/* All Endpoints Preview */}
                 <div className="p-4 rounded-lg bg-muted/50 border">
-                  <h4 className="font-medium mb-3">📋 All Endpoints (with current domain)</h4>
+                  <h4 className="font-medium mb-3">📋 Your API Endpoints</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
                     <div><strong>Numeric:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=1</div>
                     <div><strong>WinGo 30s:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=wg30</div>
