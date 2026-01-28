@@ -21,6 +21,7 @@ import {
   MessageSquare,
   BookOpen,
   Globe,
+  Download,
 } from 'lucide-react';
 
 interface NavItem {
@@ -43,6 +44,7 @@ const navItems: NavItem[] = [
   { title: 'Manual Reminder', href: '/admin/reminder', icon: Bell, adminOnly: true },
   { title: 'Activity Logs', href: '/admin/activity', icon: Activity, adminOnly: true },
   { title: 'Settings', href: '/admin/settings', icon: Settings, adminOnly: true },
+  { title: 'Backend Download', href: '/admin/download', icon: Download, adminOnly: true },
   { title: 'Documentation', href: '/docs', icon: BookOpen },
 ];
 

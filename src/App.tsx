@@ -24,6 +24,7 @@ import ActivityLogsPage from "@/pages/admin/ActivityLogsPage";
 import SettingsPage from "@/pages/admin/SettingsPage";
 import DnsCheckerPage from "@/pages/admin/DnsCheckerPage";
 import LiveMonitorPage from "@/pages/admin/LiveMonitorPage";
+import BackendDownloadPage from "@/pages/admin/BackendDownloadPage";
 
 // User Pages
 import UserKeysPage from "@/pages/user/UserKeysPage";
@@ -62,6 +63,7 @@ const App = () => (
                 <Route path="/admin/reminder" element={<ManualReminderPage />} />
                 <Route path="/admin/activity" element={<ActivityLogsPage />} />
                 <Route path="/admin/settings" element={<SettingsPage />} />
+                <Route path="/admin/download" element={<BackendDownloadPage />} />
               </Route>
 
               {/* Catch-all */}
