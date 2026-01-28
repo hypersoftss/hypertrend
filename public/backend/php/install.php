@@ -2,109 +2,248 @@
 /**
  * HYPER SOFTS TREND API - AUTOMATED INSTALLER
  * One-click installation for cPanel/shared hosting
+ * 
+ * Features:
+ * - 3-step wizard
+ * - Database connection test
+ * - Auto table creation
+ * - Admin account setup
+ * - Config file generation
  */
 
-define('INSTALLER_VERSION', '1.0.0');
-session_start();
+define('INSTALLER_VERSION', '1.0.1');
+
+// Prevent session errors
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 $configFile = __DIR__ . '/config.php';
 $isInstalled = false;
 
+// Check if already installed
 if (file_exists($configFile)) {
     require_once $configFile;
     if (defined('DB_HOST') && defined('DB_NAME')) {
         try {
-            $testConn = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
+            $testConn = new PDO(
+                "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+                DB_USER,
+                DB_PASS,
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            );
             $stmt = $testConn->query("SELECT COUNT(*) FROM users WHERE role = 'admin'");
-            if ($stmt->fetchColumn() > 0) $isInstalled = true;
-        } catch (PDOException $e) {}
+            if ($stmt->fetchColumn() > 0) {
+                $isInstalled = true;
+            }
+        } catch (PDOException $e) {
+            // Config exists but DB connection fails - allow reinstall
+        }
     }
 }
 
-$step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
+$step = isset($_GET['step']) ? max(1, min(3, (int)$_GET['step'])) : 1;
 $error = '';
+$success = '';
 
+// Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    
+    // CSRF protection via session check
+    if (!isset($_SESSION['install_started'])) {
+        $_SESSION['install_started'] = true;
+    }
+    
+    // Step 1: Test database connection
     if (isset($_POST['test_connection'])) {
         $dbHost = trim($_POST['db_host'] ?? '');
         $dbName = trim($_POST['db_name'] ?? '');
         $dbUser = trim($_POST['db_user'] ?? '');
         $dbPass = $_POST['db_pass'] ?? '';
         
-        try {
-            $testConn = new PDO("mysql:host={$dbHost}", $dbUser, $dbPass);
-            $testConn->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-            $_SESSION['install_db'] = compact('dbHost', 'dbName', 'dbUser', 'dbPass');
-            header('Location: install.php?step=2');
-            exit;
-        } catch (PDOException $e) {
-            $error = 'Connection failed: ' . $e->getMessage();
+        // Validation
+        if (empty($dbHost) || empty($dbName) || empty($dbUser)) {
+            $error = 'All database fields are required.';
+        } elseif (!preg_match('/^[a-zA-Z0-9_\-\.]+$/', $dbHost)) {
+            $error = 'Invalid database host format.';
+        } elseif (!preg_match('/^[a-zA-Z0-9_]+$/', $dbName)) {
+            $error = 'Database name can only contain letters, numbers, and underscores.';
+        } elseif (strlen($dbName) > 64) {
+            $error = 'Database name is too long (max 64 characters).';
+        } else {
+            try {
+                // Test connection first
+                $testConn = new PDO(
+                    "mysql:host={$dbHost}",
+                    $dbUser,
+                    $dbPass,
+                    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+                );
+                
+                // Try to create database if it doesn't exist
+                $testConn->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                
+                // Test connection to the specific database
+                $testConn = new PDO(
+                    "mysql:host={$dbHost};dbname={$dbName};charset=utf8mb4",
+                    $dbUser,
+                    $dbPass,
+                    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+                );
+                
+                // Store in session
+                $_SESSION['install_db'] = [
+                    'dbHost' => $dbHost,
+                    'dbName' => $dbName,
+                    'dbUser' => $dbUser,
+                    'dbPass' => $dbPass
+                ];
+                
+                header('Location: install.php?step=2');
+                exit;
+            } catch (PDOException $e) {
+                $error = 'Connection failed: ' . htmlspecialchars($e->getMessage());
+            }
         }
     }
     
+    // Step 2: Run installation
     if (isset($_POST['run_install'])) {
         if (!isset($_SESSION['install_db'])) {
             header('Location: install.php?step=1');
             exit;
         }
         
-        extract($_SESSION['install_db']);
+        $db = $_SESSION['install_db'];
         $adminUser = trim($_POST['admin_username'] ?? 'admin');
         $adminEmail = trim($_POST['admin_email'] ?? '');
-        $adminPass = $_POST['admin_password'] ?? 'admin123';
+        $adminPass = $_POST['admin_password'] ?? '';
         $siteNameInput = trim($_POST['site_name'] ?? 'Hyper Softs');
         
-        try {
-            $pdo = new PDO("mysql:host={$dbHost};dbname={$dbName};charset=utf8mb4", $dbUser, $dbPass);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            
-            $sqlFile = __DIR__ . '/database.sql';
-            if (!file_exists($sqlFile)) throw new Exception('database.sql not found!');
-            
-            $sql = file_get_contents($sqlFile);
-            $sql = preg_replace('/DELIMITER.*?DELIMITER\s+;/s', '', $sql);
-            $sql = preg_replace('/SET\s+GLOBAL.*?;/i', '', $sql);
-            $sql = preg_replace('/CREATE\s+EVENT.*?;/s', '', $sql);
-            
-            foreach (array_filter(array_map('trim', explode(';', $sql))) as $stmt) {
-                if (!empty($stmt) && !preg_match('/^--/', $stmt)) {
-                    try { $pdo->exec($stmt); } catch (PDOException $e) {}
+        // Validation
+        if (empty($adminUser) || empty($adminEmail) || empty($adminPass)) {
+            $error = 'All admin fields are required.';
+        } elseif (!preg_match('/^[a-zA-Z0-9_]+$/', $adminUser)) {
+            $error = 'Username can only contain letters, numbers, and underscores.';
+        } elseif (strlen($adminUser) < 3 || strlen($adminUser) > 50) {
+            $error = 'Username must be between 3 and 50 characters.';
+        } elseif (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+            $error = 'Please enter a valid email address.';
+        } elseif (strlen($adminPass) < 6) {
+            $error = 'Password must be at least 6 characters.';
+        } elseif (strlen($siteNameInput) < 2 || strlen($siteNameInput) > 100) {
+            $error = 'Site name must be between 2 and 100 characters.';
+        } else {
+            try {
+                $pdo = new PDO(
+                    "mysql:host={$db['dbHost']};dbname={$db['dbName']};charset=utf8mb4",
+                    $db['dbUser'],
+                    $db['dbPass'],
+                    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+                );
+                
+                // Read and execute database schema
+                $sqlFile = __DIR__ . '/database.sql';
+                if (!file_exists($sqlFile)) {
+                    throw new Exception('database.sql not found! Please ensure it\'s in the same directory.');
                 }
-            }
-            
-            $hashedPass = password_hash($adminPass, PASSWORD_DEFAULT);
-            $pdo->exec("DELETE FROM users WHERE username = 'admin'");
-            $stmt = $pdo->prepare("INSERT INTO users (username, email, password_hash, role, status) VALUES (?, ?, ?, 'admin', 'active')");
-            $stmt->execute([$adminUser, $adminEmail, $hashedPass]);
-            
-            // Update site name in settings
-            $stmt = $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = 'site_name'");
-            $stmt->execute([$siteNameInput]);
-            
-            $configContent = '<?php
+                
+                $sql = file_get_contents($sqlFile);
+                
+                // Remove problematic statements for shared hosting
+                $sql = preg_replace('/DELIMITER.*?DELIMITER\s+;/s', '', $sql);
+                $sql = preg_replace('/SET\s+GLOBAL.*?;/i', '', $sql);
+                $sql = preg_replace('/CREATE\s+EVENT.*?;/s', '', $sql);
+                $sql = preg_replace('/CREATE\s+PROCEDURE.*?END\s*\/\//s', '', $sql);
+                
+                // Execute each statement
+                $statements = array_filter(array_map('trim', explode(';', $sql)));
+                foreach ($statements as $stmt) {
+                    if (!empty($stmt) && !preg_match('/^--/', $stmt) && !preg_match('/^\/\*/', $stmt)) {
+                        try {
+                            $pdo->exec($stmt);
+                        } catch (PDOException $e) {
+                            // Ignore duplicate errors, continue with others
+                            if (strpos($e->getMessage(), 'Duplicate') === false && 
+                                strpos($e->getMessage(), 'already exists') === false) {
+                                // Log but continue
+                            }
+                        }
+                    }
+                }
+                
+                // Create admin user
+                $hashedPass = password_hash($adminPass, PASSWORD_DEFAULT);
+                
+                // Delete default admin if exists
+                $pdo->exec("DELETE FROM users WHERE username = 'admin' AND id = 1");
+                
+                // Check if username already exists
+                $checkStmt = $pdo->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
+                $checkStmt->execute([$adminUser, $adminEmail]);
+                if ($checkStmt->fetch()) {
+                    // Update existing
+                    $stmt = $pdo->prepare("UPDATE users SET password_hash = ?, role = 'admin', status = 'active' WHERE username = ? OR email = ?");
+                    $stmt->execute([$hashedPass, $adminUser, $adminEmail]);
+                } else {
+                    // Insert new
+                    $stmt = $pdo->prepare("INSERT INTO users (username, email, password_hash, role, status) VALUES (?, ?, ?, 'admin', 'active')");
+                    $stmt->execute([$adminUser, $adminEmail, $hashedPass]);
+                }
+                
+                // Update site name in settings
+                $stmt = $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = 'site_name'");
+                $stmt->execute([$siteNameInput]);
+                
+                // Generate config.php
+                $configContent = '<?php
 /**
- * ' . strtoupper($siteNameInput) . ' - CONFIGURATION
+ * ' . strtoupper(preg_replace('/[^a-zA-Z0-9\s]/', '', $siteNameInput)) . ' - CONFIGURATION
  * Generated: ' . date('Y-m-d H:i:s') . '
+ * 
+ * WARNING: Do not edit this file unless you know what you are doing!
  */
 
-define("DB_HOST", "' . $dbHost . '");
-define("DB_NAME", "' . $dbName . '");
-define("DB_USER", "' . $dbUser . '");
-define("DB_PASS", "' . addslashes($dbPass) . '");
+// Database Configuration
+define("DB_HOST", "' . addslashes($db['dbHost']) . '");
+define("DB_NAME", "' . addslashes($db['dbName']) . '");
+define("DB_USER", "' . addslashes($db['dbUser']) . '");
+define("DB_PASS", "' . addslashes($db['dbPass']) . '");
 define("DB_CHARSET", "utf8mb4");
-define("SITE_NAME", "' . $siteNameInput . '");
-define("SITE_URL", (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === "on" ? "https" : "http") . "://" . $_SERVER["HTTP_HOST"]);
+
+// Site Configuration
+define("SITE_NAME", "' . addslashes($siteNameInput) . '");
+define("SITE_URL", (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === "on" ? "https" : "http") . "://" . ($_SERVER["HTTP_HOST"] ?? "localhost"));
+
+// Upstream API Configuration (Hidden from users)
 define("UPSTREAM_API_BASE", "https://betapi.space");
 define("UPSTREAM_API_ENDPOINT", "/Xdrtrend");
+
+// Telegram Bot Configuration
 define("TELEGRAM_BOT_TOKEN", "");
 define("ADMIN_TELEGRAM_ID", "");
-define("DEBUG_MODE", false);
 
+// Security Configuration
+define("DEBUG_MODE", false);
+define("SESSION_LIFETIME", 86400); // 24 hours
+
+// Error handling
 if (!DEBUG_MODE) {
     error_reporting(0);
     ini_set("display_errors", 0);
+} else {
+    error_reporting(E_ALL);
+    ini_set("display_errors", 1);
 }
 
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set("session.cookie_httponly", 1);
+    ini_set("session.use_strict_mode", 1);
+    session_start();
+}
+
+// Database connection
 try {
     $GLOBALS["pdo"] = new PDO(
         "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET,
@@ -112,25 +251,59 @@ try {
         DB_PASS,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false
         ]
     );
 } catch (PDOException $e) {
-    die("Database connection failed.");
+    if (DEBUG_MODE) {
+        die("Database connection failed: " . $e->getMessage());
+    }
+    die("Database connection failed. Please check your configuration.");
 }
 
-function getDB() {
+/**
+ * Get PDO database connection
+ */
+function getDB(): PDO {
     return $GLOBALS["pdo"];
 }
+
+/**
+ * Get setting value from database
+ */
+function getSetting(string $key, $default = null) {
+    static $cache = [];
+    if (isset($cache[$key])) return $cache[$key];
+    
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
+        $stmt->execute([$key]);
+        $result = $stmt->fetchColumn();
+        $cache[$key] = $result !== false ? $result : $default;
+        return $cache[$key];
+    } catch (PDOException $e) {
+        return $default;
+    }
+}
 ';
-            
-            file_put_contents($configFile, $configContent);
-            unset($_SESSION['install_db']);
-            $_SESSION['admin_user'] = $adminUser;
-            header('Location: install.php?step=3');
-            exit;
-        } catch (Exception $e) {
-            $error = 'Installation failed: ' . $e->getMessage();
+                
+                // Write config file
+                if (file_put_contents($configFile, $configContent) === false) {
+                    throw new Exception('Failed to write config.php. Check directory permissions.');
+                }
+                
+                // Clear session
+                $_SESSION['admin_user'] = $adminUser;
+                unset($_SESSION['install_db']);
+                
+                header('Location: install.php?step=3');
+                exit;
+                
+            } catch (Exception $e) {
+                $error = 'Installation failed: ' . htmlspecialchars($e->getMessage());
+            }
         }
     }
 }

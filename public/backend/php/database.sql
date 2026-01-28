@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS `api_keys` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- API LOGS TABLE (Partitioned by month for performance)
+-- API LOGS TABLE
 -- =====================================================
 CREATE TABLE IF NOT EXISTS `api_logs` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -82,9 +82,10 @@ CREATE TABLE IF NOT EXISTS `api_logs` (
     `response_body` TEXT NULL,
     `http_status` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     `duration_ms` INT UNSIGNED NOT NULL DEFAULT 0,
-    `is_success` BOOLEAN GENERATED ALWAYS AS (http_status = 200) STORED,
+    `is_success` BOOLEAN NOT NULL DEFAULT FALSE,
+    `error_message` VARCHAR(500) NULL,
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`, `created_at`),
+    PRIMARY KEY (`id`),
     KEY `idx_api_key_id` (`api_key_id`),
     KEY `idx_user_id` (`user_id`),
     KEY `idx_client_ip` (`client_ip`),
@@ -157,18 +158,21 @@ CREATE TABLE IF NOT EXISTS `activity_logs` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id` INT UNSIGNED NULL,
     `action` VARCHAR(100) NOT NULL,
+    `description` TEXT NULL COMMENT 'Human readable description',
     `target_type` VARCHAR(50) NULL COMMENT 'user, api_key, setting, etc.',
     `target_id` INT UNSIGNED NULL,
     `old_values` JSON NULL,
     `new_values` JSON NULL,
     `ip_address` VARCHAR(45) NULL,
     `user_agent` VARCHAR(500) NULL,
+    `is_read` BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'For notification system',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_user_id` (`user_id`),
     KEY `idx_action` (`action`),
     KEY `idx_target` (`target_type`, `target_id`),
-    KEY `idx_created_at` (`created_at`)
+    KEY `idx_created_at` (`created_at`),
+    KEY `idx_is_read` (`is_read`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
@@ -210,61 +214,25 @@ INSERT INTO `settings` (`setting_key`, `setting_value`, `setting_type`, `descrip
 ('log_retention_days', '90', 'number', 'Days to keep API logs', FALSE)
 ON DUPLICATE KEY UPDATE `id` = `id`;
 
--- =====================================================
--- STORED PROCEDURES
--- =====================================================
-
--- Procedure to clean old logs
-DELIMITER //
-CREATE PROCEDURE IF NOT EXISTS `cleanup_old_logs`(IN days_to_keep INT)
-BEGIN
-    DELETE FROM `api_logs` WHERE `created_at` < DATE_SUB(NOW(), INTERVAL days_to_keep DAY);
-    DELETE FROM `telegram_logs` WHERE `created_at` < DATE_SUB(NOW(), INTERVAL days_to_keep DAY);
-    DELETE FROM `activity_logs` WHERE `created_at` < DATE_SUB(NOW(), INTERVAL days_to_keep * 2 DAY);
-END //
-DELIMITER ;
-
--- Procedure to reset daily/monthly counters
-DELIMITER //
-CREATE PROCEDURE IF NOT EXISTS `reset_api_counters`()
-BEGIN
-    -- Reset daily counters at midnight
-    UPDATE `api_keys` SET `calls_today` = 0;
-    
-    -- Reset monthly counters on 1st of month
-    IF DAY(NOW()) = 1 THEN
-        UPDATE `api_keys` SET `calls_this_month` = 0;
-    END IF;
-END //
-DELIMITER ;
-
--- =====================================================
--- EVENTS (Auto maintenance)
--- =====================================================
-
--- Enable event scheduler
-SET GLOBAL event_scheduler = ON;
-
--- Daily cleanup event
-CREATE EVENT IF NOT EXISTS `daily_cleanup`
-ON SCHEDULE EVERY 1 DAY
-STARTS CURRENT_DATE + INTERVAL 1 DAY + INTERVAL 3 HOUR
-DO CALL `cleanup_old_logs`(90);
-
--- Daily counter reset
-CREATE EVENT IF NOT EXISTS `daily_counter_reset`
-ON SCHEDULE EVERY 1 DAY
-STARTS CURRENT_DATE + INTERVAL 1 DAY
-DO CALL `reset_api_counters`();
-
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =====================================================
 -- 🎉 SETUP COMPLETE!
 -- =====================================================
--- Default admin credentials:
--- Username: admin
--- Password: admin123
 -- 
--- ⚠️ IMPORTANT: Change the admin password immediately!
+-- Default admin credentials are created via install.php
+-- 
+-- OPTIONAL: Run these queries manually for maintenance:
+-- 
+-- Clean old logs (90 days):
+-- DELETE FROM api_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 90 DAY);
+-- DELETE FROM telegram_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 90 DAY);
+-- DELETE FROM activity_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 180 DAY);
+-- 
+-- Reset daily counters:
+-- UPDATE api_keys SET calls_today = 0;
+-- 
+-- Reset monthly counters (run on 1st of month):
+-- UPDATE api_keys SET calls_this_month = 0;
+-- 
 -- =====================================================
