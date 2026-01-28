@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useConfig } from '@/contexts/ConfigContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Moon, Sun, Lock, User, Zap, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react';
+import { Moon, Sun, Lock, User, Zap, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -16,8 +17,25 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { config } = useConfig();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Update favicon dynamically
+  useEffect(() => {
+    if (config.faviconUrl) {
+      const link = document.querySelector("link[rel*='icon']") as HTMLLinkElement || document.createElement('link');
+      link.type = 'image/x-icon';
+      link.rel = 'shortcut icon';
+      link.href = config.faviconUrl;
+      document.getElementsByTagName('head')[0].appendChild(link);
+    }
+  }, [config.faviconUrl]);
+
+  // Update page title dynamically
+  useEffect(() => {
+    document.title = `Login - ${config.siteName}`;
+  }, [config.siteName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +46,7 @@ const Login = () => {
       if (success) {
         toast({
           title: '✅ Login Successful',
-          description: 'Welcome to Hyper Softs Trend!',
+          description: `Welcome to ${config.siteName}!`,
         });
         navigate('/dashboard');
       } else {
@@ -52,48 +70,55 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden p-4">
       {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Gradient Orbs */}
-        <div className="absolute top-1/4 -left-20 w-72 h-72 bg-primary/30 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent/30 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-[120px]" />
+        <div className="absolute top-1/4 -left-20 w-72 h-72 bg-primary/20 rounded-full blur-[100px]" />
+        <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent/20 rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-[120px]" />
         
         {/* Grid Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_70%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(hsl(var(--muted)/0.03)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--muted)/0.03)_1px,transparent_1px)] bg-[size:50px_50px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_70%)]" />
       </div>
 
       {/* Theme Toggle */}
       <Button
         variant="outline"
         size="icon"
-        className="absolute top-4 right-4 z-50 rounded-full border-border/50 bg-background/50 backdrop-blur-xl hover:bg-primary hover:text-white transition-all duration-300"
+        className="absolute top-4 right-4 z-50 rounded-full border-border/50 bg-background/80 backdrop-blur-xl hover:bg-primary hover:text-primary-foreground transition-all duration-300"
         onClick={toggleTheme}
       >
         {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </Button>
 
       {/* Login Card */}
-      <Card className="w-full max-w-md relative z-10 border-border/50 bg-gradient-to-br from-card/90 to-card/50 backdrop-blur-xl shadow-2xl animate-fade-in">
+      <Card className="w-full max-w-md relative z-10 border-border/50 bg-card/95 backdrop-blur-xl shadow-2xl animate-fade-in">
         {/* Glow Effect */}
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-accent to-primary rounded-xl opacity-20 blur-xl -z-10" />
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-xl blur-xl -z-10 opacity-50" />
         
         <CardHeader className="text-center pb-2 pt-8">
           {/* Logo */}
           <div className="flex justify-center mb-4">
             <div className="relative">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30 animate-scale-in">
-                <Zap className="w-10 h-10 text-white" />
-              </div>
-              <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 border-4 border-background flex items-center justify-center animate-pulse">
-                <Sparkles className="w-3 h-3 text-white" />
-              </div>
+              {config.logoUrl ? (
+                <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-lg animate-scale-in">
+                  <img 
+                    src={config.logoUrl} 
+                    alt={config.siteName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30 animate-scale-in">
+                  <Zap className="w-10 h-10 text-primary-foreground" />
+                </div>
+              )}
             </div>
           </div>
           
-          <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-            Hyper Softs
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-foreground">
+            {config.siteName}
           </CardTitle>
-          <p className="text-primary font-medium text-sm">Trend API System</p>
+          <p className="text-primary font-medium text-sm">{config.siteDescription}</p>
           <CardDescription className="mt-3">
             Sign in to access your dashboard
           </CardDescription>
@@ -153,12 +178,12 @@ const Login = () => {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-xl shadow-lg shadow-primary/25 transition-all duration-300 group"
+              className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-primary-foreground font-semibold rounded-xl shadow-lg shadow-primary/25 transition-all duration-300 group"
               disabled={isLoading}
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
-                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent" />
                   Signing in...
                 </span>
               ) : (
@@ -169,30 +194,20 @@ const Login = () => {
               )}
             </Button>
 
-            {/* Demo Credentials */}
-            <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50">
-              <p className="text-center text-sm text-muted-foreground mb-2 flex items-center justify-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                Demo Credentials
-              </p>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-2 rounded-lg bg-background/50 text-center">
-                  <p className="text-muted-foreground mb-1">Admin</p>
-                  <p className="font-mono text-foreground">admin / admin123</p>
-                </div>
-                <div className="p-2 rounded-lg bg-background/50 text-center">
-                  <p className="text-muted-foreground mb-1">User</p>
-                  <p className="font-mono text-foreground">user1 / user123</p>
-                </div>
-              </div>
-            </div>
+            {/* Contact Support */}
+            <p className="text-center text-xs text-muted-foreground mt-4">
+              Need help? Contact{' '}
+              <a href={`mailto:${config.supportEmail}`} className="text-primary hover:underline">
+                {config.supportEmail}
+              </a>
+            </p>
           </form>
         </CardContent>
       </Card>
 
       {/* Footer Text */}
-      <p className="absolute bottom-4 text-xs text-muted-foreground/50">
-        © 2024 Hyper Softs. All rights reserved.
+      <p className="absolute bottom-4 text-xs text-muted-foreground">
+        © {new Date().getFullYear()} {config.siteName}. All rights reserved.
       </p>
     </div>
   );
