@@ -36,8 +36,6 @@ const SettingsPage = () => {
     // API Configuration - synced from config
     apiDomain: config.apiDomain,
     apiEndpoint: config.apiEndpoint,
-    rateLimitPerMinute: 100,
-    rateLimitPerDay: 10000,
     
     // Notifications
     autoReminderDays: 7,
@@ -554,31 +552,6 @@ const SettingsPage = () => {
                     >
                       <ExternalLink className="w-4 h-4 text-primary" />
                     </a>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <h4 className="font-medium">Rate Limiting</h4>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="rateLimitPerMinute">Requests per Minute</Label>
-                    <Input
-                      id="rateLimitPerMinute"
-                      type="number"
-                      value={settings.rateLimitPerMinute}
-                      onChange={(e) => setSettings({ ...settings, rateLimitPerMinute: parseInt(e.target.value) || 100 })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="rateLimitPerDay">Requests per Day</Label>
-                    <Input
-                      id="rateLimitPerDay"
-                      type="number"
-                      value={settings.rateLimitPerDay}
-                      onChange={(e) => setSettings({ ...settings, rateLimitPerDay: parseInt(e.target.value) || 10000 })}
-                    />
                   </div>
                 </div>
 
