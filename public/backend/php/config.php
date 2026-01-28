@@ -27,16 +27,19 @@ define('UPSTREAM_API_ENDPOINT', '/Xdrtrend');
 
 // ==================== YOUR DOMAIN (What users see) ====================
 define('YOUR_DOMAIN', 'https://api.yourdomain.com');
+define('SITE_URL', isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http' . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
 
 // ==================== TELEGRAM BOT ====================
 define('TELEGRAM_BOT_TOKEN', 'your_bot_token_from_botfather');
 define('ADMIN_TELEGRAM_ID', 'your_telegram_id');
+define('TELEGRAM_WEBHOOK_SECRET', 'your_webhook_secret'); // For webhook verification
 
 // ==================== SITE INFO ====================
 define('SITE_NAME', 'Hyper Softs');
 define('SITE_DESCRIPTION', 'Trend API Management System');
 define('ADMIN_EMAIL', 'admin@hypersofts.com');
 define('SUPPORT_EMAIL', 'support@hypersofts.com');
+define('SUPPORT_TELEGRAM', '@hypersofts');
 
 // ==================== GAME TYPE MAPPING ====================
 // Maps clean duration names to hidden upstream typeIds
@@ -131,6 +134,8 @@ define('ENABLE_IP_WHITELIST', true);
 define('ENABLE_DOMAIN_WHITELIST', true);
 define('LOG_ALL_REQUESTS', true);
 define('MASK_API_KEYS_IN_LOGS', true);
+define('SESSION_LIFETIME', 86400); // 24 hours
+define('JWT_SECRET', 'change-this-to-a-random-secret-key'); // For API token auth
 
 // ==================== RATE LIMITING ====================
 define('RATE_LIMIT_ENABLED', true);
@@ -138,7 +143,12 @@ define('RATE_LIMIT_PER_MINUTE', 60);
 define('RATE_LIMIT_PER_HOUR', 1000);
 define('RATE_LIMIT_PER_DAY', 10000);
 
+// ==================== KEY EXPIRY REMINDERS ====================
+define('REMINDER_DAYS_BEFORE', [7, 3, 1]); // Days before expiry to send reminders
+define('AUTO_REMINDERS_ENABLED', true);
+
 // ==================== CORS ====================
+define('CORS_ENABLED', true);
 define('ALLOWED_ORIGINS', [
     'https://your-frontend-domain.com',
     'https://admin.your-domain.com',
@@ -244,8 +254,70 @@ try {
  * Get PDO database instance
  * @return PDO
  */
-function getDB() {
+function getDB(): PDO {
     return $GLOBALS['pdo'];
+}
+
+/**
+ * Get setting value from database with caching
+ * @param string $key Setting key
+ * @param mixed $default Default value if not found
+ * @return mixed Setting value or default
+ */
+function getSetting(string $key, $default = null) {
+    static $cache = [];
+    
+    if (isset($cache[$key])) {
+        return $cache[$key];
+    }
+    
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("SELECT setting_value, setting_type FROM settings WHERE setting_key = ?");
+        $stmt->execute([$key]);
+        $row = $stmt->fetch();
+        
+        if ($row === false) {
+            $cache[$key] = $default;
+            return $default;
+        }
+        
+        // Cast value based on type
+        $value = $row['setting_value'];
+        switch ($row['setting_type']) {
+            case 'number':
+                $value = is_numeric($value) ? (float)$value : $default;
+                break;
+            case 'boolean':
+                $value = in_array(strtolower($value), ['true', '1', 'yes']);
+                break;
+            case 'json':
+                $decoded = json_decode($value, true);
+                $value = $decoded !== null ? $decoded : $default;
+                break;
+        }
+        
+        $cache[$key] = $value;
+        return $value;
+    } catch (PDOException $e) {
+        return $default;
+    }
+}
+
+/**
+ * Update setting value in database
+ * @param string $key Setting key
+ * @param mixed $value New value
+ * @return bool Success status
+ */
+function updateSetting(string $key, $value): bool {
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("UPDATE settings SET setting_value = ?, updated_at = NOW() WHERE setting_key = ?");
+        return $stmt->execute([(string)$value, $key]);
+    } catch (PDOException $e) {
+        return false;
+    }
 }
 
 // ==================== SESSION CONFIGURATION ====================
@@ -253,9 +325,11 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_strict_mode', 1);
     ini_set('session.cookie_samesite', 'Strict');
+    ini_set('session.gc_maxlifetime', SESSION_LIFETIME);
     if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
         ini_set('session.cookie_secure', 1);
     }
+    session_start();
 }
 
 // ==================== PATH CONFIGURATION ====================
@@ -263,3 +337,6 @@ define('APP_ROOT', __DIR__);
 define('INCLUDES_PATH', APP_ROOT . '/includes');
 define('ADMIN_PATH', APP_ROOT . '/admin');
 define('API_PATH', APP_ROOT . '/api');
+
+// ==================== VERSION ====================
+define('APP_VERSION', '1.0.0');
