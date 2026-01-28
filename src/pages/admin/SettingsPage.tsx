@@ -33,9 +33,13 @@ const SettingsPage = () => {
     adminTelegramId: config.adminTelegramId,
     webhookUrl: '',
     
-    // API Configuration - synced from config
-    apiDomain: config.apiDomain,
-    apiEndpoint: config.apiEndpoint,
+    // API Configuration - INTERNAL (Hidden from users - actual source)
+    internalApiDomain: config.apiDomain,
+    internalApiEndpoint: config.apiEndpoint,
+    
+    // API Configuration - USER-FACING (What merchants see in documentation)
+    userApiDomain: config.userApiDomain,
+    userApiEndpoint: config.userApiEndpoint,
     
     // Notifications
     autoReminderDays: 7,
@@ -71,8 +75,12 @@ const SettingsPage = () => {
       supportEmail: settings.supportEmail,
       logoUrl: settings.logoUrl,
       faviconUrl: settings.faviconUrl,
-      apiDomain: settings.apiDomain,
-      apiEndpoint: settings.apiEndpoint,
+      // Internal API (hidden)
+      apiDomain: settings.internalApiDomain,
+      apiEndpoint: settings.internalApiEndpoint,
+      // User-facing API (shown to merchants)
+      userApiDomain: settings.userApiDomain,
+      userApiEndpoint: settings.userApiEndpoint,
       telegramBotToken: settings.telegramBotToken,
       adminTelegramId: settings.adminTelegramId,
     });
@@ -495,151 +503,172 @@ const SettingsPage = () => {
 
           {/* API Settings */}
           <TabsContent value="api">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Server className="w-5 h-5 text-primary" />
-                  API Configuration
-                </CardTitle>
-                <CardDescription>Configure your API domain and endpoints for documentation</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* API Domain Configuration */}
-                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                  <h4 className="font-medium mb-4 flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-primary" />
-                    Your API Domain Settings
-                  </h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Set YOUR custom API domain here. This will be shown in documentation. Your upstream source stays private.
-                  </p>
+            <div className="space-y-6">
+              {/* User-Facing API (What merchants/users see) */}
+              <Card className="border-2 border-primary/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-primary" />
+                    User-Facing API (Public)
+                  </CardTitle>
+                  <CardDescription>
+                    This is what your merchants/users will see in documentation. Your server URL.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="p-4 rounded-lg bg-success/10 border border-success/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-3 h-3 rounded-full bg-success"></div>
+                      <span className="font-semibold text-success">Visible to Users</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Users will see this URL in their documentation, code examples, and API requests.
+                    </p>
+                  </div>
                   
                   <div className="grid gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="apiDomain">Your API Domain</Label>
+                      <Label htmlFor="userApiDomain">Your API Domain</Label>
                       <Input
-                        id="apiDomain"
-                        value={settings.apiDomain}
-                        onChange={(e) => setSettings({ ...settings, apiDomain: e.target.value })}
+                        id="userApiDomain"
+                        value={settings.userApiDomain}
+                        onChange={(e) => setSettings({ ...settings, userApiDomain: e.target.value })}
                         placeholder="https://api.yourdomain.com"
                       />
-                      <p className="text-xs text-muted-foreground">Your server domain (e.g., https://api.yourdomain.com)</p>
+                      <p className="text-xs text-muted-foreground">Your VPS server URL where backend is hosted</p>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="apiEndpoint">API Endpoint Path</Label>
+                      <Label htmlFor="userApiEndpoint">API Endpoint Path</Label>
                       <Input
-                        id="apiEndpoint"
-                        value={settings.apiEndpoint}
-                        onChange={(e) => setSettings({ ...settings, apiEndpoint: e.target.value })}
+                        id="userApiEndpoint"
+                        value={settings.userApiEndpoint}
+                        onChange={(e) => setSettings({ ...settings, userApiEndpoint: e.target.value })}
                         placeholder="/api/trend"
                       />
-                      <p className="text-xs text-muted-foreground">Your endpoint path (e.g., /api/trend)</p>
+                      <p className="text-xs text-muted-foreground">Your custom endpoint path (e.g., /api/trend)</p>
                     </div>
                   </div>
                   
                   {/* Preview */}
-                  <div className="mt-4 p-3 rounded-lg bg-muted">
-                    <p className="text-xs text-muted-foreground mb-2">Preview URL (shown to users):</p>
-                    <code className="text-sm text-primary font-mono">
-                      {settings.apiDomain}{settings.apiEndpoint}?typeId=wg1
+                  <div className="p-3 rounded-lg bg-muted">
+                    <p className="text-xs text-muted-foreground mb-2">Users will call this URL:</p>
+                    <code className="text-sm text-primary font-mono font-bold">
+                      {settings.userApiDomain}{settings.userApiEndpoint}?typeId=wg1&apiKey=THEIR_KEY
                     </code>
-                    <a 
-                      href={`${settings.apiDomain}${settings.apiEndpoint}?typeId=wg1`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="ml-2 inline-flex"
-                    >
-                      <ExternalLink className="w-4 h-4 text-primary" />
-                    </a>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
 
-                <Separator />
-
-                {/* IP Whitelist Management */}
-                <div className="p-4 rounded-lg bg-warning/5 border border-warning/20">
-                  <h4 className="font-medium mb-4 flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-warning" />
-                    Global IP Whitelist
-                  </h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Manage default IPs that are allowed to access your API. Individual API keys can have additional whitelisted IPs.
-                  </p>
+              {/* Internal API (Hidden from users) */}
+              <Card className="border-2 border-destructive/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-destructive" />
+                    Internal API Source (Hidden)
+                  </CardTitle>
+                  <CardDescription>
+                    This is your actual data source. Never shown to users. Keep it private!
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-3 h-3 rounded-full bg-destructive"></div>
+                      <span className="font-semibold text-destructive">🔒 Admin Only - Never Shared</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Your backend fetches data from this source internally. Users never see this URL.
+                    </p>
+                  </div>
                   
-                  <div className="space-y-4">
+                  <div className="grid gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="globalIpWhitelist">Default Whitelisted IPs</Label>
+                      <Label htmlFor="internalApiDomain">Source API Domain</Label>
+                      <Input
+                        id="internalApiDomain"
+                        type="password"
+                        value={settings.internalApiDomain}
+                        onChange={(e) => setSettings({ ...settings, internalApiDomain: e.target.value })}
+                        placeholder="https://source-api.example.com"
+                      />
+                      <p className="text-xs text-muted-foreground">The actual API source your server fetches from</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="internalApiEndpoint">Source Endpoint Path</Label>
+                      <Input
+                        id="internalApiEndpoint"
+                        value={settings.internalApiEndpoint}
+                        onChange={(e) => setSettings({ ...settings, internalApiEndpoint: e.target.value })}
+                        placeholder="/endpoint"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* IP Whitelist Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-warning" />
+                    Security Whitelists
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* IP Whitelist */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium flex items-center gap-2">
+                        Global IP Whitelist
+                      </h4>
                       <textarea
-                        id="globalIpWhitelist"
-                        className="w-full h-24 px-3 py-2 rounded-md border border-input bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                        placeholder="Enter IPs (one per line)&#10;Example:&#10;192.168.1.1&#10;10.0.0.1&#10;2001:db8::1"
+                        className="w-full h-32 px-3 py-2 rounded-md border border-input bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                        placeholder="Enter IPs (one per line)&#10;192.168.1.1&#10;10.0.0.1&#10;2001:db8::1"
                         defaultValue=""
                       />
                       <p className="text-xs text-muted-foreground">
-                        These IPs are automatically allowed for all new API keys. One IP per line.
+                        Default IPs allowed for all new API keys (IPv4 & IPv6)
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-3 rounded-lg bg-muted/50 border">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 rounded-full bg-success"></div>
-                          <span className="text-sm font-medium">IPv4 Format</span>
-                        </div>
-                        <code className="text-xs text-muted-foreground">192.168.1.1, 10.0.0.1</code>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/50 border">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-2 h-2 rounded-full bg-primary"></div>
-                          <span className="text-sm font-medium">IPv6 Format</span>
-                        </div>
-                        <code className="text-xs text-muted-foreground">2001:db8::1</code>
-                      </div>
+                    {/* Domain Whitelist */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium flex items-center gap-2">
+                        Global Domain Whitelist
+                      </h4>
+                      <textarea
+                        className="w-full h-32 px-3 py-2 rounded-md border border-input bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                        placeholder="Enter domains (one per line)&#10;yourdomain.com&#10;*.yourdomain.com"
+                        defaultValue=""
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Default domains allowed (supports * wildcard for subdomains)
+                      </p>
                     </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
 
-                {/* Domain Whitelist */}
-                <div className="p-4 rounded-lg bg-accent/5 border border-accent/20">
-                  <h4 className="font-medium mb-4 flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-accent-foreground" />
-                    Global Domain Whitelist
-                  </h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Default domains allowed to access your API via Origin header verification.
-                  </p>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="globalDomainWhitelist">Default Whitelisted Domains</Label>
-                    <textarea
-                      id="globalDomainWhitelist"
-                      className="w-full h-24 px-3 py-2 rounded-md border border-input bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                      placeholder="Enter domains (one per line)&#10;Example:&#10;yourdomain.com&#10;app.yourdomain.com&#10;*.yourdomain.com"
-                      defaultValue=""
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Supports wildcard subdomains with * prefix. One domain per line.
-                    </p>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* All Endpoints Preview */}
-                <div className="p-4 rounded-lg bg-muted/50 border">
-                  <h4 className="font-medium mb-3">📋 Your API Endpoints</h4>
+              {/* All Endpoints Preview */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>📋 User-Visible API Endpoints</CardTitle>
+                  <CardDescription>These are what your users/merchants will see in documentation</CardDescription>
+                </CardHeader>
+                <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
-                    <div><strong>Numeric:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=1</div>
-                    <div><strong>WinGo 30s:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=wg30</div>
-                    <div><strong>WinGo 1m:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=wg1</div>
-                    <div><strong>K3 3m:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=k33</div>
-                    <div><strong>5D 5m:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=5d5</div>
-                    <div><strong>TRX 10m:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=trx10</div>
+                    <div><strong>Numeric 1m:</strong> {settings.userApiDomain}{settings.userApiEndpoint}?typeId=1</div>
+                    <div><strong>WinGo 30s:</strong> {settings.userApiDomain}{settings.userApiEndpoint}?typeId=wg30</div>
+                    <div><strong>WinGo 1m:</strong> {settings.userApiDomain}{settings.userApiEndpoint}?typeId=wg1</div>
+                    <div><strong>K3 3m:</strong> {settings.userApiDomain}{settings.userApiEndpoint}?typeId=k33</div>
+                    <div><strong>5D 5m:</strong> {settings.userApiDomain}{settings.userApiEndpoint}?typeId=5d5</div>
+                    <div><strong>TRX 10m:</strong> {settings.userApiDomain}{settings.userApiEndpoint}?typeId=trx10</div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Notification Settings */}

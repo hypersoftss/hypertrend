@@ -30,9 +30,9 @@ const DocumentationPage = () => {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  // Use API config from settings
-  const API_BASE = config.apiDomain;
-  const API_ENDPOINT = config.apiEndpoint;
+  // Use USER-FACING API config (what merchants see - NOT the internal source)
+  const API_BASE = config.userApiDomain;
+  const API_ENDPOINT = config.userApiEndpoint;
 
   // Build full URL helper
   const buildUrl = (typeId: string) => `${API_BASE}${API_ENDPOINT}?typeId=${typeId}`;
