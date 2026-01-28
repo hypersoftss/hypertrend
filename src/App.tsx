@@ -26,6 +26,7 @@ import SettingsPage from "@/pages/admin/SettingsPage";
 import DnsCheckerPage from "@/pages/admin/DnsCheckerPage";
 import LiveMonitorPage from "@/pages/admin/LiveMonitorPage";
 import BackendDownloadPage from "@/pages/admin/BackendDownloadPage";
+import AnalyticsPage from "@/pages/admin/AnalyticsPage";
 
 // User Pages
 import UserKeysPage from "@/pages/user/UserKeysPage";
@@ -55,6 +56,7 @@ const App = () => (
 
                 {/* Protected Routes - Admin Only */}
                 <Route element={<ProtectedRoute requiredRole="admin" />}>
+                  <Route path="/admin/analytics" element={<AnalyticsPage />} />
                   <Route path="/admin/users" element={<UsersPage />} />
                   <Route path="/admin/keys" element={<ApiKeysPage />} />
                   <Route path="/admin/logs" element={<ApiLogsPage />} />

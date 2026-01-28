@@ -22,6 +22,7 @@ import {
   BookOpen,
   Globe,
   Download,
+  BarChart3,
 } from 'lucide-react';
 
 interface NavItem {
@@ -33,6 +34,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { title: 'Analytics', href: '/admin/analytics', icon: BarChart3, adminOnly: true },
   { title: 'Users', href: '/admin/users', icon: Users, adminOnly: true },
   { title: 'API Keys', href: '/admin/keys', icon: Key, adminOnly: true },
   { title: 'My Keys', href: '/user/keys', icon: Key },
