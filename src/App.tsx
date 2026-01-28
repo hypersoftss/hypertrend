@@ -20,15 +20,11 @@ import NotFound from "@/pages/NotFound";
 import UsersPage from "@/pages/admin/UsersPage";
 import ApiKeysPage from "@/pages/admin/ApiKeysPage";
 import ApiLogsPage from "@/pages/admin/ApiLogsPage";
-import TelegramLogsPage from "@/pages/admin/TelegramLogsPage";
-import ServerHealthPage from "@/pages/admin/ServerHealthPage";
 import ManualReminderPage from "@/pages/admin/ManualReminderPage";
-import ActivityLogsPage from "@/pages/admin/ActivityLogsPage";
 import SettingsPage from "@/pages/admin/SettingsPage";
-import DnsCheckerPage from "@/pages/admin/DnsCheckerPage";
-import LiveMonitorPage from "@/pages/admin/LiveMonitorPage";
 import BackendDownloadPage from "@/pages/admin/BackendDownloadPage";
-import AnalyticsPage from "@/pages/admin/AnalyticsPage";
+import SystemMonitorPage from "@/pages/admin/SystemMonitorPage";
+import LogsToolsPage from "@/pages/admin/LogsToolsPage";
 
 // User Pages
 import UserKeysPage from "@/pages/user/UserKeysPage";
@@ -60,16 +56,12 @@ const App = () => (
 
                 {/* Protected Routes - Admin Only */}
                 <Route element={<ProtectedRoute requiredRole="admin" />}>
-                  <Route path="/admin/analytics" element={<AnalyticsPage />} />
                   <Route path="/admin/users" element={<UsersPage />} />
                   <Route path="/admin/keys" element={<ApiKeysPage />} />
                   <Route path="/admin/logs" element={<ApiLogsPage />} />
-                  <Route path="/admin/live" element={<LiveMonitorPage />} />
-                  <Route path="/admin/telegram" element={<TelegramLogsPage />} />
-                  <Route path="/admin/dns" element={<DnsCheckerPage />} />
-                  <Route path="/admin/health" element={<ServerHealthPage />} />
+                  <Route path="/admin/monitor" element={<SystemMonitorPage />} />
+                  <Route path="/admin/tools" element={<LogsToolsPage />} />
                   <Route path="/admin/reminder" element={<ManualReminderPage />} />
-                  <Route path="/admin/activity" element={<ActivityLogsPage />} />
                   <Route path="/admin/settings" element={<SettingsPage />} />
                   <Route path="/admin/download" element={<BackendDownloadPage />} />
                 </Route>
