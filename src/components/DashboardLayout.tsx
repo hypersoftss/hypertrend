@@ -109,59 +109,75 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
             })}
           </nav>
         </ScrollArea>
-
-        {/* User Section */}
-        <div className="p-4 border-t border-border space-y-3">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-10 h-10 rounded-full gradient-accent flex items-center justify-center">
-              <span className="text-accent-foreground font-semibold">
-                {user?.username?.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-foreground truncate">{user?.username}</p>
-              <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1" onClick={toggleTheme}>
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-            <Button variant="outline" size="sm" className="flex-1" onClick={handleLogout}>
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
       </aside>
 
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border p-4">
-        <div className="flex items-center justify-between">
-          <Link to="/dashboard" className="flex items-center gap-2">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Top Header Bar */}
+        <header className="h-16 border-b border-border bg-card px-6 flex items-center justify-between">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
               <Zap className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="font-bold text-foreground">Hyper Softs</span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={toggleTheme}>
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </div>
+          
+          {/* Page Title - Desktop */}
+          <div className="hidden lg:block">
+            <h2 className="text-lg font-semibold text-foreground">
+              {filteredNavItems.find(item => item.href === location.pathname)?.title || 'Dashboard'}
+            </h2>
+          </div>
+
+          {/* Right Side - Profile, Theme Toggle, Logout */}
+          <div className="flex items-center gap-3">
+            {/* User Profile */}
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center">
+                <span className="text-accent-foreground font-semibold text-sm">
+                  {user?.username?.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="hidden sm:block">
+                <p className="text-sm font-medium text-foreground">{user?.username}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="h-8 w-px bg-border mx-1" />
+
+            {/* Theme Toggle */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleTheme}
+              className="h-9 w-9"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleLogout}>
-              <LogOut className="w-5 h-5" />
+
+            {/* Logout */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout}
+              className="h-9 w-9 text-muted-foreground hover:text-destructive"
+            >
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
-        </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 p-6 overflow-auto">
+          {children}
+        </main>
       </div>
 
-      {/* Main Content */}
-      <main className="flex-1 lg:p-8 p-4 pt-20 lg:pt-8 overflow-auto">
-        {children}
-      </main>
-
       {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border p-2 flex justify-around">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border p-2 flex justify-around z-50">
         {filteredNavItems.slice(0, 5).map((item) => {
           const isActive = location.pathname === item.href;
           return (
