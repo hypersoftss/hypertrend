@@ -32,6 +32,8 @@ import ActivityLogsPage from "@/pages/admin/ActivityLogsPage";
 
 // User Pages
 import UserKeysPage from "@/pages/user/UserKeysPage";
+import UserLogsPage from "@/pages/user/UserLogsPage";
+import UserAnalyticsPage from "@/pages/user/UserAnalyticsPage";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +58,8 @@ const App = () => (
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/change-password" element={<ChangePasswordPage />} />
                   <Route path="/user/keys" element={<UserKeysPage />} />
+                  <Route path="/user/logs" element={<UserLogsPage />} />
+                  <Route path="/user/analytics" element={<UserAnalyticsPage />} />
                 </Route>
 
                 {/* Protected Routes - Admin Only */}
