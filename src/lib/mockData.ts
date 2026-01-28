@@ -284,6 +284,19 @@ export const formatDate = (dateString: string, includeTime: boolean = true): str
   return date.toLocaleString('en-IN', options);
 };
 
+export const formatDateTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleString('en-IN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: 'Asia/Kolkata',
+  });
+};
+
 export const getDaysUntilExpiry = (expiresAt: string): number => {
   const now = new Date();
   const expiry = new Date(expiresAt);
