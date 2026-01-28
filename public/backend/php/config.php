@@ -17,6 +17,7 @@ define('DB_HOST', 'localhost');
 define('DB_USER', 'your_db_user');
 define('DB_PASS', 'your_db_password');
 define('DB_NAME', 'hyper_softs_db');
+define('DB_CHARSET', 'utf8mb4');
 
 // ==================== HIDDEN UPSTREAM API ====================
 // This is your REAL data source - KEEP IT SECRET!
@@ -217,3 +218,48 @@ function get_available_durations($game) {
     
     return $durations[$game] ?? [];
 }
+
+// ==================== DATABASE CONNECTION ====================
+// Global PDO connection - available everywhere via getDB()
+try {
+    $GLOBALS['pdo'] = new PDO(
+        'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=' . DB_CHARSET,
+        DB_USER,
+        DB_PASS,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false
+        ]
+    );
+} catch (PDOException $e) {
+    if (DEBUG_MODE) {
+        die('Database connection failed: ' . $e->getMessage());
+    } else {
+        die('Database connection failed. Please check your configuration.');
+    }
+}
+
+/**
+ * Get PDO database instance
+ * @return PDO
+ */
+function getDB() {
+    return $GLOBALS['pdo'];
+}
+
+// ==================== SESSION CONFIGURATION ====================
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.use_strict_mode', 1);
+    ini_set('session.cookie_samesite', 'Strict');
+    if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+        ini_set('session.cookie_secure', 1);
+    }
+}
+
+// ==================== PATH CONFIGURATION ====================
+define('APP_ROOT', __DIR__);
+define('INCLUDES_PATH', APP_ROOT . '/includes');
+define('ADMIN_PATH', APP_ROOT . '/admin');
+define('API_PATH', APP_ROOT . '/api');
