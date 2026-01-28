@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
-import { Moon, Sun, Zap, ArrowLeft, Copy, CheckCircle, Code, Globe, Shield, AlertTriangle, Server, Database, ExternalLink } from 'lucide-react';
+import { Moon, Sun, Zap, ArrowLeft, Copy, CheckCircle, Code, Globe, Shield, AlertTriangle, Server, Database, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const DocumentationPage = () => {
@@ -178,7 +178,7 @@ $trx = getTrendData('trx10');      // TRX 10-min
                 <Zap className="w-5 h-5 text-primary-foreground" />
               </div>
               <div>
-                <span className="font-bold text-foreground">Hyper Softs</span>
+                <span className="font-bold text-foreground">{config.siteName}</span>
                 <span className="text-muted-foreground ml-2 text-sm">API Documentation</span>
               </div>
             </div>
@@ -199,30 +199,145 @@ $trx = getTrendData('trx10');      // TRX 10-min
           {/* Hero */}
           <div className="text-center space-y-4">
             <Badge className="mb-4">v1.0</Badge>
-            <h1 className="text-4xl font-bold text-foreground">Hyper Softs Trend API</h1>
+            <h1 className="text-4xl font-bold text-foreground">{config.siteName} API</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Complete API documentation for Numeric, WinGo, K3, 5D, and TRX game trend data
+              {config.siteDescription} - Complete API documentation for Numeric, WinGo, K3, 5D, and TRX game trend data
             </p>
           </div>
 
-          {/* Base URL */}
+          {/* Base URL - YOUR OWN API */}
           <Card className="gradient-primary text-primary-foreground overflow-hidden">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Server className="w-8 h-8" />
-                  <div>
-                    <h2 className="text-xl font-bold">Base URL</h2>
-                    <code className="text-lg opacity-90">{API_BASE}{API_ENDPOINT}?typeId=</code>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Server className="w-8 h-8" />
+                    <div>
+                      <h2 className="text-xl font-bold">Your API Base URL</h2>
+                      <code className="text-lg opacity-90">{API_BASE}{API_ENDPOINT}</code>
+                    </div>
                   </div>
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    onClick={() => copyCode(`${API_BASE}${API_ENDPOINT}`, 'baseurl')}
+                  >
+                    {copiedCode === 'baseurl' ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
                 </div>
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
-                  onClick={() => copyCode(`${API_BASE}${API_ENDPOINT}?typeId=`, 'baseurl')}
-                >
-                  {copiedCode === 'baseurl' ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                </Button>
+                <div className="bg-primary-foreground/10 rounded-lg p-3 text-sm">
+                  <p className="opacity-90">
+                    📌 This is YOUR API endpoint. Users will call your server, which fetches and processes data securely.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* API Key & Authentication */}
+          <Card className="border-2 border-primary/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-primary" />
+                API Key Authentication
+              </CardTitle>
+              <CardDescription>How to authenticate your API requests</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 rounded-lg bg-muted/50 border">
+                <h4 className="font-medium mb-3">Request Format</h4>
+                <div className="relative">
+                  <pre className="p-3 rounded bg-muted overflow-x-auto">
+                    <code className="text-sm">{`GET ${API_BASE}${API_ENDPOINT}?typeId={typeId}&apiKey={YOUR_API_KEY}`}</code>
+                  </pre>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute top-1 right-1"
+                    onClick={() => copyCode(`${API_BASE}${API_ENDPOINT}?typeId=1&apiKey=YOUR_API_KEY`, 'format')}
+                  >
+                    {copiedCode === 'format' ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border bg-card">
+                  <h5 className="font-medium mb-2">Required Parameters</h5>
+                  <ul className="text-sm space-y-2 text-muted-foreground">
+                    <li><code className="text-primary">typeId</code> - Game type identifier</li>
+                    <li><code className="text-primary">apiKey</code> - Your unique API key</li>
+                  </ul>
+                </div>
+                <div className="p-4 rounded-lg border bg-card">
+                  <h5 className="font-medium mb-2">Optional Headers</h5>
+                  <ul className="text-sm space-y-2 text-muted-foreground">
+                    <li><code className="text-primary">X-Api-Key</code> - Alternative to query param</li>
+                    <li><code className="text-primary">Origin</code> - For domain verification</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* IP & Domain Whitelisting - DETAILED */}
+          <Card className="border-2 border-warning/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-warning" />
+                IP & Domain Whitelisting
+              </CardTitle>
+              <CardDescription>Security measures to protect your API</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Globe className="w-5 h-5 text-accent-foreground" />
+                    <h4 className="font-semibold">IP Whitelisting</h4>
+                  </div>
+                  <ul className="text-sm space-y-2 text-muted-foreground">
+                    <li>✅ Only whitelisted IPs can access API</li>
+                    <li>✅ Supports both IPv4 and IPv6</li>
+                    <li>✅ Multiple IPs per API key</li>
+                    <li>✅ Real-time IP validation</li>
+                  </ul>
+                </div>
+                
+                <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Globe className="w-5 h-5 text-accent-foreground" />
+                    <h4 className="font-semibold">Domain Whitelisting</h4>
+                  </div>
+                  <ul className="text-sm space-y-2 text-muted-foreground">
+                    <li>✅ Restrict to specific domains</li>
+                    <li>✅ Origin header verification</li>
+                    <li>✅ Subdomain support</li>
+                    <li>✅ Prevents unauthorized use</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-muted/50 border">
+                <h4 className="font-medium mb-3">How It Works</h4>
+                <ol className="text-sm space-y-2 text-muted-foreground list-decimal list-inside">
+                  <li>Admin creates API key and sets allowed IPs/domains</li>
+                  <li>When request comes in, server checks IP against whitelist</li>
+                  <li>If IP not in list → <Badge variant="destructive" className="text-xs">403 Forbidden</Badge></li>
+                  <li>Domain from Origin header is also verified</li>
+                  <li>Only requests passing both checks are processed</li>
+                </ol>
+              </div>
+
+              <div className="flex items-start gap-2 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                <AlertTriangle className="w-5 h-5 text-destructive mt-0.5" />
+                <div>
+                  <p className="font-medium text-foreground">Important</p>
+                  <p className="text-sm text-muted-foreground">
+                    API calls from non-whitelisted IPs will be rejected with 403 error. 
+                    Contact admin to add your server IP to the whitelist.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -266,59 +381,12 @@ $trx = getTrendData('trx10');      // TRX 10-min
                               <Copy className="w-4 h-4" />
                             )}
                           </Button>
-                          <a href={ep.url} target="_blank" rel="noopener noreferrer">
-                            <Button variant="ghost" size="sm">
-                              <ExternalLink className="w-4 h-4" />
-                            </Button>
-                          </a>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
               ))}
-            </CardContent>
-          </Card>
-
-          {/* Security Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-primary" />
-                Security & Access
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-success/10 border border-success/20">
-                  <h4 className="font-medium mb-2 flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-success" />
-                    IP Whitelisting
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Only requests from whitelisted IPs are accepted. Configure in admin panel.
-                  </p>
-                </div>
-                <div className="p-4 rounded-lg bg-success/10 border border-success/20">
-                  <h4 className="font-medium mb-2 flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-success" />
-                    Domain Verification
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Requests are validated against domain whitelist for security.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2 p-4 rounded-lg bg-warning/10 border border-warning/20">
-                <AlertTriangle className="w-5 h-5 text-warning mt-0.5" />
-                <div>
-                  <p className="font-medium text-foreground">Security Notice</p>
-                  <p className="text-sm text-muted-foreground">
-                    Always call from your backend server. Never expose API calls in frontend code.
-                  </p>
-                </div>
-              </div>
             </CardContent>
           </Card>
 
@@ -329,7 +397,7 @@ $trx = getTrendData('trx10');      // TRX 10-min
                 <Code className="w-5 h-5 text-primary" />
                 Code Examples
               </CardTitle>
-              <CardDescription>Ready-to-use code in different languages</CardDescription>
+              <CardDescription>Ready-to-use code with API key authentication</CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="curl">
@@ -385,9 +453,32 @@ $trx = getTrendData('trx10');      // TRX 10-min
             </CardContent>
           </Card>
 
+          {/* Support Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Need Help?</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-muted/50 border">
+                  <h4 className="font-medium mb-2">📧 Support Email</h4>
+                  <a href={`mailto:${config.supportEmail}`} className="text-primary hover:underline">
+                    {config.supportEmail}
+                  </a>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/50 border">
+                  <h4 className="font-medium mb-2">📧 Admin Contact</h4>
+                  <a href={`mailto:${config.adminEmail}`} className="text-primary hover:underline">
+                    {config.adminEmail}
+                  </a>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Footer */}
           <div className="text-center py-8 text-muted-foreground">
-            <p>© 2025 Hyper Softs. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} {config.siteName}. All rights reserved.</p>
           </div>
         </div>
       </main>
