@@ -138,16 +138,11 @@ function error_response(string $error_key, int $status = 400, array $extra = [])
 }
 
 /**
- * Get database connection
+ * Get database connection (uses global PDO from config.php)
+ * For backward compatibility - prefer using getDB() directly
  */
-function get_db_connection(): mysqli {
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-    if ($conn->connect_error) {
-        error_log("DB Connection failed: " . $conn->connect_error);
-        error_response('server_error', 500);
-    }
-    $conn->set_charset('utf8mb4');
-    return $conn;
+function get_db_connection(): PDO {
+    return getDB();
 }
 
 /**
@@ -156,60 +151,55 @@ function get_db_connection(): mysqli {
 function check_ip_whitelist(string $client_ip): bool {
     if (!ENABLE_IP_WHITELIST) return true;
     
-    $conn = get_db_connection();
+    $db = getDB();
     
-    // Check global whitelist
-    $stmt = $conn->prepare("SELECT resolved_ip FROM allowed_ips WHERE status = 'active' AND resolved_ip IS NOT NULL");
-    if (!$stmt) {
-        $conn->close();
-        return false;
-    }
-    
+    $stmt = $db->prepare("SELECT resolved_ip FROM allowed_ips WHERE status = 'active' AND resolved_ip IS NOT NULL");
     $stmt->execute();
-    $result = $stmt->get_result();
     
-    $allowed = false;
-    while ($row = $result->fetch_assoc()) {
+    while ($row = $stmt->fetch()) {
         $entry = trim($row['resolved_ip']);
         if (!empty($entry) && ip_in_cidr($client_ip, $entry)) {
-            $allowed = true;
-            break;
+            return true;
         }
     }
     
-    $stmt->close();
-    $conn->close();
+    return false;
+}
+
+/**
+ * Check key-specific IP whitelist
+ */
+function check_key_ip_whitelist(string $client_ip, array $key_data): bool {
+    $whitelisted_ips = json_decode($key_data['whitelisted_ips'] ?? '[]', true) ?: [];
     
-    return $allowed;
+    // If no IPs whitelisted, allow all
+    if (empty($whitelisted_ips)) return true;
+    
+    foreach ($whitelisted_ips as $allowed_ip) {
+        if (ip_in_cidr($client_ip, trim($allowed_ip))) {
+            return true;
+        }
+    }
+    
+    return false;
 }
 
 /**
  * Check domain whitelist
  */
-function check_domain_whitelist(string $domain, int $api_key_id): bool {
+function check_domain_whitelist(string $domain, array $key_data): bool {
     if (!ENABLE_DOMAIN_WHITELIST || empty($domain)) return true;
     
-    $conn = get_db_connection();
+    $whitelisted_domains = json_decode($key_data['whitelisted_domains'] ?? '[]', true) ?: [];
     
-    // Check key-specific whitelist
-    $stmt = $conn->prepare("SELECT whitelisted_domains FROM api_keys WHERE id = ?");
-    $stmt->bind_param("i", $api_key_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    // If no domains whitelisted, allow all
+    if (empty($whitelisted_domains)) return true;
     
-    if ($row = $result->fetch_assoc()) {
-        $domains = json_decode($row['whitelisted_domains'] ?? '[]', true) ?: [];
-        foreach ($domains as $pattern) {
-            if (domain_matches($domain, $pattern)) {
-                $stmt->close();
-                $conn->close();
-                return true;
-            }
+    foreach ($whitelisted_domains as $pattern) {
+        if (domain_matches($domain, $pattern)) {
+            return true;
         }
     }
-    
-    $stmt->close();
-    $conn->close();
     
     return false;
 }
@@ -220,34 +210,21 @@ function check_domain_whitelist(string $domain, int $api_key_id): bool {
 function validate_api_key(string $api_key): ?array {
     if (empty($api_key)) return null;
     
-    $conn = get_db_connection();
+    $db = getDB();
     
-    $stmt = $conn->prepare("
+    $stmt = $db->prepare("
         SELECT id, user_id, game_type, status, expires_at, 
-               whitelisted_ips, whitelisted_domains, daily_limit, monthly_limit
+               whitelisted_ips, whitelisted_domains, daily_limit, monthly_limit,
+               calls_today, calls_this_month, total_calls
         FROM api_keys 
         WHERE api_key = ? 
         LIMIT 1
     ");
     
-    if (!$stmt) {
-        $conn->close();
-        return null;
-    }
+    $stmt->execute([$api_key]);
+    $row = $stmt->fetch();
     
-    $stmt->bind_param("s", $api_key);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($row = $result->fetch_assoc()) {
-        $stmt->close();
-        $conn->close();
-        return $row;
-    }
-    
-    $stmt->close();
-    $conn->close();
-    return null;
+    return $row ?: null;
 }
 
 /**
@@ -256,44 +233,32 @@ function validate_api_key(string $api_key): ?array {
 function log_api_request(array $log_data): bool {
     if (!LOG_ALL_REQUESTS) return true;
     
-    $conn = get_db_connection();
-    
-    $sql = "INSERT INTO api_logs 
-            (api_key_id, user_id, client_ip, domain, endpoint, game_type, 
-             request_params, response_body, http_status, duration_ms, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
-    
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) {
-        error_log("Log prepare failed: " . $conn->error);
-        $conn->close();
+    try {
+        $db = getDB();
+        
+        $sql = "INSERT INTO api_logs 
+                (api_key_id, user_id, client_ip, domain, endpoint, game_type, 
+                 request_params, response_body, http_status, duration_ms, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        
+        $stmt = $db->prepare($sql);
+        
+        return $stmt->execute([
+            $log_data['api_key_id'] ?? null,
+            $log_data['user_id'] ?? null,
+            $log_data['client_ip'] ?? '',
+            $log_data['domain'] ?? '',
+            $log_data['endpoint'] ?? '',
+            $log_data['game_type'] ?? '',
+            $log_data['request_params'] ?? '',
+            $log_data['response_body'] ?? '',
+            (int)($log_data['http_status'] ?? 0),
+            (int)($log_data['duration_ms'] ?? 0)
+        ]);
+    } catch (Exception $e) {
+        error_log("Log insert failed: " . $e->getMessage());
         return false;
     }
-    
-    $api_key_id = $log_data['api_key_id'] ?? null;
-    $user_id = $log_data['user_id'] ?? null;
-    $client_ip = $log_data['client_ip'] ?? '';
-    $domain = $log_data['domain'] ?? '';
-    $endpoint = $log_data['endpoint'] ?? '';
-    $game_type = $log_data['game_type'] ?? '';
-    $request_params = $log_data['request_params'] ?? '';
-    $response_body = $log_data['response_body'] ?? '';
-    $http_status = (int)($log_data['http_status'] ?? 0);
-    $duration_ms = (int)($log_data['duration_ms'] ?? 0);
-    
-    $stmt->bind_param(
-        "iissssssii",
-        $api_key_id, $user_id, $client_ip, $domain, $endpoint, $game_type,
-        $request_params, $response_body, $http_status, $duration_ms
-    );
-    
-    $ok = $stmt->execute();
-    if (!$ok) error_log("Log insert failed: " . $stmt->error);
-    
-    $stmt->close();
-    $conn->close();
-    
-    return $ok;
 }
 
 /**
@@ -365,13 +330,16 @@ function fetch_upstream_data(string $type_id): array {
 /**
  * Send Telegram notification
  */
-function send_telegram_notification(string $message): bool {
-    if (empty(TELEGRAM_BOT_TOKEN) || empty(ADMIN_TELEGRAM_ID)) return false;
+function send_telegram_notification(string $message, ?string $chat_id = null): bool {
+    if (empty(TELEGRAM_BOT_TOKEN)) return false;
+    
+    $target_chat_id = $chat_id ?? ADMIN_TELEGRAM_ID;
+    if (empty($target_chat_id)) return false;
     
     $url = "https://api.telegram.org/bot" . TELEGRAM_BOT_TOKEN . "/sendMessage";
     
     $data = [
-        'chat_id' => ADMIN_TELEGRAM_ID,
+        'chat_id' => $target_chat_id,
         'text' => $message,
         'parse_mode' => 'HTML'
     ];
@@ -386,9 +354,32 @@ function send_telegram_notification(string $message): bool {
     ]);
     
     $result = curl_exec($ch);
+    $success = $result !== false;
     curl_close($ch);
     
-    return $result !== false;
+    // Log to database
+    log_telegram_notification($target_chat_id, $message, $success);
+    
+    return $success;
+}
+
+/**
+ * Log Telegram notification to database
+ */
+function log_telegram_notification(string $chat_id, string $message, bool $success): void {
+    try {
+        $db = getDB();
+        
+        $stmt = $db->prepare("
+            INSERT INTO telegram_logs (chat_id, message, status, created_at)
+            VALUES (?, ?, ?, NOW())
+        ");
+        
+        $status = $success ? 'sent' : 'failed';
+        $stmt->execute([$chat_id, $message, $status]);
+    } catch (Exception $e) {
+        error_log("Telegram log failed: " . $e->getMessage());
+    }
 }
 
 /**
@@ -415,31 +406,29 @@ function set_cors_headers(): void {
  * Update API key usage stats
  */
 function update_api_key_usage(int $api_key_id, string $client_ip): void {
-    $conn = get_db_connection();
-    
-    $stmt = $conn->prepare("
-        UPDATE api_keys 
-        SET calls_today = calls_today + 1,
-            calls_this_month = calls_this_month + 1,
-            total_calls = total_calls + 1,
-            last_used_at = NOW(),
-            last_used_ip = ?
-        WHERE id = ?
-    ");
-    
-    if ($stmt) {
-        $stmt->bind_param("si", $client_ip, $api_key_id);
-        $stmt->execute();
-        $stmt->close();
+    try {
+        $db = getDB();
+        
+        $stmt = $db->prepare("
+            UPDATE api_keys 
+            SET calls_today = calls_today + 1,
+                calls_this_month = calls_this_month + 1,
+                total_calls = total_calls + 1,
+                last_used_at = NOW(),
+                last_used_ip = ?
+            WHERE id = ?
+        ");
+        
+        $stmt->execute([$client_ip, $api_key_id]);
+    } catch (Exception $e) {
+        error_log("Usage update failed: " . $e->getMessage());
     }
-    
-    $conn->close();
 }
 
 /**
  * Check rate limit
  */
-function check_rate_limit(int $api_key_id, array $key_data): bool {
+function check_rate_limit(array $key_data): bool {
     if (!RATE_LIMIT_ENABLED) return true;
     
     $daily_limit = $key_data['daily_limit'] ?? 10000;
@@ -457,8 +446,6 @@ function check_rate_limit(int $api_key_id, array $key_data): bool {
  * Get API stats for a user
  */
 function get_user_api_stats(int $user_id): array {
-    $conn = get_db_connection();
-    
     $stats = [
         'total_calls' => 0,
         'calls_today' => 0,
@@ -466,23 +453,23 @@ function get_user_api_stats(int $user_id): array {
         'avg_response_time' => 0
     ];
     
-    // Get from api_logs
-    $stmt = $conn->prepare("
-        SELECT 
-            COUNT(*) as total,
-            SUM(CASE WHEN http_status = 200 THEN 1 ELSE 0 END) as success,
-            AVG(duration_ms) as avg_time,
-            SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) as today
-        FROM api_logs 
-        WHERE user_id = ?
-    ");
-    
-    if ($stmt) {
-        $stmt->bind_param("i", $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
+    try {
+        $db = getDB();
         
-        if ($row = $result->fetch_assoc()) {
+        $stmt = $db->prepare("
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN http_status = 200 THEN 1 ELSE 0 END) as success,
+                AVG(duration_ms) as avg_time,
+                SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) as today
+            FROM api_logs 
+            WHERE user_id = ?
+        ");
+        
+        $stmt->execute([$user_id]);
+        $row = $stmt->fetch();
+        
+        if ($row) {
             $stats['total_calls'] = (int)$row['total'];
             $stats['calls_today'] = (int)$row['today'];
             $stats['avg_response_time'] = round((float)$row['avg_time'], 2);
@@ -491,10 +478,103 @@ function get_user_api_stats(int $user_id): array {
                 $stats['success_rate'] = round(($row['success'] / $row['total']) * 100, 1);
             }
         }
-        
-        $stmt->close();
+    } catch (Exception $e) {
+        error_log("Stats fetch failed: " . $e->getMessage());
     }
     
-    $conn->close();
     return $stats;
+}
+
+/**
+ * Log activity
+ */
+function log_activity(int $user_id, string $action, string $details = '', ?string $ip = null): void {
+    try {
+        $db = getDB();
+        
+        $stmt = $db->prepare("
+            INSERT INTO activity_logs (user_id, action, details, ip_address, created_at)
+            VALUES (?, ?, ?, ?, NOW())
+        ");
+        
+        $stmt->execute([
+            $user_id,
+            $action,
+            $details,
+            $ip ?? get_client_ip()
+        ]);
+    } catch (Exception $e) {
+        error_log("Activity log failed: " . $e->getMessage());
+    }
+}
+
+/**
+ * Get setting value from database
+ */
+function get_setting(string $key, $default = null) {
+    try {
+        $db = getDB();
+        
+        $stmt = $db->prepare("SELECT setting_value FROM settings WHERE setting_key = ? LIMIT 1");
+        $stmt->execute([$key]);
+        $row = $stmt->fetch();
+        
+        return $row ? $row['setting_value'] : $default;
+    } catch (Exception $e) {
+        return $default;
+    }
+}
+
+/**
+ * Update setting value
+ */
+function update_setting(string $key, string $value): bool {
+    try {
+        $db = getDB();
+        
+        $stmt = $db->prepare("
+            INSERT INTO settings (setting_key, setting_value, updated_at)
+            VALUES (?, ?, NOW())
+            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()
+        ");
+        
+        return $stmt->execute([$key, $value]);
+    } catch (Exception $e) {
+        error_log("Setting update failed: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Generate secure API key
+ */
+function generate_api_key(string $prefix = 'hs'): string {
+    return $prefix . '_' . bin2hex(random_bytes(24));
+}
+
+/**
+ * Format bytes to human readable
+ */
+function format_bytes(int $bytes, int $precision = 2): string {
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    
+    for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+        $bytes /= 1024;
+    }
+    
+    return round($bytes, $precision) . ' ' . $units[$i];
+}
+
+/**
+ * Sanitize user input
+ */
+function sanitize_input(string $input): string {
+    return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Validate email format
+ */
+function is_valid_email(string $email): bool {
+    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 }
