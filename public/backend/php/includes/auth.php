@@ -82,7 +82,7 @@ function verify_session(): bool {
 /**
  * Login user
  */
-function login_user(string $username, string $password): array {
+function login_user(string $username, string $password, bool $remember = false): array {
     try {
         $db = getDB();
         
@@ -122,6 +122,26 @@ function login_user(string $username, string $password): array {
         $_SESSION['email'] = $user['email'];
         $_SESSION['role'] = $user['role'];
         $_SESSION['login_time'] = time();
+        
+        // Handle "Remember Me" - extend session lifetime
+        if ($remember) {
+            // Set cookie lifetime to 30 days
+            $lifetime = 30 * 24 * 60 * 60; // 30 days in seconds
+            $params = session_get_cookie_params();
+            setcookie(
+                session_name(),
+                session_id(),
+                time() + $lifetime,
+                $params['path'],
+                $params['domain'],
+                $params['secure'],
+                $params['httponly']
+            );
+            
+            // Also store in session for reference
+            $_SESSION['remember_me'] = true;
+            $_SESSION['session_expires'] = time() + $lifetime;
+        }
         
         // Log successful login
         log_activity($user['id'], 'login', 'User logged in successfully', get_client_ip());
