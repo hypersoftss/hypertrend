@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConfig } from '@/contexts/ConfigContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -7,8 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Link } from 'react-router-dom';
-import { Moon, Sun, Zap, ArrowLeft, Copy, CheckCircle, Code, Globe, Shield, AlertTriangle, Server, Database, Key, Download, FileText, Rocket, Terminal } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { 
+  Moon, Sun, Zap, ArrowLeft, Copy, CheckCircle, Code, Globe, Shield, 
+  AlertTriangle, Server, Database, Key, Download, FileText, Rocket, 
+  Terminal, Clock, Activity, ChevronRight, BookOpen, Layers, Lock, 
+  ExternalLink, Play, Hash
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const DocumentationPage = () => {
@@ -17,8 +23,8 @@ const DocumentationPage = () => {
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState('getting-started');
 
-  // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -30,616 +36,636 @@ const DocumentationPage = () => {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  // Use USER-FACING API config (what merchants see - NOT the internal source)
   const API_BASE = config.userApiDomain;
 
-  // PHP Endpoints - Clean and simple
   const phpEndpoints = [
     { 
       game: 'WinGo', 
       endpoint: '/api/wingo.php',
       durations: ['30s', '1min', '3min', '5min'],
-      description: 'WinGo lottery trend data'
+      description: 'WinGo lottery trend data',
+      color: 'bg-purple-500'
     },
     { 
       game: 'K3', 
       endpoint: '/api/k3.php',
       durations: ['1min', '3min', '5min', '10min'],
-      description: 'K3 dice game trend data'
+      description: 'K3 dice game trend data',
+      color: 'bg-blue-500'
     },
     { 
       game: '5D', 
       endpoint: '/api/5d.php',
       durations: ['1min', '3min', '5min', '10min'],
-      description: '5D lottery trend data'
+      description: '5D lottery trend data',
+      color: 'bg-green-500'
     },
     { 
       game: 'TRX', 
       endpoint: '/api/trx.php',
       durations: ['1min', '3min', '5min'],
-      description: 'TRX blockchain game trend data'
+      description: 'TRX blockchain game trend data',
+      color: 'bg-orange-500'
     },
     { 
       game: 'Numeric', 
       endpoint: '/api/numeric.php',
       durations: ['1min', '3min', '5min'],
-      description: 'Numeric lottery trend data'
+      description: 'Numeric lottery trend data',
+      color: 'bg-pink-500'
     },
   ];
 
   const codeExamples = {
-    curl: `# WinGo 1 Minute
-curl "${API_BASE}/api/wingo.php?api_key=YOUR_KEY&duration=1min"
+    curl: `# WinGo API Call
+curl -X GET "${API_BASE}/api/wingo.php?api_key=YOUR_KEY&duration=1min"
 
-# WinGo 30 Seconds
-curl "${API_BASE}/api/wingo.php?api_key=YOUR_KEY&duration=30s"
+# K3 API Call
+curl -X GET "${API_BASE}/api/k3.php?api_key=YOUR_KEY&duration=3min"
 
-# K3 3 Minutes
-curl "${API_BASE}/api/k3.php?api_key=YOUR_KEY&duration=3min"
-
-# 5D 5 Minutes
-curl "${API_BASE}/api/5d.php?api_key=YOUR_KEY&duration=5min"
-
-# TRX 1 Minute
-curl "${API_BASE}/api/trx.php?api_key=YOUR_KEY&duration=1min"
-
-# Numeric 3 Minutes
-curl "${API_BASE}/api/numeric.php?api_key=YOUR_KEY&duration=3min"
-
-# Health Check (No API key needed)
-curl "${API_BASE}/api/health.php"`,
+# Health Check (No auth required)
+curl -X GET "${API_BASE}/api/health.php"`,
     
-    javascript: `// JavaScript / Node.js Example
-const API_BASE = '${API_BASE}';
-const API_KEY = 'YOUR_API_KEY';
+    javascript: `// Fetch Trend Data
+const API_KEY = 'your_api_key_here';
+const BASE_URL = '${API_BASE}';
 
-async function getTrendData(game, duration) {
-  try {
-    const url = \`\${API_BASE}/api/\${game}.php?api_key=\${API_KEY}&duration=\${duration}\`;
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(\`HTTP \${response.status}\`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error:', error);
-    throw error;
+async function getTrend(game, duration) {
+  const url = \`\${BASE_URL}/api/\${game}.php?api_key=\${API_KEY}&duration=\${duration}\`;
+  
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
   }
+  
+  return response.json();
 }
 
 // Usage Examples
-const wingoData = await getTrendData('wingo', '1min');
-const k3Data = await getTrendData('k3', '3min');
-const fiveDData = await getTrendData('5d', '5min');
-const trxData = await getTrendData('trx', '1min');
-const numericData = await getTrendData('numeric', '3min');
+const wingo = await getTrend('wingo', '1min');
+console.log('WinGo Data:', wingo.data);
 
-console.log(wingoData);`,
+const k3 = await getTrend('k3', '3min');
+console.log('K3 Data:', k3.data);`,
     
-    python: `# Python Example
-import requests
+    python: `import requests
 
-API_BASE = "${API_BASE}"
-API_KEY = "YOUR_API_KEY"
+API_KEY = "your_api_key_here"
+BASE_URL = "${API_BASE}"
 
-def get_trend_data(game, duration):
-    url = f"{API_BASE}/api/{game}.php"
-    params = {
-        "api_key": API_KEY,
-        "duration": duration
-    }
+def get_trend(game: str, duration: str) -> dict:
+    """Fetch trend data from API"""
+    url = f"{BASE_URL}/api/{game}.php"
+    params = {"api_key": API_KEY, "duration": duration}
     
     response = requests.get(url, params=params)
     response.raise_for_status()
     return response.json()
 
 # Usage Examples
-wingo_data = get_trend_data("wingo", "1min")
-k3_data = get_trend_data("k3", "3min")
-five_d_data = get_trend_data("5d", "5min")
-trx_data = get_trend_data("trx", "1min")
-numeric_data = get_trend_data("numeric", "3min")
+wingo = get_trend("wingo", "1min")
+print(f"WinGo Data: {wingo['data']}")
 
-print(wingo_data)`,
+k3 = get_trend("k3", "3min")
+print(f"K3 Data: {k3['data']}")`,
     
     php: `<?php
-// PHP Example
-$apiBase = "${API_BASE}";
-$apiKey = "YOUR_API_KEY";
+$API_KEY = "your_api_key_here";
+$BASE_URL = "${API_BASE}";
 
-function getTrendData($game, $duration) {
-    global $apiBase, $apiKey;
+function getTrend($game, $duration) {
+    global $API_KEY, $BASE_URL;
     
-    $url = "$apiBase/api/$game.php?api_key=$apiKey&duration=$duration";
-    
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_SSL_VERIFYPEER => true
+    $url = "$BASE_URL/api/$game.php?" . http_build_query([
+        'api_key' => $API_KEY,
+        'duration' => $duration
     ]);
     
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    if ($httpCode !== 200) {
-        throw new Exception("HTTP Error: $httpCode");
+    $response = file_get_contents($url);
+    if ($response === false) {
+        throw new Exception("API request failed");
     }
     
     return json_decode($response, true);
 }
 
 // Usage Examples
-$wingoData = getTrendData('wingo', '1min');
-$k3Data = getTrendData('k3', '3min');
-$fiveDData = getTrendData('5d', '5min');
-$trxData = getTrendData('trx', '1min');
+$wingo = getTrend('wingo', '1min');
+print_r($wingo['data']);
 
-print_r($wingoData);
+$k3 = getTrend('k3', '3min');
+print_r($k3['data']);
 ?>`,
   };
 
   const errorCodes = [
-    { code: 200, message: 'Success', description: 'Request completed successfully', color: 'bg-green-500' },
-    { code: 400, message: 'Bad Request', description: 'Invalid duration or missing parameters', color: 'bg-yellow-500' },
-    { code: 401, message: 'Unauthorized', description: 'Invalid or missing API key', color: 'bg-red-500' },
-    { code: 403, message: 'Forbidden', description: 'IP or domain not whitelisted, or key expired', color: 'bg-red-500' },
-    { code: 429, message: 'Too Many Requests', description: 'Rate limit exceeded', color: 'bg-yellow-500' },
-    { code: 502, message: 'Bad Gateway', description: 'Data source temporarily unavailable', color: 'bg-red-500' },
+    { code: 200, status: 'success', message: 'OK', description: 'Request completed successfully', color: 'bg-success' },
+    { code: 400, status: 'error', message: 'Bad Request', description: 'Invalid duration or missing parameters', color: 'bg-warning' },
+    { code: 401, status: 'error', message: 'Unauthorized', description: 'Invalid or missing API key', color: 'bg-destructive' },
+    { code: 403, status: 'error', message: 'Forbidden', description: 'IP/Domain not whitelisted or key expired', color: 'bg-destructive' },
+    { code: 429, status: 'error', message: 'Rate Limited', description: 'Too many requests, slow down', color: 'bg-warning' },
+    { code: 502, status: 'error', message: 'Bad Gateway', description: 'Upstream data source unavailable', color: 'bg-destructive' },
   ];
+
+  const sidebarItems = [
+    { id: 'getting-started', label: 'Getting Started', icon: Rocket },
+    { id: 'authentication', label: 'Authentication', icon: Key },
+    { id: 'endpoints', label: 'API Endpoints', icon: Database },
+    { id: 'code-examples', label: 'Code Examples', icon: Code },
+    { id: 'response-format', label: 'Response Format', icon: FileText },
+    { id: 'error-codes', label: 'Error Codes', icon: AlertTriangle },
+    { id: 'security', label: 'Security', icon: Shield },
+    { id: 'rate-limits', label: 'Rate Limits', icon: Clock },
+  ];
+
+  const scrollToSection = (id: string) => {
+    setActiveSection(id);
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <Link to="/dashboard">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ArrowLeft className="w-4 h-4" />
               </Button>
             </Link>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-                <Zap className="w-5 h-5 text-primary-foreground" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg gradient-primary flex items-center justify-center">
+                <BookOpen className="w-4 h-4 text-primary-foreground" />
               </div>
-              <div>
-                <span className="font-bold text-foreground">{config.siteName}</span>
-                <span className="text-muted-foreground ml-2 text-sm">API Documentation</span>
+              <div className="hidden sm:block">
+                <span className="font-bold text-foreground text-sm">{config.siteName}</span>
+                <span className="text-muted-foreground ml-2 text-xs">API Docs</span>
               </div>
+              <span className="sm:hidden font-bold text-foreground text-sm">API Docs</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
-              👤 {user?.username}
+            <Badge variant="outline" className="text-[10px] sm:text-xs hidden sm:flex">
+              v2.0
             </Badge>
-            <Button variant="ghost" size="icon" onClick={toggleTheme}>
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            <Badge variant="outline" className="text-[10px] sm:text-xs">
+              {user?.username}
+            </Badge>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleTheme}>
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-5xl mx-auto space-y-8">
-          {/* Hero */}
-          <div className="text-center space-y-4">
-            <Badge className="mb-4">PHP API v2.0</Badge>
-            <h1 className="text-4xl font-bold text-foreground">{config.siteName} API</h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              {config.siteDescription} - Simple PHP-based API with separate endpoints for each game type
-            </p>
-            
-            {/* Quick Action Buttons */}
-            <div className="flex flex-wrap justify-center gap-3 pt-4">
-              <Button 
-                variant="outline" 
-                className="gap-2"
-                onClick={() => {
-                  const docsContent = `# ${config.siteName} API Documentation\n\nBase URL: ${API_BASE}/api/\n\n## Endpoints\n\n${phpEndpoints.map(ep => `### ${ep.game}\n- Endpoint: ${ep.endpoint}\n- Durations: ${ep.durations.join(', ')}\n- Description: ${ep.description}`).join('\n\n')}\n\n## Code Examples\n\n### cURL\n${codeExamples.curl}\n\n### JavaScript\n${codeExamples.javascript}\n\n### Python\n${codeExamples.python}\n\n### PHP\n${codeExamples.php}`;
-                  const blob = new Blob([docsContent], { type: 'text/markdown' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `${config.siteName.replace(/\s+/g, '-').toLowerCase()}-api-docs.md`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                  toast({ title: '📥 Downloaded!', description: 'API documentation saved as Markdown file' });
-                }}
-              >
-                <Download className="w-4 h-4" />
-                Download Docs
-              </Button>
-              <Button 
-                variant="outline" 
-                className="gap-2"
-                onClick={() => copyCode(`${API_BASE}/api/`, 'baseurl-hero')}
-              >
-                {copiedCode === 'baseurl-hero' ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                Copy Base URL
-              </Button>
-            </div>
-          </div>
-
-          {/* Base URL Card */}
-          <Card className="gradient-primary text-primary-foreground overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Server className="w-8 h-8" />
-                    <div>
-                      <h2 className="text-xl font-bold">Your API Base URL</h2>
-                      <code className="text-lg opacity-90">{API_BASE}/api/</code>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
-                    onClick={() => copyCode(`${API_BASE}/api/`, 'baseurl')}
+      <div className="container mx-auto px-4 py-4 sm:py-6">
+        <div className="flex gap-6">
+          {/* Sidebar - Desktop */}
+          <aside className="hidden lg:block w-56 shrink-0">
+            <div className="sticky top-20">
+              <nav className="space-y-1">
+                {sidebarItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => scrollToSection(item.id)}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
+                      activeSection === item.id 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
                   >
-                    {copiedCode === 'baseurl' ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  </Button>
-                </div>
-                <div className="bg-primary-foreground/10 rounded-lg p-3 text-sm">
-                  <p className="opacity-90">
-                    📌 This is YOUR API. The actual data source is hidden - users only see your domain.
-                  </p>
-                </div>
+                    <item.icon className="w-4 h-4" />
+                    {item.label}
+                  </button>
+                ))}
+              </nav>
+              
+              <div className="mt-6 p-3 rounded-lg bg-muted/50 border">
+                <p className="text-xs text-muted-foreground mb-2">Base URL</p>
+                <code className="text-[10px] sm:text-xs text-primary break-all">{API_BASE}/api/</code>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </aside>
 
-          {/* Quick Start */}
-          <Card className="border-2 border-primary/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-primary" />
-                Quick Start
-              </CardTitle>
-              <CardDescription>Get started in seconds with these simple endpoints</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 rounded-lg bg-muted/50 border">
-                <h4 className="font-medium mb-3">Request Format</h4>
-                <div className="relative">
-                  <pre className="p-3 rounded bg-muted overflow-x-auto">
-                    <code className="text-sm">GET {API_BASE}/api/[game].php?api_key=YOUR_KEY&duration=1min</code>
-                  </pre>
-                </div>
+          {/* Main Content */}
+          <main className="flex-1 max-w-4xl space-y-8 pb-8">
+            {/* Hero */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className="gradient-primary text-white">API v2.0</Badge>
+                <Badge variant="outline" className="text-xs">PHP Backend</Badge>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg border bg-card">
-                  <h5 className="font-medium mb-2 flex items-center gap-2">
-                    <Key className="w-4 h-4 text-primary" />
-                    Required Parameters
-                  </h5>
-                  <ul className="text-sm space-y-2 text-muted-foreground">
-                    <li><code className="text-primary">api_key</code> - Your unique API key</li>
-                    <li><code className="text-primary">duration</code> - Time duration (1min, 3min, etc.)</li>
-                  </ul>
-                </div>
-                <div className="p-4 rounded-lg border bg-card">
-                  <h5 className="font-medium mb-2 flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-primary" />
-                    Available Games
-                  </h5>
-                  <ul className="text-sm space-y-2 text-muted-foreground">
-                    <li><code className="text-primary">wingo.php</code> - WinGo Lottery</li>
-                    <li><code className="text-primary">k3.php</code> - K3 Dice</li>
-                    <li><code className="text-primary">5d.php, trx.php, numeric.php</code></li>
-                  </ul>
-                </div>
+              <h1 className="text-2xl sm:text-4xl font-bold text-foreground">{config.siteName} API</h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Complete API documentation for integrating trend data into your applications. 
+                Simple REST endpoints with JSON responses.
+              </p>
+              
+              {/* Quick Actions */}
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Button size="sm" className="gap-2 text-xs" onClick={() => copyCode(`${API_BASE}/api/`, 'base-url')}>
+                  {copiedCode === 'base-url' ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  Copy Base URL
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2 text-xs">
+                  <Download className="w-3 h-3" />
+                  Download Docs
+                </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* All Endpoints */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="w-5 h-5 text-primary" />
-                All API Endpoints
-              </CardTitle>
-              <CardDescription>Complete list with all available durations</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {phpEndpoints.map((ep) => (
-                <div key={ep.game} className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge className="text-sm px-3 py-1">{ep.game}</Badge>
-                      <span className="text-sm text-muted-foreground">{ep.description}</span>
-                    </div>
-                    <code className="text-xs text-primary font-mono">{ep.endpoint}</code>
+            {/* Getting Started */}
+            <section id="getting-started">
+              <Card className="glass">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Rocket className="w-5 h-5 text-primary" />
+                    Getting Started
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Quick setup guide to start using the API</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { step: 1, title: 'Get API Key', desc: 'Request an API key from admin with game permissions' },
+                      { step: 2, title: 'Whitelist IP', desc: 'Add your server IP to the whitelist for access' },
+                      { step: 3, title: 'Make Requests', desc: 'Call endpoints with your key and duration' },
+                    ].map((item) => (
+                      <div key={item.step} className="p-3 rounded-lg bg-muted/30 border">
+                        <div className="w-7 h-7 rounded-full gradient-primary flex items-center justify-center mb-2">
+                          <span className="text-white text-xs font-bold">{item.step}</span>
+                        </div>
+                        <h4 className="font-medium text-sm mb-1">{item.title}</h4>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      </div>
+                    ))}
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {ep.durations.map((d) => {
-                      const url = `${API_BASE}${ep.endpoint}?api_key=YOUR_KEY&duration=${d}`;
-                      return (
-                        <div 
-                          key={`${ep.game}-${d}`}
-                          className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border hover:border-primary/50 transition-colors group"
-                        >
-                          <Badge variant="secondary" className="font-mono">{d}</Badge>
+
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Terminal className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">Quick Test</span>
+                    </div>
+                    <div className="relative">
+                      <pre className="p-2 rounded bg-muted overflow-x-auto text-xs">
+                        <code>curl "{API_BASE}/api/wingo.php?api_key=YOUR_KEY&duration=1min"</code>
+                      </pre>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="absolute top-1 right-1 h-6 w-6 p-0"
+                        onClick={() => copyCode(`curl "${API_BASE}/api/wingo.php?api_key=YOUR_KEY&duration=1min"`, 'quick-test')}
+                      >
+                        {copiedCode === 'quick-test' ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* Authentication */}
+            <section id="authentication">
+              <Card className="glass">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Key className="w-5 h-5 text-primary" />
+                    Authentication
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">How to authenticate your API requests</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg border bg-muted/20">
+                      <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                        <Hash className="w-4 h-4 text-primary" />
+                        Query Parameter
+                      </h4>
+                      <code className="text-xs text-muted-foreground">?api_key=YOUR_API_KEY</code>
+                    </div>
+                    <div className="p-3 rounded-lg border bg-muted/20">
+                      <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-primary" />
+                        Header (Alternative)
+                      </h4>
+                      <code className="text-xs text-muted-foreground">X-API-Key: YOUR_API_KEY</code>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-warning/10 border border-warning/30">
+                    <div className="flex items-start gap-2">
+                      <Lock className="w-4 h-4 text-warning mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">API Key Security</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Never expose your API key in client-side code. Always make API calls from your backend server.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* Endpoints */}
+            <section id="endpoints">
+              <Card className="glass">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Database className="w-5 h-5 text-primary" />
+                    API Endpoints
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">All available game endpoints and durations</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Accordion type="single" collapsible className="w-full">
+                    {phpEndpoints.map((ep) => (
+                      <AccordionItem key={ep.game} value={ep.game} className="border rounded-lg mb-2 px-3">
+                        <AccordionTrigger className="hover:no-underline py-3">
+                          <div className="flex items-center gap-3">
+                            <Badge className={`${ep.color} text-white text-xs`}>{ep.game}</Badge>
+                            <span className="text-sm">{ep.description}</span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="pb-3">
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <code className="text-xs bg-muted px-2 py-1 rounded">{ep.endpoint}</code>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 w-6 p-0"
+                                onClick={() => copyCode(`${API_BASE}${ep.endpoint}`, `ep-${ep.game}`)}
+                              >
+                                {copiedCode === `ep-${ep.game}` ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                              </Button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {ep.durations.map((d) => (
+                                <Badge key={d} variant="outline" className="text-xs font-mono">{d}</Badge>
+                              ))}
+                            </div>
+                            <div className="relative">
+                              <pre className="p-2 rounded bg-muted overflow-x-auto text-[10px] sm:text-xs">
+                                <code>{`GET ${API_BASE}${ep.endpoint}?api_key=KEY&duration=${ep.durations[0]}`}</code>
+                              </pre>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="absolute top-1 right-1 h-5 w-5 p-0"
+                                onClick={() => copyCode(`${API_BASE}${ep.endpoint}?api_key=YOUR_KEY&duration=${ep.durations[0]}`, `full-${ep.game}`)}
+                              >
+                                {copiedCode === `full-${ep.game}` ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                              </Button>
+                            </div>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+
+                  {/* Health Check */}
+                  <div className="p-3 rounded-lg bg-success/10 border border-success/30">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-success" />
+                        <span className="text-sm font-medium">Health Check</span>
+                        <Badge variant="outline" className="text-[10px]">No Auth</Badge>
+                      </div>
+                      <code className="text-xs font-mono text-success">/api/health.php</code>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* Code Examples */}
+            <section id="code-examples">
+              <Card className="glass">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Code className="w-5 h-5 text-primary" />
+                    Code Examples
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Ready-to-use code snippets in popular languages</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="curl" className="space-y-3">
+                    <TabsList className="w-full grid grid-cols-4 h-9">
+                      <TabsTrigger value="curl" className="text-xs">cURL</TabsTrigger>
+                      <TabsTrigger value="javascript" className="text-xs">JS</TabsTrigger>
+                      <TabsTrigger value="python" className="text-xs">Python</TabsTrigger>
+                      <TabsTrigger value="php" className="text-xs">PHP</TabsTrigger>
+                    </TabsList>
+                    
+                    {Object.entries(codeExamples).map(([lang, code]) => (
+                      <TabsContent key={lang} value={lang}>
+                        <div className="relative">
+                          <ScrollArea className="h-[250px] sm:h-[300px] rounded-lg border">
+                            <pre className="p-3 text-[10px] sm:text-xs">
+                              <code className="language-{lang}">{code}</code>
+                            </pre>
+                          </ScrollArea>
                           <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => copyCode(url, `${ep.game}-${d}`)}
+                            variant="secondary" 
+                            size="sm" 
+                            className="absolute top-2 right-2 h-7 text-xs gap-1"
+                            onClick={() => copyCode(code, `code-${lang}`)}
                           >
-                            {copiedCode === `${ep.game}-${d}` ? (
-                              <CheckCircle className="w-4 h-4 text-green-500" />
-                            ) : (
-                              <Copy className="w-4 h-4" />
-                            )}
+                            {copiedCode === `code-${lang}` ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                            Copy
                           </Button>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </section>
 
-              {/* Health Check */}
-              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      Health Check Endpoint
-                    </h4>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      No API key required - check server status
-                    </p>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => copyCode(`${API_BASE}/api/health.php`, 'health')}
-                  >
-                    {copiedCode === 'health' ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    <span className="ml-2 font-mono text-xs">/api/health.php</span>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Response Format */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Response Format</CardTitle>
-              <CardDescription>All endpoints return JSON with this structure</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <pre className="p-4 rounded-lg bg-muted overflow-x-auto text-sm">
-{`{
+            {/* Response Format */}
+            <section id="response-format">
+              <Card className="glass">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <FileText className="w-5 h-5 text-primary" />
+                    Response Format
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Standard JSON response structure</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative">
+                    <ScrollArea className="h-[200px] rounded-lg border">
+                      <pre className="p-3 text-[10px] sm:text-xs">
+                        <code>{`{
   "success": true,
   "game": "wingo",
   "duration": "1min",
   "game_name": "WinGo 1 Minute",
   "data": {
-    // Trend data here
+    "period": "20240128001",
+    "result": 5,
+    "color": "green",
+    "size": "small",
+    // ... more trend data
   },
   "meta": {
     "response_time_ms": 45,
-    "timestamp": "2024-01-15T10:30:00+00:00",
-    "powered_by": "${config.siteName} Trend API"
+    "timestamp": "2024-01-28T10:30:00+00:00",
+    "powered_by": "${config.siteName} API"
   }
-}`}
-              </pre>
-            </CardContent>
-          </Card>
-
-          {/* Security Info */}
-          <Card className="border-2 border-yellow-500/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-yellow-500" />
-                Security & Whitelisting
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-muted/50 border">
-                  <h4 className="font-semibold mb-2">✅ IP Whitelisting</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Only whitelisted IPs can access the API. Contact admin to add your server IP.
-                  </p>
-                </div>
-                <div className="p-4 rounded-lg bg-muted/50 border">
-                  <h4 className="font-semibold mb-2">✅ Domain Whitelisting</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Requests are verified against allowed domains set in your API key.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Important Security Notice</p>
-                    <p className="text-sm text-muted-foreground">
-                      API calls from non-whitelisted IPs/domains will be rejected with 403 error.
-                      Ensure your server IP is whitelisted before integration.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Code Examples */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Code className="w-5 h-5 text-primary" />
-                Code Examples
-              </CardTitle>
-              <CardDescription>Ready-to-use code snippets in multiple languages</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="curl" className="space-y-4">
-                <TabsList className="grid grid-cols-4 w-full">
-                  <TabsTrigger value="curl">cURL</TabsTrigger>
-                  <TabsTrigger value="javascript">JavaScript</TabsTrigger>
-                  <TabsTrigger value="python">Python</TabsTrigger>
-                  <TabsTrigger value="php">PHP</TabsTrigger>
-                </TabsList>
-                
-                {Object.entries(codeExamples).map(([lang, code]) => (
-                  <TabsContent key={lang} value={lang}>
-                    <div className="relative">
-                      <pre className="p-4 rounded-lg bg-muted overflow-x-auto text-sm max-h-96">
-                        <code>{code}</code>
+}`}</code>
                       </pre>
-                      <Button 
-                        variant="secondary" 
-                        size="sm" 
-                        className="absolute top-2 right-2"
-                        onClick={() => copyCode(code, lang)}
-                      >
-                        {copiedCode === lang ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                      </Button>
+                    </ScrollArea>
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="absolute top-2 right-2 h-7 text-xs gap-1"
+                      onClick={() => copyCode(`{"success":true,"game":"wingo","duration":"1min","data":{}}`, 'response')}
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* Error Codes */}
+            <section id="error-codes">
+              <Card className="glass">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <AlertTriangle className="w-5 h-5 text-primary" />
+                    Error Codes
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">HTTP status codes and their meanings</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {errorCodes.map((err) => (
+                      <div key={err.code} className="flex items-center gap-3 p-2 sm:p-3 rounded-lg bg-muted/30 border">
+                        <Badge className={`${err.color} text-white text-xs min-w-[50px] justify-center`}>
+                          {err.code}
+                        </Badge>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-sm">{err.message}</span>
+                          <p className="text-xs text-muted-foreground truncate sm:whitespace-normal">{err.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* Security */}
+            <section id="security">
+              <Card className="glass border-warning/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Shield className="w-5 h-5 text-warning" />
+                    Security
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">IP and Domain whitelisting requirements</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg bg-muted/30 border">
+                      <h4 className="font-medium text-sm mb-1 flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-primary" />
+                        IP Whitelisting
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        Only whitelisted server IPs can access the API. Contact admin to add your IP.
+                      </p>
                     </div>
-                  </TabsContent>
-                ))}
-              </Tabs>
-            </CardContent>
-          </Card>
-
-          {/* Error Codes */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Error Codes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-2">
-                {errorCodes.map((err) => (
-                  <div key={err.code} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-                    <Badge className={`${err.color} text-white min-w-16 justify-center`}>
-                      {err.code}
-                    </Badge>
-                    <div>
-                      <span className="font-medium">{err.message}</span>
-                      <span className="text-muted-foreground ml-2">— {err.description}</span>
+                    <div className="p-3 rounded-lg bg-muted/30 border">
+                      <h4 className="font-medium text-sm mb-1 flex items-center gap-2">
+                        <Server className="w-4 h-4 text-primary" />
+                        Domain Verification
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        Requests are verified against allowed domains set for your API key.
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Quick Setup Guide */}
-          <Card className="border-2 border-accent/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Rocket className="w-5 h-5 text-accent" />
-                Quick Setup Guide
-              </CardTitle>
-              <CardDescription>Get started in 3 simple steps</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-bold">1</span>
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">Security Notice</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Requests from non-whitelisted IPs/domains return 403 Forbidden. Ensure proper configuration before integration.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <h4 className="font-semibold">Get Your API Key</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Contact admin or request a key from your dashboard. Each key has specific game permissions.
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-bold">2</span>
-                  </div>
-                  <h4 className="font-semibold">Whitelist Your IP</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Ensure your server IP is whitelisted. Requests from non-whitelisted IPs will be rejected.
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-bold">3</span>
-                  </div>
-                  <h4 className="font-semibold">Make API Calls</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Use the code examples below. Pass your API key and desired duration for each request.
-                  </p>
-                </div>
-              </div>
-              
-              {/* Sample Request */}
-              <div className="mt-6 p-4 rounded-lg bg-muted/50 border">
-                <div className="flex items-center gap-2 mb-3">
-                  <Terminal className="w-4 h-4 text-primary" />
-                  <span className="font-medium">Sample Request</span>
-                </div>
-                <div className="relative">
-                  <pre className="p-3 rounded bg-muted overflow-x-auto text-sm">
-                    <code>curl "{API_BASE}/api/wingo.php?api_key=YOUR_KEY&duration=1min"</code>
-                  </pre>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="absolute top-1 right-1"
-                    onClick={() => copyCode(`curl "${API_BASE}/api/wingo.php?api_key=YOUR_KEY&duration=1min"`, 'sample-curl')}
-                  >
-                    {copiedCode === 'sample-curl' ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </section>
 
-          {/* Support - Enhanced */}
-          <Card className="gradient-primary text-primary-foreground overflow-hidden">
-            <CardContent className="py-8">
-              <div className="text-center space-y-4">
-                <h3 className="text-2xl font-bold">Need Help?</h3>
-                <p className="opacity-90 max-w-lg mx-auto">
-                  Our support team is here to help you integrate and troubleshoot any issues with the API.
+            {/* Rate Limits */}
+            <section id="rate-limits">
+              <Card className="glass">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Clock className="w-5 h-5 text-primary" />
+                    Rate Limits
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Request limits and best practices</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="p-3 rounded-lg bg-muted/30 border text-center">
+                      <p className="text-lg sm:text-2xl font-bold text-primary">100</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Requests/minute</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted/30 border text-center">
+                      <p className="text-lg sm:text-2xl font-bold text-primary">5000</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Requests/hour</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted/30 border text-center col-span-2 sm:col-span-1">
+                      <p className="text-lg sm:text-2xl font-bold text-primary">50K</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">Requests/day</p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                    <p className="text-sm font-medium mb-2">Best Practices</p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• Cache responses for at least 10 seconds</li>
+                      <li>• Implement exponential backoff on errors</li>
+                      <li>• Use connection pooling for high volume</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* Support */}
+            <Card className="gradient-primary text-white">
+              <CardContent className="py-6 sm:py-8 text-center space-y-3">
+                <h3 className="text-xl sm:text-2xl font-bold">Need Help?</h3>
+                <p className="text-sm opacity-90 max-w-md mx-auto">
+                  Contact our support team for integration help or API issues.
                 </p>
-                <div className="flex flex-wrap justify-center gap-3 pt-2">
-                  <Button 
-                    variant="secondary" 
-                    className="gap-2"
-                    onClick={() => window.location.href = `mailto:${config.supportEmail}`}
-                  >
-                    <FileText className="w-4 h-4" />
+                <div className="flex flex-wrap justify-center gap-2 pt-2">
+                  <Button variant="secondary" size="sm" className="gap-2 text-xs">
+                    <FileText className="w-3 h-3" />
                     Email Support
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    className="gap-2 bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20"
-                    onClick={() => {
-                      const docsContent = `# ${config.siteName} API Documentation\n\nBase URL: ${API_BASE}/api/\n\n## Endpoints\n\n${phpEndpoints.map(ep => `### ${ep.game}\n- Endpoint: ${ep.endpoint}\n- Durations: ${ep.durations.join(', ')}\n- Description: ${ep.description}`).join('\n\n')}\n\n## Code Examples\n\n### cURL\n${codeExamples.curl}\n\n### JavaScript\n${codeExamples.javascript}\n\n### Python\n${codeExamples.python}\n\n### PHP\n${codeExamples.php}`;
-                      const blob = new Blob([docsContent], { type: 'text/markdown' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `${config.siteName.replace(/\s+/g, '-').toLowerCase()}-api-docs.md`;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                      toast({ title: '📥 Downloaded!', description: 'Complete API documentation saved' });
-                    }}
-                  >
-                    <Download className="w-4 h-4" />
-                    Download Full Docs
+                  <Button variant="outline" size="sm" className="gap-2 text-xs bg-white/10 border-white/30 hover:bg-white/20">
+                    <ExternalLink className="w-3 h-3" />
+                    Dashboard
                   </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </main>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
