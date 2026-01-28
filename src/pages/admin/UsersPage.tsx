@@ -8,12 +8,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { useConfig } from '@/contexts/ConfigContext';
 import { mockUsers } from '@/lib/mockData';
 import { User } from '@/types';
-import { Users as UsersIcon, Plus, Search, Edit, Trash2, MessageSquare, Mail, Shield, User as UserIcon, Key, Send, Copy, CheckCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
-
-// Telegram Bot Token (from settings)
-const TELEGRAM_BOT_TOKEN = '7843243355:AAFaHx7XrIAehoIqVRw83uEkZGjT8G75HO8';
+import { Users as UsersIcon, Plus, Search, Edit, Trash2, MessageSquare, Mail, Shield, User as UserIcon, Key, Send, Copy, RefreshCw, Eye, EyeOff, RotateCcw } from 'lucide-react';
 
 // Generate random password
 const generatePassword = (length: number = 12): string => {
@@ -26,14 +24,19 @@ const generatePassword = (length: number = 12): string => {
 };
 
 const UsersPage = () => {
+  const { config } = useConfig();
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [resetUser, setResetUser] = useState<User | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [sendViaTelegram, setSendViaTelegram] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -79,10 +82,21 @@ const UsersPage = () => {
     toast({ title: '📋 Copied!', description: 'Password copied to clipboard' });
   };
 
-  const sendCredentialsViaTelegram = async (username: string, password: string, telegramId: string) => {
+  const sendCredentialsViaTelegram = async (username: string, password: string, telegramId: string, isReset: boolean = false) => {
     if (!telegramId) return false;
 
-    const message = `🔐 *Your Login Credentials*
+    const message = isReset 
+      ? `🔄 *Password Reset*
+
+👤 *Username:* \`${username}\`
+🔑 *New Password:* \`${password}\`
+
+🌐 *Login URL:* ${window.location.origin}/login
+
+⚠️ _Your password has been reset by admin. Please login with the new password._
+
+— Hyper Softs Team`
+      : `🔐 *Your Login Credentials*
 
 👤 *Username:* \`${username}\`
 🔑 *Password:* \`${password}\`
@@ -94,7 +108,7 @@ const UsersPage = () => {
 — Hyper Softs Team`;
 
     try {
-      const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      const response = await fetch(`https://api.telegram.org/bot${config.telegramBotToken}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -110,6 +124,46 @@ const UsersPage = () => {
       console.error('Telegram send error:', error);
       return false;
     }
+  };
+
+  // Password Reset Handler
+  const handleResetPassword = async () => {
+    if (!resetUser || !resetPassword) return;
+
+    setIsResetting(true);
+
+    if (resetUser.telegramId) {
+      const sent = await sendCredentialsViaTelegram(resetUser.username, resetPassword, resetUser.telegramId, true);
+      
+      if (sent) {
+        toast({ 
+          title: '✅ Password Reset & Sent!', 
+          description: `New password sent to ${resetUser.username}'s Telegram` 
+        });
+      } else {
+        toast({ 
+          title: '⚠️ Password Reset', 
+          description: 'Password reset but failed to send via Telegram. Share manually.',
+          variant: 'destructive'
+        });
+      }
+    } else {
+      toast({ 
+        title: '✅ Password Reset', 
+        description: `New password: ${resetPassword} - Share it manually with the user!` 
+      });
+    }
+
+    setIsResetting(false);
+    setIsResetDialogOpen(false);
+    setResetUser(null);
+    setResetPassword('');
+  };
+
+  const openResetDialog = (user: User) => {
+    setResetUser(user);
+    setResetPassword(generatePassword());
+    setIsResetDialogOpen(true);
   };
 
   const handleSave = async () => {
@@ -422,6 +476,14 @@ const UsersPage = () => {
                     <Button variant="ghost" size="sm" onClick={() => toggleUserStatus(user.id)}>
                       {user.isActive ? 'Disable' : 'Enable'}
                     </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => openResetDialog(user)}
+                      title="Reset Password"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(user)}>
                       <Edit className="w-4 h-4" />
                     </Button>
@@ -439,6 +501,111 @@ const UsersPage = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Password Reset Dialog */}
+        <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <RotateCcw className="w-5 h-5 text-primary" />
+                Reset Password
+              </DialogTitle>
+              <DialogDescription>
+                Generate a new password for {resetUser?.username}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="p-4 rounded-lg bg-muted/50 border">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center">
+                    <span className="text-primary-foreground font-bold">
+                      {resetUser?.username.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium">{resetUser?.username}</p>
+                    <p className="text-xs text-muted-foreground">{resetUser?.email}</p>
+                  </div>
+                </div>
+                {resetUser?.telegramId && (
+                  <div className="flex items-center gap-2 text-sm text-success">
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Will send new password to Telegram ID: {resetUser.telegramId}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Key className="w-4 h-4 text-primary" />
+                  New Password
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      value={resetPassword}
+                      onChange={(e) => setResetPassword(e.target.value)}
+                      className="pr-10 font-mono"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
+                  <Button variant="outline" size="icon" onClick={() => setResetPassword(generatePassword())}>
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(resetPassword);
+                      toast({ title: '📋 Copied!', description: 'Password copied to clipboard' });
+                    }}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsResetDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleResetPassword}
+                className="gradient-primary text-primary-foreground"
+                disabled={isResetting}
+              >
+                {isResetting ? (
+                  <>
+                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent mr-2" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    {resetUser?.telegramId ? (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Reset & Send
+                      </>
+                    ) : (
+                      <>
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Reset Password
+                      </>
+                    )}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

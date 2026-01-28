@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,12 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Settings, Save, Globe, Mail, MessageSquare, Bell, Key, Upload, Link, Server, Database, Shield, Palette } from 'lucide-react';
+import { useConfig } from '@/contexts/ConfigContext';
+import { Settings, Save, Globe, Mail, MessageSquare, Bell, Key, Upload, Link, Server, Database, Shield, Palette, ExternalLink } from 'lucide-react';
 
 const SettingsPage = () => {
+  const { config, updateConfig } = useConfig();
+  
   const [settings, setSettings] = useState({
     // General
     siteName: 'Hyper Softs Trend',
@@ -24,14 +27,14 @@ const SettingsPage = () => {
     docsUrl: 'https://docs.hypersofts.com',
     
     // Telegram
-    telegramBotToken: '7843243355:AAFaHx7XrIAehoIqVRw83uEkZGjT8G75HO8',
-    adminTelegramId: '1896145195',
+    telegramBotToken: config.telegramBotToken,
+    adminTelegramId: config.adminTelegramId,
     webhookUrl: '',
     telegramBotStatus: 'stopped' as 'stopped' | 'running' | 'testing',
     
-    // API
-    betApiKey: '',
-    betApiBaseUrl: 'https://betapi.space/api',
+    // API Configuration
+    apiDomain: config.apiDomain,
+    apiEndpoint: config.apiEndpoint,
     rateLimitPerMinute: 100,
     rateLimitPerDay: 10000,
     
@@ -60,6 +63,15 @@ const SettingsPage = () => {
 
   const handleSave = async () => {
     setIsSaving(true);
+    
+    // Update global config
+    updateConfig({
+      apiDomain: settings.apiDomain,
+      apiEndpoint: settings.apiEndpoint,
+      telegramBotToken: settings.telegramBotToken,
+      adminTelegramId: settings.adminTelegramId,
+    });
+    
     await new Promise(resolve => setTimeout(resolve, 1000));
     toast({
       title: '✅ Settings Saved',
@@ -489,27 +501,58 @@ const SettingsPage = () => {
                   <Server className="w-5 h-5 text-primary" />
                   API Configuration
                 </CardTitle>
-                <CardDescription>BetAPI connection and rate limiting settings</CardDescription>
+                <CardDescription>Configure your API domain and endpoints for documentation</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="betApiBaseUrl">BetAPI Base URL</Label>
-                  <Input
-                    id="betApiBaseUrl"
-                    value={settings.betApiBaseUrl}
-                    onChange={(e) => setSettings({ ...settings, betApiBaseUrl: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="betApiKey">BetAPI Key</Label>
-                  <Input
-                    id="betApiKey"
-                    type="password"
-                    value={settings.betApiKey}
-                    onChange={(e) => setSettings({ ...settings, betApiKey: e.target.value })}
-                    placeholder="Enter your BetAPI key"
-                  />
+              <CardContent className="space-y-6">
+                {/* API Domain Configuration */}
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <h4 className="font-medium mb-4 flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-primary" />
+                    API Domain Settings
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    These settings control the API URLs shown in documentation. Change them when you deploy to a new domain.
+                  </p>
+                  
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="apiDomain">API Domain</Label>
+                      <Input
+                        id="apiDomain"
+                        value={settings.apiDomain}
+                        onChange={(e) => setSettings({ ...settings, apiDomain: e.target.value })}
+                        placeholder="https://betapi.space"
+                      />
+                      <p className="text-xs text-muted-foreground">Your API server domain (e.g., https://betapi.space)</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="apiEndpoint">API Endpoint Path</Label>
+                      <Input
+                        id="apiEndpoint"
+                        value={settings.apiEndpoint}
+                        onChange={(e) => setSettings({ ...settings, apiEndpoint: e.target.value })}
+                        placeholder="/Xdrtrend"
+                      />
+                      <p className="text-xs text-muted-foreground">Endpoint path (e.g., /Xdrtrend)</p>
+                    </div>
+                  </div>
+                  
+                  {/* Preview */}
+                  <div className="mt-4 p-3 rounded-lg bg-muted">
+                    <p className="text-xs text-muted-foreground mb-2">Preview URL:</p>
+                    <code className="text-sm text-primary font-mono">
+                      {settings.apiDomain}{settings.apiEndpoint}?typeId=wg1
+                    </code>
+                    <a 
+                      href={`${settings.apiDomain}${settings.apiEndpoint}?typeId=wg1`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="ml-2 inline-flex"
+                    >
+                      <ExternalLink className="w-4 h-4 text-primary" />
+                    </a>
+                  </div>
                 </div>
 
                 <Separator />
@@ -534,6 +577,19 @@ const SettingsPage = () => {
                       value={settings.rateLimitPerDay}
                       onChange={(e) => setSettings({ ...settings, rateLimitPerDay: parseInt(e.target.value) || 10000 })}
                     />
+                  </div>
+                </div>
+
+                {/* All Endpoints Preview */}
+                <div className="p-4 rounded-lg bg-muted/50 border">
+                  <h4 className="font-medium mb-3">📋 All Endpoints (with current domain)</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
+                    <div><strong>Numeric:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=1</div>
+                    <div><strong>WinGo 30s:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=wg30</div>
+                    <div><strong>WinGo 1m:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=wg1</div>
+                    <div><strong>K3 3m:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=k33</div>
+                    <div><strong>5D 5m:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=5d5</div>
+                    <div><strong>TRX 10m:</strong> {settings.apiDomain}{settings.apiEndpoint}?typeId=trx10</div>
                   </div>
                 </div>
               </CardContent>
