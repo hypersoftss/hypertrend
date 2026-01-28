@@ -1,8 +1,14 @@
 <?php
 /**
  * =====================================================
- * 📊 ADMIN DASHBOARD
+ * 📊 ENHANCED ADMIN DASHBOARD
  * =====================================================
+ * Features:
+ * - Real-time statistics
+ * - Interactive charts
+ * - Live API activity feed
+ * - Quick actions
+ * - Game type distribution
  */
 
 $page_title = 'Dashboard';
@@ -13,24 +19,37 @@ $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 $stats = [];
 
 // Total Users
-$result = $conn->query("SELECT COUNT(*) as count FROM users WHERE status = 'active'");
-$stats['users'] = $result->fetch_assoc()['count'];
+$result = $conn->query("SELECT COUNT(*) as count FROM users WHERE is_active = 1");
+$stats['users'] = $result ? $result->fetch_assoc()['count'] : 0;
 
 // Active API Keys
-$result = $conn->query("SELECT COUNT(*) as count FROM api_keys WHERE status = 'active'");
-$stats['active_keys'] = $result->fetch_assoc()['count'];
+$result = $conn->query("SELECT COUNT(*) as count FROM api_keys WHERE status = 'active' AND (expires_at IS NULL OR expires_at > NOW())");
+$stats['active_keys'] = $result ? $result->fetch_assoc()['count'] : 0;
 
 // Today's API Calls
 $result = $conn->query("SELECT COUNT(*) as count FROM api_logs WHERE DATE(created_at) = CURDATE()");
-$stats['today_calls'] = $result->fetch_assoc()['count'];
+$stats['today_calls'] = $result ? $result->fetch_assoc()['count'] : 0;
+
+// Yesterday's calls for comparison
+$result = $conn->query("SELECT COUNT(*) as count FROM api_logs WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)");
+$stats['yesterday_calls'] = $result ? $result->fetch_assoc()['count'] : 0;
+
+// Calculate trend
+$trend_percent = 0;
+if ($stats['yesterday_calls'] > 0) {
+    $trend_percent = round((($stats['today_calls'] - $stats['yesterday_calls']) / $stats['yesterday_calls']) * 100, 1);
+}
 
 // Success Rate
 $result = $conn->query("SELECT 
     COUNT(*) as total,
     SUM(CASE WHEN http_status = 200 THEN 1 ELSE 0 END) as success
     FROM api_logs WHERE DATE(created_at) = CURDATE()");
-$row = $result->fetch_assoc();
+$row = $result ? $result->fetch_assoc() : ['total' => 0, 'success' => 0];
 $stats['success_rate'] = $row['total'] > 0 ? round(($row['success'] / $row['total']) * 100, 1) : 100;
+
+// Revenue (if applicable - placeholder)
+$stats['total_revenue'] = 0;
 
 // Recent API Logs
 $recent_logs = $conn->query("
@@ -38,169 +57,413 @@ $recent_logs = $conn->query("
     FROM api_logs l
     LEFT JOIN api_keys k ON l.api_key_id = k.id
     LEFT JOIN users u ON l.user_id = u.id
-    ORDER BY l.created_at DESC LIMIT 10
+    ORDER BY l.created_at DESC LIMIT 8
 ");
 
-// Game Type Stats
+// Game Type Stats for today
 $game_stats = $conn->query("
     SELECT game_type, COUNT(*) as count
     FROM api_logs
     WHERE DATE(created_at) = CURDATE() AND game_type IS NOT NULL
     GROUP BY game_type
     ORDER BY count DESC
+    LIMIT 5
+");
+
+// Hourly distribution for chart
+$hourly_stats = $conn->query("
+    SELECT HOUR(created_at) as hour, COUNT(*) as count
+    FROM api_logs
+    WHERE DATE(created_at) = CURDATE()
+    GROUP BY HOUR(created_at)
+    ORDER BY hour
+");
+
+$hourly_data = array_fill(0, 24, 0);
+while ($row = $hourly_stats->fetch_assoc()) {
+    $hourly_data[(int)$row['hour']] = (int)$row['count'];
+}
+
+// Weekly trend
+$weekly_stats = $conn->query("
+    SELECT DATE(created_at) as date, COUNT(*) as count
+    FROM api_logs
+    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+    GROUP BY DATE(created_at)
+    ORDER BY date
+");
+
+$weekly_labels = [];
+$weekly_data = [];
+while ($row = $weekly_stats->fetch_assoc()) {
+    $weekly_labels[] = date('D', strtotime($row['date']));
+    $weekly_data[] = (int)$row['count'];
+}
+
+// Expiring keys (next 7 days)
+$expiring_keys = $conn->query("
+    SELECT k.*, u.username 
+    FROM api_keys k
+    LEFT JOIN users u ON k.user_id = u.id
+    WHERE k.expires_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 7 DAY)
+    AND k.status = 'active'
+    ORDER BY k.expires_at ASC
+    LIMIT 5
 ");
 
 $conn->close();
 ?>
 
-<!-- Stats Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<!-- Stats Grid -->
+<div class="grid grid-cols-4 md-cols-2 sm-cols-1 mb-6">
     <!-- Total Users -->
-    <div class="card rounded-xl p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-gray-400 text-sm">Total Users</p>
-                <h3 class="text-3xl font-bold text-white mt-1"><?php echo number_format($stats['users']); ?></h3>
-            </div>
-            <div class="w-14 h-14 bg-indigo-600 bg-opacity-20 rounded-xl flex items-center justify-center">
-                <i class="fas fa-users text-2xl text-indigo-400"></i>
-            </div>
+    <div class="card stat-card">
+        <div class="stat-icon primary">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <h3><?php echo number_format($stats['users']); ?></h3>
+            <p>Active Users</p>
         </div>
     </div>
 
     <!-- Active Keys -->
-    <div class="card rounded-xl p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-gray-400 text-sm">Active API Keys</p>
-                <h3 class="text-3xl font-bold text-white mt-1"><?php echo number_format($stats['active_keys']); ?></h3>
-            </div>
-            <div class="w-14 h-14 bg-green-600 bg-opacity-20 rounded-xl flex items-center justify-center">
-                <i class="fas fa-key text-2xl text-green-400"></i>
-            </div>
+    <div class="card stat-card">
+        <div class="stat-icon success">
+            <i class="fas fa-key"></i>
+        </div>
+        <div class="stat-content">
+            <h3><?php echo number_format($stats['active_keys']); ?></h3>
+            <p>Active API Keys</p>
         </div>
     </div>
 
     <!-- Today's Calls -->
-    <div class="card rounded-xl p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-gray-400 text-sm">Today's API Calls</p>
-                <h3 class="text-3xl font-bold text-white mt-1"><?php echo number_format($stats['today_calls']); ?></h3>
-            </div>
-            <div class="w-14 h-14 bg-purple-600 bg-opacity-20 rounded-xl flex items-center justify-center">
-                <i class="fas fa-chart-bar text-2xl text-purple-400"></i>
+    <div class="card stat-card">
+        <div class="stat-icon info">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="stat-content">
+            <h3><?php echo number_format($stats['today_calls']); ?></h3>
+            <p>Today's API Calls</p>
+            <div class="stat-trend <?php echo $trend_percent >= 0 ? 'up' : 'down'; ?>">
+                <i class="fas fa-arrow-<?php echo $trend_percent >= 0 ? 'up' : 'down'; ?>"></i>
+                <span><?php echo abs($trend_percent); ?>% from yesterday</span>
             </div>
         </div>
     </div>
 
     <!-- Success Rate -->
-    <div class="card rounded-xl p-6">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-gray-400 text-sm">Success Rate</p>
-                <h3 class="text-3xl font-bold text-white mt-1"><?php echo $stats['success_rate']; ?>%</h3>
+    <div class="card stat-card">
+        <div class="stat-icon warning">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-content">
+            <h3><?php echo $stats['success_rate']; ?>%</h3>
+            <p>Success Rate</p>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid grid-cols-3 lg-cols-2 md-cols-1 mb-6">
+    <!-- API Usage Chart -->
+    <div class="card" style="grid-column: span 2;">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-chart-area"></i>
+                Today's API Activity
+            </h3>
+            <div class="flex gap-2">
+                <button class="btn btn-sm btn-secondary" onclick="updateChartPeriod('today')">Today</button>
+                <button class="btn btn-sm btn-secondary" onclick="updateChartPeriod('week')">Week</button>
             </div>
-            <div class="w-14 h-14 bg-yellow-600 bg-opacity-20 rounded-xl flex items-center justify-center">
-                <i class="fas fa-check-circle text-2xl text-yellow-400"></i>
+        </div>
+        <div class="card-body">
+            <div style="height: 280px;">
+                <canvas id="apiUsageChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Distribution -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-gamepad"></i>
+                Game Distribution
+            </h3>
+        </div>
+        <div class="card-body">
+            <div style="height: 200px;">
+                <canvas id="gameDistChart"></canvas>
+            </div>
+            <div style="margin-top: 16px;">
+                <?php 
+                $game_stats->data_seek(0);
+                $colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+                $i = 0;
+                while ($game = $game_stats->fetch_assoc()): 
+                ?>
+                <div class="flex items-center justify-between mb-2" style="padding: 8px 0;">
+                    <div class="flex items-center gap-2">
+                        <span style="width: 12px; height: 12px; background: <?php echo $colors[$i % 5]; ?>; border-radius: 3px;"></span>
+                        <span class="text-sm"><?php echo htmlspecialchars(ucfirst($game['game_type'])); ?></span>
+                    </div>
+                    <span class="badge badge-primary"><?php echo number_format($game['count']); ?></span>
+                </div>
+                <?php $i++; endwhile; ?>
             </div>
         </div>
     </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Bottom Section -->
+<div class="grid grid-cols-3 lg-cols-2 md-cols-1">
     <!-- Recent Activity -->
-    <div class="lg:col-span-2 card rounded-xl p-6">
-        <h3 class="text-lg font-semibold mb-4">
-            <i class="fas fa-clock text-indigo-400 mr-2"></i>Recent API Requests
-        </h3>
-        <div class="table-container">
-            <table class="data-table w-full text-sm">
-                <thead>
-                    <tr class="text-left text-gray-400">
-                        <th class="p-3 rounded-tl-lg">Time</th>
-                        <th class="p-3">Endpoint</th>
-                        <th class="p-3">Status</th>
-                        <th class="p-3">IP</th>
-                        <th class="p-3 rounded-tr-lg">Duration</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while ($log = $recent_logs->fetch_assoc()): ?>
-                    <tr class="border-t border-gray-800">
-                        <td class="p-3 text-gray-400"><?php echo date('H:i:s', strtotime($log['created_at'])); ?></td>
-                        <td class="p-3">
-                            <span class="text-indigo-300"><?php echo htmlspecialchars($log['game_type'] ?? $log['endpoint']); ?></span>
-                        </td>
-                        <td class="p-3">
-                            <?php if ($log['http_status'] == 200): ?>
-                                <span class="px-2 py-1 bg-green-900 text-green-300 rounded text-xs">200 OK</span>
-                            <?php else: ?>
-                                <span class="px-2 py-1 bg-red-900 text-red-300 rounded text-xs"><?php echo $log['http_status']; ?></span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="p-3 text-gray-400 text-xs"><?php echo htmlspecialchars($log['client_ip']); ?></td>
-                        <td class="p-3 text-gray-400"><?php echo $log['duration_ms']; ?>ms</td>
-                    </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
+    <div class="card" style="grid-column: span 2;">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-clock"></i>
+                Recent API Requests
+            </h3>
+            <a href="api-logs.php" class="btn btn-sm btn-secondary">
+                View All <i class="fas fa-arrow-right"></i>
+            </a>
         </div>
-        <a href="api-logs.php" class="mt-4 inline-block text-indigo-400 hover:text-indigo-300 text-sm">
-            View all logs <i class="fas fa-arrow-right ml-1"></i>
-        </a>
+        <div class="card-body" style="padding: 0;">
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Game</th>
+                            <th>Status</th>
+                            <th>IP Address</th>
+                            <th>Response</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if ($recent_logs && $recent_logs->num_rows > 0): ?>
+                        <?php while ($log = $recent_logs->fetch_assoc()): ?>
+                        <tr>
+                            <td>
+                                <span class="text-muted"><?php echo date('H:i:s', strtotime($log['created_at'])); ?></span>
+                            </td>
+                            <td>
+                                <span class="badge badge-primary">
+                                    <?php echo htmlspecialchars(ucfirst($log['game_type'] ?? 'Unknown')); ?>
+                                </span>
+                            </td>
+                            <td>
+                                <?php if ($log['http_status'] == 200): ?>
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-check"></i> Success
+                                    </span>
+                                <?php else: ?>
+                                    <span class="badge badge-danger">
+                                        <i class="fas fa-times"></i> <?php echo $log['http_status']; ?>
+                                    </span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <code style="font-size: 12px; color: rgb(var(--text-muted));">
+                                    <?php echo htmlspecialchars(substr($log['client_ip'], 0, 15)); ?>
+                                </code>
+                            </td>
+                            <td>
+                                <span class="text-muted text-sm"><?php echo $log['duration_ms'] ?? 0; ?>ms</span>
+                            </td>
+                        </tr>
+                        <?php endwhile; ?>
+                        <?php else: ?>
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state" style="padding: 32px;">
+                                    <i class="fas fa-inbox" style="font-size: 24px; color: rgb(var(--text-muted));"></i>
+                                    <p class="text-muted" style="margin-top: 8px;">No API requests today</p>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <!-- Game Type Distribution -->
-    <div class="card rounded-xl p-6">
-        <h3 class="text-lg font-semibold mb-4">
-            <i class="fas fa-gamepad text-indigo-400 mr-2"></i>Today's Game Types
-        </h3>
-        <div class="space-y-4">
-            <?php 
-            $colors = ['bg-indigo-500', 'bg-green-500', 'bg-purple-500', 'bg-yellow-500', 'bg-pink-500'];
-            $i = 0;
-            while ($game = $game_stats->fetch_assoc()): 
-            ?>
-            <div>
-                <div class="flex justify-between text-sm mb-1">
-                    <span class="text-gray-300"><?php echo htmlspecialchars(ucfirst($game['game_type'])); ?></span>
-                    <span class="text-gray-400"><?php echo number_format($game['count']); ?> calls</span>
-                </div>
-                <div class="h-2 bg-gray-800 rounded-full overflow-hidden">
-                    <div class="h-full <?php echo $colors[$i % 5]; ?> rounded-full" style="width: <?php echo min(100, ($game['count'] / max(1, $stats['today_calls'])) * 100); ?>%"></div>
-                </div>
+    <!-- Quick Actions & Expiring Keys -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-bolt"></i>
+                Quick Actions
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="grid grid-cols-2" style="gap: 12px; margin-bottom: 24px;">
+                <a href="api-keys.php?action=create" class="quick-action">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>New Key</span>
+                </a>
+                <a href="users.php?action=create" class="quick-action">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Add User</span>
+                </a>
+                <a href="documentation.php" class="quick-action">
+                    <i class="fas fa-book"></i>
+                    <span>API Docs</span>
+                </a>
+                <a href="settings.php" class="quick-action">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
             </div>
-            <?php $i++; endwhile; ?>
             
-            <?php if ($i === 0): ?>
-            <p class="text-gray-500 text-center py-4">No API calls today</p>
+            <!-- Expiring Soon -->
+            <h4 class="text-sm font-semibold text-muted mb-4" style="border-top: 1px solid rgb(var(--border) / var(--border-opacity)); padding-top: 16px;">
+                <i class="fas fa-clock" style="color: rgb(var(--warning));"></i> Expiring Soon
+            </h4>
+            <?php if ($expiring_keys && $expiring_keys->num_rows > 0): ?>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <?php while ($key = $expiring_keys->fetch_assoc()): ?>
+                <div style="padding: 10px; background: rgb(var(--warning) / 0.05); border: 1px solid rgb(var(--warning) / 0.2); border-radius: var(--radius-md);">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium"><?php echo htmlspecialchars($key['username'] ?? 'Unknown'); ?></span>
+                        <span class="badge badge-warning text-xs">
+                            <?php echo date('M d', strtotime($key['expires_at'])); ?>
+                        </span>
+                    </div>
+                    <code style="font-size: 11px; color: rgb(var(--text-muted));">
+                        <?php echo substr($key['api_key'], 0, 8); ?>...
+                    </code>
+                </div>
+                <?php endwhile; ?>
+            </div>
+            <?php else: ?>
+            <p class="text-muted text-sm text-center" style="padding: 16px 0;">No keys expiring soon</p>
             <?php endif; ?>
         </div>
-
-        <!-- Quick Actions -->
-        <div class="mt-6 pt-6 border-t border-gray-800">
-            <h4 class="text-sm font-medium text-gray-400 mb-3">Quick Actions</h4>
-            <div class="grid grid-cols-2 gap-2">
-                <a href="api-keys.php?action=create" class="p-3 bg-indigo-600 bg-opacity-20 hover:bg-opacity-30 rounded-lg text-center text-sm transition">
-                    <i class="fas fa-plus-circle block mb-1"></i>
-                    New Key
-                </a>
-                <a href="users.php?action=create" class="p-3 bg-green-600 bg-opacity-20 hover:bg-opacity-30 rounded-lg text-center text-sm transition">
-                    <i class="fas fa-user-plus block mb-1"></i>
-                    New User
-                </a>
-                <a href="documentation.php" class="p-3 bg-purple-600 bg-opacity-20 hover:bg-opacity-30 rounded-lg text-center text-sm transition">
-                    <i class="fas fa-book block mb-1"></i>
-                    Docs
-                </a>
-                <a href="settings.php" class="p-3 bg-yellow-600 bg-opacity-20 hover:bg-opacity-30 rounded-lg text-center text-sm transition">
-                    <i class="fas fa-cog block mb-1"></i>
-                    Settings
-                </a>
-            </div>
-        </div>
     </div>
 </div>
+
+<script>
+// Initialize Charts
+document.addEventListener('DOMContentLoaded', function() {
+    // API Usage Chart (Hourly)
+    const hourlyData = <?php echo json_encode(array_values($hourly_data)); ?>;
+    const hourlyLabels = Array.from({length: 24}, (_, i) => `${i}:00`);
+    
+    new Chart(document.getElementById('apiUsageChart'), {
+        type: 'line',
+        data: {
+            labels: hourlyLabels,
+            datasets: [{
+                label: 'API Calls',
+                data: hourlyData,
+                borderColor: 'rgb(99, 102, 241)',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointHoverBackgroundColor: 'rgb(99, 102, 241)',
+                pointHoverBorderColor: '#fff',
+                pointHoverBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 10, 30, 0.9)',
+                    titleColor: '#fff',
+                    bodyColor: '#94a3b8',
+                    borderColor: 'rgba(99, 102, 241, 0.3)',
+                    borderWidth: 1,
+                    padding: 12,
+                    cornerRadius: 8,
+                    displayColors: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(99, 102, 241, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: 'rgb(100, 116, 139)',
+                        font: { size: 11 }
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        color: 'rgb(100, 116, 139)',
+                        font: { size: 11 },
+                        maxTicksLimit: 12
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    });
+
+    // Game Distribution Chart
+    <?php 
+    $game_stats->data_seek(0);
+    $game_labels = [];
+    $game_data_arr = [];
+    while ($g = $game_stats->fetch_assoc()) {
+        $game_labels[] = ucfirst($g['game_type']);
+        $game_data_arr[] = (int)$g['count'];
+    }
+    ?>
+    
+    new Chart(document.getElementById('gameDistChart'), {
+        type: 'doughnut',
+        data: {
+            labels: <?php echo json_encode($game_labels); ?>,
+            datasets: [{
+                data: <?php echo json_encode($game_data_arr); ?>,
+                backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                borderWidth: 0,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 10, 30, 0.9)',
+                    titleColor: '#fff',
+                    bodyColor: '#94a3b8',
+                    borderColor: 'rgba(99, 102, 241, 0.3)',
+                    borderWidth: 1,
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            }
+        }
+    });
+});
+
+// Chart period toggle
+function updateChartPeriod(period) {
+    // This would fetch new data via AJAX in a real implementation
+    showToast('Info', `Switching to ${period} view...`, 'info');
+}
+</script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

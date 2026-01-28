@@ -1,8 +1,13 @@
 <?php
 /**
  * =====================================================
- * 🔑 API KEYS MANAGEMENT
+ * 🔑 API KEYS MANAGEMENT - ENHANCED UI
  * =====================================================
+ * Features:
+ * - Generate/Manage API keys
+ * - IP & Domain whitelisting
+ * - Usage statistics
+ * - Quick copy functionality
  */
 
 $page_title = 'API Keys';
@@ -39,7 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("issssssi", $user_id, $api_key, $name, $game_type, $expires_at, $ip_json, $domain_json, $daily_limit);
         
         if ($stmt->execute()) {
-            $message = "API Key created: <code class='bg-gray-800 px-2 py-1 rounded select-all cursor-pointer' onclick='copyToClipboard(\"{$api_key}\")'>{$api_key}</code>";
+            $_SESSION['new_api_key'] = $api_key;
+            $message = "API Key generated successfully!";
             log_activity($conn, $_SESSION['user_id'], 'create_api_key', 'api_key', $stmt->insert_id);
         } else {
             $error = 'Failed to create API key: ' . $conn->error;
@@ -88,310 +94,425 @@ $keys = $conn->query("
 // Get users for dropdown (admin only)
 $users = is_admin() ? $conn->query("SELECT id, username FROM users ORDER BY username") : null;
 
+// Get stats
+$stats_query = is_admin() ? "1=1" : "user_id = " . (int)$_SESSION['user_id'];
+$stats = [
+    'total' => $conn->query("SELECT COUNT(*) as c FROM api_keys WHERE $stats_query")->fetch_assoc()['c'],
+    'active' => $conn->query("SELECT COUNT(*) as c FROM api_keys WHERE status='active' AND $stats_query")->fetch_assoc()['c'],
+    'expired' => $conn->query("SELECT COUNT(*) as c FROM api_keys WHERE expires_at < NOW() AND $stats_query")->fetch_assoc()['c'],
+];
+
 $conn->close();
 ?>
 
+<!-- Page Header -->
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h2 class="text-2xl font-bold">API Keys</h2>
+        <p class="text-muted text-sm">Generate and manage API keys for your applications</p>
+    </div>
+    <button onclick="openModal('createKeyModal')" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Generate New Key
+    </button>
+</div>
+
+<!-- New Key Alert -->
+<?php if (isset($_SESSION['new_api_key'])): ?>
+<div style="padding: 20px; background: rgb(var(--success) / 0.1); border: 1px solid rgb(var(--success) / 0.3); border-radius: var(--radius-lg); margin-bottom: 24px;">
+    <div class="flex items-center gap-3 mb-3">
+        <i class="fas fa-check-circle" style="color: rgb(var(--success)); font-size: 24px;"></i>
+        <div>
+            <h4 class="font-semibold" style="color: rgb(var(--success));">API Key Generated!</h4>
+            <p class="text-sm text-muted">Copy your key now - it won't be shown again in full</p>
+        </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgb(var(--bg-base)); border-radius: var(--radius-md);">
+        <code style="flex: 1; font-size: 14px; word-break: break-all;"><?php echo htmlspecialchars($_SESSION['new_api_key']); ?></code>
+        <button onclick="copyToClipboard('<?php echo $_SESSION['new_api_key']; ?>', 'API Key copied!')" class="btn btn-sm btn-success">
+            <i class="fas fa-copy"></i> Copy
+        </button>
+    </div>
+</div>
+<?php unset($_SESSION['new_api_key']); endif; ?>
+
+<!-- Alerts -->
 <?php if ($message): ?>
-<div class="bg-green-900 bg-opacity-50 border border-green-500 text-green-200 px-4 py-3 rounded-lg mb-6">
-    <i class="fas fa-check-circle mr-2"></i><?php echo $message; ?>
+<div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: rgb(var(--success) / 0.1); border: 1px solid rgb(var(--success) / 0.3); border-radius: var(--radius-lg); margin-bottom: 24px;">
+    <i class="fas fa-check-circle" style="color: rgb(var(--success));"></i>
+    <span><?php echo $message; ?></span>
 </div>
 <?php endif; ?>
 
 <?php if ($error): ?>
-<div class="bg-red-900 bg-opacity-50 border border-red-500 text-red-200 px-4 py-3 rounded-lg mb-6">
-    <i class="fas fa-exclamation-circle mr-2"></i><?php echo htmlspecialchars($error); ?>
+<div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: rgb(var(--danger) / 0.1); border: 1px solid rgb(var(--danger) / 0.3); border-radius: var(--radius-lg); margin-bottom: 24px;">
+    <i class="fas fa-exclamation-circle" style="color: rgb(var(--danger));"></i>
+    <span><?php echo htmlspecialchars($error); ?></span>
 </div>
 <?php endif; ?>
 
-<!-- Create Key Button -->
-<div class="mb-6">
-    <button onclick="showCreateModal()" class="btn-primary px-6 py-3 rounded-lg font-medium">
-        <i class="fas fa-plus-circle mr-2"></i>Generate New API Key
-    </button>
+<!-- Stats Cards -->
+<div class="grid grid-cols-3 md-cols-1 mb-6">
+    <div class="card stat-card">
+        <div class="stat-icon primary">
+            <i class="fas fa-key"></i>
+        </div>
+        <div class="stat-content">
+            <h3><?php echo number_format($stats['total']); ?></h3>
+            <p>Total Keys</p>
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon success">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-content">
+            <h3><?php echo number_format($stats['active']); ?></h3>
+            <p>Active Keys</p>
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon danger">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="stat-content">
+            <h3><?php echo number_format($stats['expired']); ?></h3>
+            <p>Expired Keys</p>
+        </div>
+    </div>
 </div>
 
 <!-- API Keys Table -->
-<div class="card rounded-xl overflow-hidden">
-    <div class="table-container">
-        <table class="data-table w-full">
-            <thead>
-                <tr class="text-left text-gray-400 text-sm">
-                    <th class="p-4">API Key</th>
-                    <th class="p-4">Name</th>
-                    <?php if (is_admin()): ?><th class="p-4">User</th><?php endif; ?>
-                    <th class="p-4">Game Type</th>
-                    <th class="p-4">Status</th>
-                    <th class="p-4">Expires</th>
-                    <th class="p-4">Usage</th>
-                    <th class="p-4">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php while ($key = $keys->fetch_assoc()): ?>
-                <tr class="border-t border-gray-800">
-                    <td class="p-4">
-                        <div class="flex items-center">
-                            <code class="bg-gray-800 px-2 py-1 rounded text-sm text-indigo-300 cursor-pointer hover:bg-gray-700" 
-                                  onclick="copyToClipboard('<?php echo $key['api_key']; ?>')">
-                                <?php echo substr($key['api_key'], 0, 12); ?>...
-                            </code>
-                            <button onclick="copyToClipboard('<?php echo $key['api_key']; ?>')" class="ml-2 text-gray-400 hover:text-white">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>
-                    </td>
-                    <td class="p-4 text-gray-300"><?php echo htmlspecialchars($key['name'] ?: 'Unnamed'); ?></td>
-                    <?php if (is_admin()): ?>
-                    <td class="p-4 text-gray-400"><?php echo htmlspecialchars($key['username']); ?></td>
-                    <?php endif; ?>
-                    <td class="p-4">
-                        <span class="px-2 py-1 bg-indigo-900 bg-opacity-50 text-indigo-300 rounded text-xs uppercase">
-                            <?php echo $key['game_type']; ?>
-                        </span>
-                    </td>
-                    <td class="p-4">
-                        <span class="status-<?php echo $key['status']; ?>">
-                            <i class="fas fa-circle text-xs mr-1"></i>
-                            <?php echo ucfirst($key['status']); ?>
-                        </span>
-                    </td>
-                    <td class="p-4 text-gray-400 text-sm">
-                        <?php 
-                        if ($key['expires_at']) {
-                            $expires = strtotime($key['expires_at']);
-                            $now = time();
-                            if ($expires < $now) {
-                                echo '<span class="text-red-400">Expired</span>';
-                            } else {
-                                $days_left = ceil(($expires - $now) / 86400);
-                                echo "{$days_left} days left";
-                            }
-                        } else {
-                            echo '<span class="text-green-400">Never</span>';
-                        }
-                        ?>
-                    </td>
-                    <td class="p-4">
-                        <div class="text-sm">
-                            <span class="text-gray-300"><?php echo number_format($key['total_calls']); ?></span>
-                            <span class="text-gray-500 text-xs">total</span>
-                        </div>
-                        <div class="text-xs text-gray-500">
-                            <?php echo number_format($key['calls_today']); ?> today
-                        </div>
-                    </td>
-                    <td class="p-4">
-                        <div class="flex space-x-2">
-                            <button onclick="viewKey(<?php echo htmlspecialchars(json_encode($key)); ?>)" 
-                                    class="p-2 text-indigo-400 hover:bg-indigo-900 rounded transition" title="View Details">
-                                <i class="fas fa-eye"></i>
-                            </button>
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-list"></i> All API Keys
+        </h3>
+        <span class="badge badge-primary"><?php echo $keys->num_rows; ?> keys</span>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>API Key</th>
+                        <th>Name</th>
+                        <?php if (is_admin()): ?><th>User</th><?php endif; ?>
+                        <th>Game</th>
+                        <th>Status</th>
+                        <th>Expires</th>
+                        <th>Usage</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if ($keys->num_rows > 0): ?>
+                    <?php while ($key = $keys->fetch_assoc()): ?>
+                    <tr>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <code style="padding: 4px 8px; background: rgb(var(--primary) / 0.1); border-radius: 6px; font-size: 12px; cursor: pointer;" 
+                                      onclick="copyToClipboard('<?php echo $key['api_key']; ?>')">
+                                    <?php echo substr($key['api_key'], 0, 16); ?>...
+                                </code>
+                                <button onclick="copyToClipboard('<?php echo $key['api_key']; ?>')" 
+                                        style="background: none; border: none; color: rgb(var(--text-muted)); cursor: pointer;">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="font-medium"><?php echo htmlspecialchars($key['name'] ?: 'Unnamed'); ?></span>
+                        </td>
+                        <?php if (is_admin()): ?>
+                        <td>
+                            <span class="text-muted"><?php echo htmlspecialchars($key['username']); ?></span>
+                        </td>
+                        <?php endif; ?>
+                        <td>
+                            <span class="badge badge-primary">
+                                <?php echo strtoupper($key['game_type']); ?>
+                            </span>
+                        </td>
+                        <td>
                             <?php if ($key['status'] === 'active'): ?>
-                            <form method="POST" class="inline">
-                                <input type="hidden" name="action" value="toggle_status">
-                                <input type="hidden" name="key_id" value="<?php echo $key['id']; ?>">
-                                <input type="hidden" name="new_status" value="disabled">
-                                <button type="submit" class="p-2 text-yellow-400 hover:bg-yellow-900 rounded transition" title="Disable">
-                                    <i class="fas fa-pause"></i>
-                                </button>
-                            </form>
+                                <span class="badge badge-success"><i class="fas fa-check"></i> Active</span>
                             <?php else: ?>
-                            <form method="POST" class="inline">
-                                <input type="hidden" name="action" value="toggle_status">
-                                <input type="hidden" name="key_id" value="<?php echo $key['id']; ?>">
-                                <input type="hidden" name="new_status" value="active">
-                                <button type="submit" class="p-2 text-green-400 hover:bg-green-900 rounded transition" title="Enable">
-                                    <i class="fas fa-play"></i>
-                                </button>
-                            </form>
+                                <span class="badge badge-danger"><i class="fas fa-times"></i> Disabled</span>
                             <?php endif; ?>
-                            <button onclick="deleteKey(<?php echo $key['id']; ?>)" 
-                                    class="p-2 text-red-400 hover:bg-red-900 rounded transition" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                <?php endwhile; ?>
-            </tbody>
-        </table>
+                        </td>
+                        <td>
+                            <?php 
+                            if ($key['expires_at']) {
+                                $expires = strtotime($key['expires_at']);
+                                $now = time();
+                                if ($expires < $now) {
+                                    echo '<span class="badge badge-danger">Expired</span>';
+                                } else {
+                                    $days_left = ceil(($expires - $now) / 86400);
+                                    if ($days_left <= 7) {
+                                        echo '<span class="badge badge-warning">' . $days_left . ' days</span>';
+                                    } else {
+                                        echo '<span class="text-muted text-sm">' . $days_left . ' days</span>';
+                                    }
+                                }
+                            } else {
+                                echo '<span class="badge badge-success">Never</span>';
+                            }
+                            ?>
+                        </td>
+                        <td>
+                            <div>
+                                <span class="font-semibold"><?php echo number_format($key['total_calls'] ?? 0); ?></span>
+                                <span class="text-muted text-xs">total</span>
+                            </div>
+                            <div class="text-xs text-muted">
+                                <?php echo number_format($key['calls_today'] ?? 0); ?>/<?php echo number_format($key['daily_limit'] ?? 10000); ?> today
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex gap-2">
+                                <button onclick='viewKeyDetails(<?php echo json_encode($key); ?>)' 
+                                        class="btn btn-sm btn-secondary" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                
+                                <?php if ($key['status'] === 'active'): ?>
+                                <form method="POST" style="display: inline;">
+                                    <input type="hidden" name="action" value="toggle_status">
+                                    <input type="hidden" name="key_id" value="<?php echo $key['id']; ?>">
+                                    <input type="hidden" name="new_status" value="disabled">
+                                    <button type="submit" class="btn btn-sm btn-secondary" title="Disable">
+                                        <i class="fas fa-pause" style="color: rgb(var(--warning));"></i>
+                                    </button>
+                                </form>
+                                <?php else: ?>
+                                <form method="POST" style="display: inline;">
+                                    <input type="hidden" name="action" value="toggle_status">
+                                    <input type="hidden" name="key_id" value="<?php echo $key['id']; ?>">
+                                    <input type="hidden" name="new_status" value="active">
+                                    <button type="submit" class="btn btn-sm btn-secondary" title="Enable">
+                                        <i class="fas fa-play" style="color: rgb(var(--success));"></i>
+                                    </button>
+                                </form>
+                                <?php endif; ?>
+                                
+                                <form method="POST" style="display: inline;" onsubmit="return confirmAction('Delete this API key?')">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="key_id" value="<?php echo $key['id']; ?>">
+                                    <button type="submit" class="btn btn-sm btn-secondary" title="Delete">
+                                        <i class="fas fa-trash" style="color: rgb(var(--danger));"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endwhile; ?>
+                    <?php else: ?>
+                    <tr>
+                        <td colspan="<?php echo is_admin() ? 8 : 7; ?>">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">
+                                    <i class="fas fa-key"></i>
+                                </div>
+                                <h3>No API Keys</h3>
+                                <p>Generate your first API key to get started</p>
+                                <button onclick="openModal('createKeyModal')" class="btn btn-primary" style="margin-top: 16px;">
+                                    <i class="fas fa-plus"></i> Generate Key
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <!-- Create Key Modal -->
-<div id="createModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
-    <div class="card rounded-xl p-6 w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
-        <h3 class="text-xl font-bold mb-4">
-            <i class="fas fa-key text-indigo-400 mr-2"></i>Generate New API Key
-        </h3>
+<div class="modal-backdrop" id="createKeyModal">
+    <div class="modal" style="max-width: 560px;">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="fas fa-key" style="color: rgb(var(--primary));"></i>
+                Generate New API Key
+            </h3>
+            <button onclick="closeModal('createKeyModal')" style="background: none; border: none; color: rgb(var(--text-muted)); cursor: pointer; font-size: 20px;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
         <form method="POST">
             <input type="hidden" name="action" value="create">
             
-            <div class="space-y-4">
-                <?php if (is_admin()): ?>
-                <div>
-                    <label class="block text-gray-400 text-sm mb-1">User</label>
-                    <select name="user_id" required class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
-                        <?php while ($user = $users->fetch_assoc()): ?>
+            <div class="modal-body">
+                <?php if (is_admin() && $users): ?>
+                <div class="form-group">
+                    <label class="form-label">Assign to User</label>
+                    <select name="user_id" required class="form-control">
+                        <?php 
+                        $users->data_seek(0);
+                        while ($user = $users->fetch_assoc()): 
+                        ?>
                         <option value="<?php echo $user['id']; ?>"><?php echo htmlspecialchars($user['username']); ?></option>
                         <?php endwhile; ?>
                     </select>
                 </div>
                 <?php endif; ?>
                 
-                <div>
-                    <label class="block text-gray-400 text-sm mb-1">Key Name (Optional)</label>
-                    <input type="text" name="name" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white" placeholder="e.g., Production Key">
+                <div class="form-group">
+                    <label class="form-label">Key Name (Optional)</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g., Production Server">
                 </div>
                 
-                <div>
-                    <label class="block text-gray-400 text-sm mb-1">Game Type</label>
-                    <select name="game_type" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
-                        <option value="all">All Games</option>
-                        <option value="wingo">WinGo</option>
-                        <option value="k3">K3</option>
-                        <option value="5d">5D</option>
-                        <option value="trx">TRX</option>
-                        <option value="numeric">Numeric</option>
-                    </select>
+                <div class="grid grid-cols-2" style="gap: 16px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Game Type</label>
+                        <select name="game_type" class="form-control">
+                            <option value="all">All Games</option>
+                            <option value="wingo">WinGo</option>
+                            <option value="k3">K3</option>
+                            <option value="5d">5D</option>
+                            <option value="trx">TRX</option>
+                            <option value="numeric">Numeric</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Validity</label>
+                        <select name="expires_days" class="form-control">
+                            <option value="7">7 Days</option>
+                            <option value="30" selected>30 Days</option>
+                            <option value="90">90 Days</option>
+                            <option value="180">6 Months</option>
+                            <option value="365">1 Year</option>
+                        </select>
+                    </div>
                 </div>
                 
-                <div>
-                    <label class="block text-gray-400 text-sm mb-1">Expires In (Days)</label>
-                    <select name="expires_days" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
-                        <option value="7">7 Days</option>
-                        <option value="30" selected>30 Days</option>
-                        <option value="90">90 Days</option>
-                        <option value="180">180 Days</option>
-                        <option value="365">1 Year</option>
-                    </select>
+                <div class="form-group" style="margin-top: 16px;">
+                    <label class="form-label">Daily Request Limit</label>
+                    <input type="number" name="daily_limit" value="10000" class="form-control">
                 </div>
                 
-                <div>
-                    <label class="block text-gray-400 text-sm mb-1">Daily Limit</label>
-                    <input type="number" name="daily_limit" value="10000" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-shield-alt" style="color: rgb(var(--warning));"></i>
+                        Whitelisted IPs (One per line)
+                    </label>
+                    <textarea name="whitelisted_ips" rows="3" class="form-control" 
+                              placeholder="192.168.1.1&#10;10.0.0.0/24&#10;2001:db8::1"></textarea>
+                    <small class="text-muted">Supports IPv4, IPv6, and CIDR notation. Leave empty to allow all.</small>
                 </div>
                 
-                <div>
-                    <label class="block text-gray-400 text-sm mb-1">Whitelisted IPs (One per line)</label>
-                    <textarea name="whitelisted_ips" rows="3" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white" placeholder="192.168.1.1&#10;10.0.0.0/24"></textarea>
-                    <p class="text-xs text-gray-500 mt-1">Supports IPv4, IPv6, and CIDR notation</p>
-                </div>
-                
-                <div>
-                    <label class="block text-gray-400 text-sm mb-1">Whitelisted Domains (One per line)</label>
-                    <textarea name="whitelisted_domains" rows="3" class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white" placeholder="example.com&#10;*.mysite.com"></textarea>
-                    <p class="text-xs text-gray-500 mt-1">Supports wildcards like *.example.com</p>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-globe" style="color: rgb(var(--info));"></i>
+                        Whitelisted Domains (One per line)
+                    </label>
+                    <textarea name="whitelisted_domains" rows="3" class="form-control" 
+                              placeholder="example.com&#10;*.mysite.com&#10;api.domain.com"></textarea>
+                    <small class="text-muted">Supports wildcards like *.example.com. Leave empty to allow all.</small>
                 </div>
             </div>
             
-            <div class="flex justify-end space-x-3 mt-6">
-                <button type="button" onclick="hideModal('createModal')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition">Cancel</button>
-                <button type="submit" class="px-4 py-2 btn-primary rounded-lg">Generate Key</button>
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal('createKeyModal')" class="btn btn-secondary">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-key"></i> Generate Key
+                </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- View Key Modal -->
-<div id="viewModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
-    <div class="card rounded-xl p-6 w-full max-w-lg mx-4">
-        <h3 class="text-xl font-bold mb-4">
-            <i class="fas fa-info-circle text-indigo-400 mr-2"></i>API Key Details
-        </h3>
-        <div id="keyDetails" class="space-y-4">
+<!-- View Key Details Modal -->
+<div class="modal-backdrop" id="viewKeyModal">
+    <div class="modal" style="max-width: 560px;">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="fas fa-info-circle" style="color: rgb(var(--info));"></i>
+                API Key Details
+            </h3>
+            <button onclick="closeModal('viewKeyModal')" style="background: none; border: none; color: rgb(var(--text-muted)); cursor: pointer; font-size: 20px;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="keyDetailsContent">
             <!-- Filled by JavaScript -->
         </div>
-        <div class="flex justify-end mt-6">
-            <button onclick="hideModal('viewModal')" class="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition">Close</button>
+        <div class="modal-footer">
+            <button onclick="closeModal('viewKeyModal')" class="btn btn-secondary">Close</button>
         </div>
     </div>
 </div>
 
-<!-- Delete Form -->
-<form id="deleteForm" method="POST" style="display:none;">
-    <input type="hidden" name="action" value="delete">
-    <input type="hidden" name="key_id" id="delete_key_id">
-</form>
-
 <script>
-function showCreateModal() {
-    document.getElementById('createModal').classList.remove('hidden');
-    document.getElementById('createModal').classList.add('flex');
-}
-
-function hideModal(id) {
-    document.getElementById(id).classList.add('hidden');
-    document.getElementById(id).classList.remove('flex');
-}
-
-function viewKey(key) {
+function viewKeyDetails(key) {
     const ips = JSON.parse(key.whitelisted_ips || '[]');
     const domains = JSON.parse(key.whitelisted_domains || '[]');
     
-    document.getElementById('keyDetails').innerHTML = `
-        <div class="bg-gray-800 p-4 rounded-lg">
-            <label class="text-gray-400 text-sm">Full API Key</label>
-            <div class="flex items-center mt-1">
-                <code class="flex-1 text-indigo-300 break-all">${key.api_key}</code>
-                <button onclick="copyToClipboard('${key.api_key}')" class="ml-2 p-2 text-gray-400 hover:text-white">
+    document.getElementById('keyDetailsContent').innerHTML = `
+        <div style="padding: 16px; background: rgb(var(--primary) / 0.05); border: 1px solid rgb(var(--primary) / 0.2); border-radius: var(--radius-md); margin-bottom: 20px;">
+            <label class="form-label" style="margin-bottom: 8px;">Full API Key</label>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <code style="flex: 1; word-break: break-all; font-size: 13px;">${key.api_key}</code>
+                <button onclick="copyToClipboard('${key.api_key}')" class="btn btn-sm btn-primary">
                     <i class="fas fa-copy"></i>
                 </button>
             </div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        
+        <div class="grid grid-cols-2" style="gap: 16px; margin-bottom: 20px;">
             <div>
-                <label class="text-gray-400 text-sm">Game Type</label>
-                <p class="text-white uppercase">${key.game_type}</p>
+                <label class="text-muted text-sm">Name</label>
+                <p class="font-medium">${key.name || 'Unnamed'}</p>
             </div>
             <div>
-                <label class="text-gray-400 text-sm">Status</label>
-                <p class="status-${key.status}">${key.status}</p>
+                <label class="text-muted text-sm">Game Type</label>
+                <p><span class="badge badge-primary">${key.game_type.toUpperCase()}</span></p>
             </div>
             <div>
-                <label class="text-gray-400 text-sm">Total Calls</label>
-                <p class="text-white">${Number(key.total_calls).toLocaleString()}</p>
+                <label class="text-muted text-sm">Status</label>
+                <p><span class="badge badge-${key.status === 'active' ? 'success' : 'danger'}">${key.status}</span></p>
             </div>
             <div>
-                <label class="text-gray-400 text-sm">Daily Limit</label>
-                <p class="text-white">${Number(key.daily_limit).toLocaleString()}</p>
+                <label class="text-muted text-sm">Daily Limit</label>
+                <p class="font-medium">${Number(key.daily_limit || 10000).toLocaleString()}</p>
+            </div>
+            <div>
+                <label class="text-muted text-sm">Total Calls</label>
+                <p class="font-medium">${Number(key.total_calls || 0).toLocaleString()}</p>
+            </div>
+            <div>
+                <label class="text-muted text-sm">Calls Today</label>
+                <p class="font-medium">${Number(key.calls_today || 0).toLocaleString()}</p>
             </div>
         </div>
-        <div>
-            <label class="text-gray-400 text-sm">Whitelisted IPs</label>
-            <p class="text-white">${ips.length ? ips.join(', ') : '<span class="text-gray-500">None</span>'}</p>
+        
+        <div style="margin-bottom: 16px;">
+            <label class="text-muted text-sm">Whitelisted IPs</label>
+            <p>${ips.length ? ips.map(ip => '<code style="font-size: 12px; padding: 2px 6px; background: rgb(var(--bg-base)); border-radius: 4px; margin-right: 4px;">' + ip + '</code>').join('') : '<span class="text-muted">All IPs allowed</span>'}</p>
         </div>
-        <div>
-            <label class="text-gray-400 text-sm">Whitelisted Domains</label>
-            <p class="text-white">${domains.length ? domains.join(', ') : '<span class="text-gray-500">None</span>'}</p>
+        
+        <div style="margin-bottom: 16px;">
+            <label class="text-muted text-sm">Whitelisted Domains</label>
+            <p>${domains.length ? domains.map(d => '<code style="font-size: 12px; padding: 2px 6px; background: rgb(var(--bg-base)); border-radius: 4px; margin-right: 4px;">' + d + '</code>').join('') : '<span class="text-muted">All domains allowed</span>'}</p>
         </div>
-        <div>
-            <label class="text-gray-400 text-sm">Created</label>
-            <p class="text-white">${new Date(key.created_at).toLocaleString()}</p>
-        </div>
-        <div>
-            <label class="text-gray-400 text-sm">Expires</label>
-            <p class="text-white">${key.expires_at ? new Date(key.expires_at).toLocaleString() : 'Never'}</p>
+        
+        <div class="grid grid-cols-2" style="gap: 16px;">
+            <div>
+                <label class="text-muted text-sm">Created</label>
+                <p class="text-sm">${new Date(key.created_at).toLocaleString()}</p>
+            </div>
+            <div>
+                <label class="text-muted text-sm">Expires</label>
+                <p class="text-sm">${key.expires_at ? new Date(key.expires_at).toLocaleString() : 'Never'}</p>
+            </div>
         </div>
     `;
     
-    document.getElementById('viewModal').classList.remove('hidden');
-    document.getElementById('viewModal').classList.add('flex');
+    openModal('viewKeyModal');
 }
-
-function deleteKey(keyId) {
-    if (confirm('Are you sure you want to delete this API key? This action cannot be undone.')) {
-        document.getElementById('delete_key_id').value = keyId;
-        document.getElementById('deleteForm').submit();
-    }
-}
-
-// Close modals on outside click
-document.querySelectorAll('[id$="Modal"]').forEach(modal => {
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) hideModal(modal.id);
-    });
-});
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
