@@ -12,6 +12,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import DocumentationPage from "@/pages/DocumentationPage";
+import ProfilePage from "@/pages/ProfilePage";
+import ChangePasswordPage from "@/pages/ChangePasswordPage";
 import NotFound from "@/pages/NotFound";
 
 // Admin Pages
@@ -51,6 +53,8 @@ const App = () => (
                 <Route element={<ProtectedRoute />}>
                   <Route path="/docs" element={<DocumentationPage />} />
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/change-password" element={<ChangePasswordPage />} />
                   <Route path="/user/keys" element={<UserKeysPage />} />
                 </Route>
 
