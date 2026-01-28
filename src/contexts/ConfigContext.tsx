@@ -7,8 +7,12 @@ interface SiteConfig {
   adminEmail: string;
   logoUrl: string;
   faviconUrl: string;
+  // Internal API (actual source - hidden from users)
   apiDomain: string;
   apiEndpoint: string;
+  // User-facing API (what merchants/users see in documentation)
+  userApiDomain: string;
+  userApiEndpoint: string;
   telegramBotToken: string;
   adminTelegramId: string;
 }
@@ -25,8 +29,12 @@ const defaultConfig: SiteConfig = {
   adminEmail: 'admin@hypersofts.com',
   logoUrl: '',
   faviconUrl: '',
+  // Internal - the REAL API source (hidden)
   apiDomain: 'https://betapi.space',
   apiEndpoint: '/Xdrtrend',
+  // User-facing - YOUR domain that users/merchants will use
+  userApiDomain: 'https://api.hypersofts.com',
+  userApiEndpoint: '/api/trend',
   telegramBotToken: '7843243355:AAFaHx7XrIAehoIqVRw83uEkZGjT8G75HO8',
   adminTelegramId: '1896145195',
 };
@@ -67,8 +75,14 @@ export const useConfig = () => {
   return context;
 };
 
-export const buildApiUrl = (typeId: string, config: SiteConfig): string => {
+// Build URL for internal API (actual source - admin only)
+export const buildInternalApiUrl = (typeId: string, config: SiteConfig): string => {
   return `${config.apiDomain}${config.apiEndpoint}?typeId=${typeId}`;
+};
+
+// Build URL for user-facing API (what merchants see)
+export const buildUserApiUrl = (typeId: string, config: SiteConfig): string => {
+  return `${config.userApiDomain}${config.userApiEndpoint}?typeId=${typeId}`;
 };
 
 export type { SiteConfig };
