@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
-import { Moon, Sun, Zap, ArrowLeft, Copy, CheckCircle, Code, Globe, Shield, AlertTriangle, Server, Database, Key } from 'lucide-react';
+import { Moon, Sun, Zap, ArrowLeft, Copy, CheckCircle, Code, Globe, Shield, AlertTriangle, Server, Database, Key, Download, FileText, Rocket, Terminal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const DocumentationPage = () => {
@@ -233,6 +233,36 @@ print_r($wingoData);
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               {config.siteDescription} - Simple PHP-based API with separate endpoints for each game type
             </p>
+            
+            {/* Quick Action Buttons */}
+            <div className="flex flex-wrap justify-center gap-3 pt-4">
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={() => {
+                  const docsContent = `# ${config.siteName} API Documentation\n\nBase URL: ${API_BASE}/api/\n\n## Endpoints\n\n${phpEndpoints.map(ep => `### ${ep.game}\n- Endpoint: ${ep.endpoint}\n- Durations: ${ep.durations.join(', ')}\n- Description: ${ep.description}`).join('\n\n')}\n\n## Code Examples\n\n### cURL\n${codeExamples.curl}\n\n### JavaScript\n${codeExamples.javascript}\n\n### Python\n${codeExamples.python}\n\n### PHP\n${codeExamples.php}`;
+                  const blob = new Blob([docsContent], { type: 'text/markdown' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `${config.siteName.replace(/\s+/g, '-').toLowerCase()}-api-docs.md`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast({ title: '📥 Downloaded!', description: 'API documentation saved as Markdown file' });
+                }}
+              >
+                <Download className="w-4 h-4" />
+                Download Docs
+              </Button>
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={() => copyCode(`${API_BASE}/api/`, 'baseurl-hero')}
+              >
+                {copiedCode === 'baseurl-hero' ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                Copy Base URL
+              </Button>
+            </div>
           </div>
 
           {/* Base URL Card */}
@@ -506,14 +536,105 @@ print_r($wingoData);
             </CardContent>
           </Card>
 
-          {/* Support */}
-          <Card className="border-2 border-primary/30">
-            <CardContent className="pt-6">
-              <div className="text-center space-y-2">
-                <h3 className="text-lg font-semibold">Need Help?</h3>
-                <p className="text-muted-foreground">
-                  Contact us at <a href={`mailto:${config.supportEmail}`} className="text-primary hover:underline">{config.supportEmail}</a>
+          {/* Quick Setup Guide */}
+          <Card className="border-2 border-accent/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Rocket className="w-5 h-5 text-accent" />
+                Quick Setup Guide
+              </CardTitle>
+              <CardDescription>Get started in 3 simple steps</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary font-bold">1</span>
+                  </div>
+                  <h4 className="font-semibold">Get Your API Key</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Contact admin or request a key from your dashboard. Each key has specific game permissions.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary font-bold">2</span>
+                  </div>
+                  <h4 className="font-semibold">Whitelist Your IP</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Ensure your server IP is whitelisted. Requests from non-whitelisted IPs will be rejected.
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary font-bold">3</span>
+                  </div>
+                  <h4 className="font-semibold">Make API Calls</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Use the code examples below. Pass your API key and desired duration for each request.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Sample Request */}
+              <div className="mt-6 p-4 rounded-lg bg-muted/50 border">
+                <div className="flex items-center gap-2 mb-3">
+                  <Terminal className="w-4 h-4 text-primary" />
+                  <span className="font-medium">Sample Request</span>
+                </div>
+                <div className="relative">
+                  <pre className="p-3 rounded bg-muted overflow-x-auto text-sm">
+                    <code>curl "{API_BASE}/api/wingo.php?api_key=YOUR_KEY&duration=1min"</code>
+                  </pre>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="absolute top-1 right-1"
+                    onClick={() => copyCode(`curl "${API_BASE}/api/wingo.php?api_key=YOUR_KEY&duration=1min"`, 'sample-curl')}
+                  >
+                    {copiedCode === 'sample-curl' ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Support - Enhanced */}
+          <Card className="gradient-primary text-primary-foreground overflow-hidden">
+            <CardContent className="py-8">
+              <div className="text-center space-y-4">
+                <h3 className="text-2xl font-bold">Need Help?</h3>
+                <p className="opacity-90 max-w-lg mx-auto">
+                  Our support team is here to help you integrate and troubleshoot any issues with the API.
                 </p>
+                <div className="flex flex-wrap justify-center gap-3 pt-2">
+                  <Button 
+                    variant="secondary" 
+                    className="gap-2"
+                    onClick={() => window.location.href = `mailto:${config.supportEmail}`}
+                  >
+                    <FileText className="w-4 h-4" />
+                    Email Support
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="gap-2 bg-primary-foreground/10 border-primary-foreground/30 hover:bg-primary-foreground/20"
+                    onClick={() => {
+                      const docsContent = `# ${config.siteName} API Documentation\n\nBase URL: ${API_BASE}/api/\n\n## Endpoints\n\n${phpEndpoints.map(ep => `### ${ep.game}\n- Endpoint: ${ep.endpoint}\n- Durations: ${ep.durations.join(', ')}\n- Description: ${ep.description}`).join('\n\n')}\n\n## Code Examples\n\n### cURL\n${codeExamples.curl}\n\n### JavaScript\n${codeExamples.javascript}\n\n### Python\n${codeExamples.python}\n\n### PHP\n${codeExamples.php}`;
+                      const blob = new Blob([docsContent], { type: 'text/markdown' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${config.siteName.replace(/\s+/g, '-').toLowerCase()}-api-docs.md`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast({ title: '📥 Downloaded!', description: 'Complete API documentation saved' });
+                    }}
+                  >
+                    <Download className="w-4 h-4" />
+                    Download Full Docs
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

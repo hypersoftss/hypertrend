@@ -9,7 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useConfig } from '@/contexts/ConfigContext';
-import { Settings, Save, Globe, Mail, MessageSquare, Bell, Key, Upload, Link, Server, Database, Shield, Palette, ExternalLink } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Settings, Save, Globe, Mail, MessageSquare, Bell, Key, Upload, Server, Database, Shield, Palette, ExternalLink, CheckCircle, XCircle, Wifi, WifiOff } from 'lucide-react';
 
 const SettingsPage = () => {
   const { config, updateConfig } = useConfig();
@@ -23,15 +24,12 @@ const SettingsPage = () => {
     logoUrl: config.logoUrl,
     faviconUrl: config.faviconUrl,
     
-    // URLs
-    frontendUrl: 'https://hyper-softs-trend.lovable.app',
-    backendUrl: 'https://api.hypersofts.com',
-    docsUrl: 'https://docs.hypersofts.com',
-    
     // Telegram - synced from config
     telegramBotToken: config.telegramBotToken,
     adminTelegramId: config.adminTelegramId,
     webhookUrl: '',
+    botConnected: false,
+    lastBotCheck: null as Date | null,
     
     // API Configuration - INTERNAL (Hidden from users - actual source)
     internalApiDomain: config.apiDomain,
@@ -174,14 +172,10 @@ const SettingsPage = () => {
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="general" className="gap-2">
               <Globe className="w-4 h-4" />
               <span className="hidden lg:inline">General</span>
-            </TabsTrigger>
-            <TabsTrigger value="urls" className="gap-2">
-              <Link className="w-4 h-4" />
-              <span className="hidden lg:inline">URLs</span>
             </TabsTrigger>
             <TabsTrigger value="telegram" className="gap-2">
               <MessageSquare className="w-4 h-4" />
@@ -314,191 +308,252 @@ const SettingsPage = () => {
             </Card>
           </TabsContent>
 
-          {/* URLs Settings */}
-          <TabsContent value="urls">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Link className="w-5 h-5 text-primary" />
-                  URL Configuration
-                </CardTitle>
-                <CardDescription>Configure all system URLs and endpoints</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="frontendUrl">Frontend URL</Label>
-                  <Input
-                    id="frontendUrl"
-                    value={settings.frontendUrl}
-                    onChange={(e) => setSettings({ ...settings, frontendUrl: e.target.value })}
-                    placeholder="https://your-domain.com"
-                  />
-                  <p className="text-xs text-muted-foreground">The URL where your admin panel is hosted</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="backendUrl">Backend API URL</Label>
-                  <Input
-                    id="backendUrl"
-                    value={settings.backendUrl}
-                    onChange={(e) => setSettings({ ...settings, backendUrl: e.target.value })}
-                    placeholder="https://api.your-domain.com"
-                  />
-                  <p className="text-xs text-muted-foreground">Your VPS server API endpoint</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="docsUrl">Documentation URL</Label>
-                  <Input
-                    id="docsUrl"
-                    value={settings.docsUrl}
-                    onChange={(e) => setSettings({ ...settings, docsUrl: e.target.value })}
-                    placeholder="https://docs.your-domain.com"
-                  />
-                  <p className="text-xs text-muted-foreground">Public API documentation URL</p>
-                </div>
-
-                <Separator />
-
-                <div className="p-4 rounded-lg bg-muted/50 border">
-                  <h4 className="font-medium mb-2">Quick Links Preview</h4>
-                  <div className="space-y-2 text-sm">
-                    <p><strong>Admin Panel:</strong> <code className="text-primary">{settings.frontendUrl}</code></p>
-                    <p><strong>API Base:</strong> <code className="text-primary">{settings.backendUrl}</code></p>
-                    <p><strong>Docs:</strong> <code className="text-primary">{settings.docsUrl}</code></p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Telegram Settings */}
+          {/* Telegram Settings - Enhanced UI */}
           <TabsContent value="telegram">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-primary" />
-                  Telegram Bot Settings
-                </CardTitle>
-                <CardDescription>Configure your Telegram bot integration</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Bot Status Card - Always Running */}
-                <div className="p-4 rounded-lg border-2 bg-success/10 border-success/30">
+            <div className="space-y-6">
+              {/* Bot Connection Status Card */}
+              <Card className="overflow-hidden">
+                <div className={cn(
+                  "p-6 border-b-4",
+                  settings.botConnected 
+                    ? "bg-gradient-to-r from-success/10 via-success/5 to-transparent border-success" 
+                    : settings.telegramBotToken 
+                      ? "bg-gradient-to-r from-warning/10 via-warning/5 to-transparent border-warning"
+                      : "bg-gradient-to-r from-muted/20 via-muted/10 to-transparent border-muted"
+                )}>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-success animate-pulse" />
+                    <div className="flex items-center gap-4">
+                      {/* Animated Status Indicator */}
+                      <div className="relative">
+                        <div className={cn(
+                          "w-16 h-16 rounded-2xl flex items-center justify-center",
+                          settings.botConnected 
+                            ? "bg-success/20" 
+                            : settings.telegramBotToken 
+                              ? "bg-warning/20" 
+                              : "bg-muted/30"
+                        )}>
+                          {settings.botConnected ? (
+                            <Wifi className="w-8 h-8 text-success" />
+                          ) : (
+                            <WifiOff className="w-8 h-8 text-muted-foreground" />
+                          )}
+                        </div>
+                        {settings.botConnected && (
+                          <span className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full animate-pulse" />
+                        )}
+                      </div>
+                      
                       <div>
-                        <p className="font-semibold text-foreground">🟢 Bot Status: Running</p>
-                        <p className="text-xs text-muted-foreground">
-                          Bot is always active and listening for commands
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                          {settings.botConnected ? (
+                            <>
+                              <CheckCircle className="w-5 h-5 text-success" />
+                              Bot Connected
+                            </>
+                          ) : settings.telegramBotToken ? (
+                            <>
+                              <XCircle className="w-5 h-5 text-warning" />
+                              Not Verified
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-5 h-5 text-muted-foreground" />
+                              Not Configured
+                            </>
+                          )}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {settings.botConnected 
+                            ? "Your Telegram bot is active and listening for commands"
+                            : settings.telegramBotToken 
+                              ? "Token configured but not verified - click 'Test Connection' to verify"
+                              : "Enter your bot token from @BotFather to enable Telegram notifications"
+                          }
                         </p>
+                        {settings.lastBotCheck && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Last checked: {settings.lastBotCheck.toLocaleString()}
+                          </p>
+                        )}
                       </div>
                     </div>
+                    
                     <Button
-                      variant="outline"
-                      onClick={testTelegramBot}
-                      disabled={isTesting}
+                      variant={settings.botConnected ? "outline" : "default"}
+                      className={cn(!settings.botConnected && "gradient-primary text-primary-foreground")}
+                      onClick={async () => {
+                        if (!settings.telegramBotToken || !settings.adminTelegramId) {
+                          toast({
+                            title: '❌ Missing Configuration',
+                            description: 'Please enter both Bot Token and Admin Telegram ID first',
+                            variant: 'destructive',
+                          });
+                          return;
+                        }
+                        setIsTesting(true);
+                        try {
+                          const message = `🧪 *Test Message from ${config.siteName}*\n\n✅ Bot connection successful!\n📅 Time: ${new Date().toLocaleString()}\n🔧 System: Admin Panel`;
+                          const response = await fetch(`https://api.telegram.org/bot${settings.telegramBotToken}/sendMessage`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              chat_id: settings.adminTelegramId,
+                              text: message,
+                              parse_mode: 'Markdown'
+                            })
+                          });
+                          const result = await response.json();
+                          if (result.ok) {
+                            setSettings(prev => ({ ...prev, botConnected: true, lastBotCheck: new Date() }));
+                            toast({ title: '✅ Connection Verified!', description: 'Test message sent to your Telegram' });
+                          } else {
+                            setSettings(prev => ({ ...prev, botConnected: false }));
+                            throw new Error(result.description || 'Unknown error');
+                          }
+                        } catch (error: any) {
+                          setSettings(prev => ({ ...prev, botConnected: false }));
+                          toast({ title: '❌ Connection Failed', description: error.message, variant: 'destructive' });
+                        } finally {
+                          setIsTesting(false);
+                        }
+                      }}
+                      disabled={isTesting || !settings.telegramBotToken}
                     >
                       {isTesting ? (
-                        <>
-                          <span className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent mr-2" />
+                        <span className="flex items-center gap-2">
+                          <span className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
                           Testing...
-                        </>
+                        </span>
                       ) : (
-                        <>🧪 Test Bot</>
+                        <span className="flex items-center gap-2">
+                          <Wifi className="w-4 h-4" />
+                          Test Connection
+                        </span>
                       )}
                     </Button>
                   </div>
                 </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label htmlFor="telegramBotToken">Bot Token</Label>
-                  <Input
-                    id="telegramBotToken"
-                    type="password"
-                    value={settings.telegramBotToken}
-                    onChange={(e) => setSettings({ ...settings, telegramBotToken: e.target.value })}
-                    placeholder="Enter your Telegram bot token from @BotFather"
-                  />
-                  <p className="text-xs text-muted-foreground">Get this from @BotFather on Telegram</p>
-                </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="adminTelegramId">Admin Telegram ID</Label>
-                  <Input
-                    id="adminTelegramId"
-                    value={settings.adminTelegramId}
-                    onChange={(e) => setSettings({ ...settings, adminTelegramId: e.target.value })}
-                    placeholder="Your Telegram user ID"
-                  />
-                  <p className="text-xs text-muted-foreground">Get this from @userinfobot on Telegram</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="webhookUrl">Webhook URL (Optional)</Label>
-                  <Input
-                    id="webhookUrl"
-                    value={settings.webhookUrl}
-                    onChange={(e) => setSettings({ ...settings, webhookUrl: e.target.value })}
-                    placeholder="https://your-domain.com/telegram/webhook"
-                  />
-                  <p className="text-xs text-muted-foreground">For receiving Telegram updates via webhook</p>
-                </div>
-
-                <Separator />
-
-                {/* Quick Test Actions */}
-                <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
-                    🧪 Quick Test Actions
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <Button variant="outline" size="sm" onClick={() => {
-                      toast({ title: '📨 Sending test notification...', description: 'Check your Telegram!' });
-                    }}>
-                      Send Test
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => {
-                      toast({ title: '🔔 Reminder sent!', description: 'Test reminder notification sent' });
-                    }}>
-                      Test Reminder
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => {
-                      toast({ title: '🔑 Key alert sent!', description: 'Test new key notification sent' });
-                    }}>
-                      Test Key Alert
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => {
-                      toast({ title: '💚 Health check sent!', description: 'Server health notification sent' });
-                    }}>
-                      Test Health
-                    </Button>
+                <CardContent className="p-6 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="telegramBotToken" className="flex items-center gap-2">
+                        <Key className="w-4 h-4 text-primary" />
+                        Bot Token
+                      </Label>
+                      <Input
+                        id="telegramBotToken"
+                        type="password"
+                        value={settings.telegramBotToken}
+                        onChange={(e) => setSettings({ ...settings, telegramBotToken: e.target.value, botConnected: false })}
+                        placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        Get from <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">@BotFather</a>
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="adminTelegramId" className="flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-primary" />
+                        Admin Telegram ID
+                      </Label>
+                      <Input
+                        id="adminTelegramId"
+                        value={settings.adminTelegramId}
+                        onChange={(e) => setSettings({ ...settings, adminTelegramId: e.target.value })}
+                        placeholder="123456789"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        Get from <a href="https://t.me/userinfobot" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">@userinfobot</a>
+                      </p>
+                    </div>
                   </div>
-                </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="webhookUrl">Webhook URL (Optional)</Label>
+                    <Input
+                      id="webhookUrl"
+                      value={settings.webhookUrl}
+                      onChange={(e) => setSettings({ ...settings, webhookUrl: e.target.value })}
+                      placeholder="https://your-domain.com/api/telegram-bot.php"
+                    />
+                    <p className="text-xs text-muted-foreground">Your server webhook endpoint for receiving Telegram updates</p>
+                  </div>
+                </CardContent>
+              </Card>
 
-                <Separator />
+              {/* Quick Test Actions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    🧪 Quick Test Notifications
+                  </CardTitle>
+                  <CardDescription>Send test notifications to verify your bot is working</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { icon: '📨', label: 'Send Test', desc: 'Generic test message' },
+                      { icon: '🔔', label: 'Reminder', desc: 'Expiry reminder' },
+                      { icon: '🔑', label: 'Key Alert', desc: 'New key notification' },
+                      { icon: '💚', label: 'Health', desc: 'Server health status' },
+                    ].map((action) => (
+                      <Button 
+                        key={action.label}
+                        variant="outline" 
+                        className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary/30"
+                        onClick={() => {
+                          toast({ title: `${action.icon} ${action.label}`, description: `${action.desc} sent to Telegram!` });
+                        }}
+                        disabled={!settings.botConnected}
+                      >
+                        <span className="text-2xl">{action.icon}</span>
+                        <span className="text-sm font-medium">{action.label}</span>
+                        <span className="text-xs text-muted-foreground">{action.desc}</span>
+                      </Button>
+                    ))}
+                  </div>
+                  {!settings.botConnected && (
+                    <p className="text-xs text-muted-foreground text-center mt-4">
+                      ⚠️ Verify your bot connection first to enable test notifications
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
 
-                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                  <h4 className="font-medium mb-2 flex items-center gap-2">
+              {/* Bot Commands Reference */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
                     <MessageSquare className="w-4 h-4 text-primary" />
-                    Bot Commands Available
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <p><code>/start</code> - Start bot</p>
-                    <p><code>/stats</code> - Dashboard stats</p>
-                    <p><code>/users</code> - List users</p>
-                    <p><code>/keys</code> - List API keys</p>
-                    <p><code>/expiring</code> - Expiring keys</p>
-                    <p><code>/health</code> - Server health</p>
-                    <p><code>/mykeys</code> - User's keys</p>
-                    <p><code>/renew</code> - Request renewal</p>
+                    Available Bot Commands
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { cmd: '/start', desc: 'Start bot' },
+                      { cmd: '/stats', desc: 'Dashboard stats' },
+                      { cmd: '/users', desc: 'List users' },
+                      { cmd: '/keys', desc: 'List API keys' },
+                      { cmd: '/expiring', desc: 'Expiring keys' },
+                      { cmd: '/health', desc: 'Server health' },
+                      { cmd: '/mykeys', desc: "User's keys" },
+                      { cmd: '/renew', desc: 'Request renewal' },
+                    ].map((item) => (
+                      <div key={item.cmd} className="p-3 rounded-lg bg-muted/50 border hover:border-primary/30 transition-colors">
+                        <code className="text-sm font-bold text-primary">{item.cmd}</code>
+                        <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* API Settings */}

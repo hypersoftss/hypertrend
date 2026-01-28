@@ -100,19 +100,24 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Track which groups are open
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    'System Monitor': true,
-    'Logs & Tools': true,
-  });
+  // Track which group is open (accordion behavior - only one at a time)
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const isAdmin = user?.role === 'admin';
 
+  // Auto-open group based on current route
+  React.useEffect(() => {
+    const currentPath = location.pathname;
+    for (const group of navGroups) {
+      if (group.items.some(item => item.href === currentPath)) {
+        setOpenGroup(group.title);
+        return;
+      }
+    }
+  }, [location.pathname]);
+
   const toggleGroup = (groupTitle: string) => {
-    setOpenGroups(prev => ({
-      ...prev,
-      [groupTitle]: !prev[groupTitle],
-    }));
+    setOpenGroup(prev => prev === groupTitle ? null : groupTitle);
   };
 
   // Filter standalone items
@@ -148,9 +153,21 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-background relative">
+      {/* Animated Background for Dark Mode */}
+      <div className="dark:block hidden animated-bg">
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+        <div className="orb orb-3" />
+        <div className="wave-container">
+          <div className="wave" />
+          <div className="wave" />
+          <div className="wave" />
+        </div>
+      </div>
+      
       {/* Sidebar */}
-      <aside className="w-64 border-r border-border bg-card hidden lg:flex flex-col">
+      <aside className="w-64 border-r border-border bg-card/95 backdrop-blur-sm hidden lg:flex flex-col relative z-10">
         {/* Logo */}
         <div className="p-6 border-b border-border">
           <Link to="/dashboard" className="flex items-center gap-3">
@@ -185,11 +202,11 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
               Dashboard
             </Link>
 
-            {/* Collapsible Groups */}
+            {/* Collapsible Groups - Accordion Behavior */}
             {filteredGroups.map((group) => (
               <Collapsible
                 key={group.title}
-                open={openGroups[group.title]}
+                open={openGroup === group.title}
                 onOpenChange={() => toggleGroup(group.title)}
                 className="space-y-1"
               >
@@ -198,22 +215,21 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
                     className={cn(
                       'flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer',
                       isGroupActive(group)
-                        ? 'bg-accent text-accent-foreground'
+                        ? 'bg-primary/10 text-primary border border-primary/20'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <group.icon className="w-5 h-5" />
+                      <group.icon className={cn("w-5 h-5", isGroupActive(group) && "text-primary")} />
                       {group.title}
                     </div>
-                    {openGroups[group.title] ? (
-                      <ChevronDown className="w-4 h-4" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4" />
-                    )}
+                    <ChevronDown className={cn(
+                      "w-4 h-4 transition-transform duration-200",
+                      openGroup === group.title ? "rotate-0" : "-rotate-90"
+                    )} />
                   </div>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-1 pl-4">
+                <CollapsibleContent className="space-y-1 pl-4 animate-accordion-down">
                   {group.items.map((item) => {
                     const isActive = location.pathname === item.href;
                     return (
@@ -223,7 +239,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
                         className={cn(
                           'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all',
                           isActive
-                            ? 'bg-primary text-primary-foreground'
+                            ? 'bg-primary text-primary-foreground shadow-sm'
                             : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                         )}
                       >
@@ -260,23 +276,24 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Top Header Bar */}
-        <header className="h-16 border-b border-border bg-card px-6 flex items-center justify-between">
+      <div className="flex-1 flex flex-col relative z-10">
+        {/* Top Header Bar - Enhanced */}
+        <header className="h-16 border-b border-border bg-card/95 backdrop-blur-sm px-6 flex items-center justify-between sticky top-0 z-20">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-2">
             {config.logoUrl ? (
               <img src={config.logoUrl} alt={config.siteName} className="w-8 h-8 rounded-lg object-cover" />
             ) : (
-              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shadow-lg">
                 <Zap className="w-5 h-5 text-primary-foreground" />
               </div>
             )}
             <span className="font-bold text-foreground">{config.siteName}</span>
           </div>
           
-          {/* Page Title - Desktop */}
-          <div className="hidden lg:block">
+          {/* Page Title - Desktop with Breadcrumb Style */}
+          <div className="hidden lg:flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
             <h2 className="text-lg font-semibold text-foreground">
               {getAllNavItems().find(item => item.href === location.pathname)?.title || 'Dashboard'}
             </h2>
@@ -353,13 +370,13 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6 overflow-auto relative">
           {children}
         </main>
       </div>
 
-      {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border p-2 flex justify-around z-50">
+      {/* Mobile Bottom Nav - Enhanced */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border p-2 flex justify-around z-50">
         {[
           { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
           { title: 'Monitor', href: '/admin/live-monitor', icon: Activity },
@@ -373,12 +390,14 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
               key={item.href}
               to={item.href}
               className={cn(
-                'flex flex-col items-center gap-1 p-2 rounded-lg transition-colors',
-                isActive ? 'text-primary' : 'text-muted-foreground'
+                'flex flex-col items-center gap-1 p-2 rounded-xl transition-all',
+                isActive 
+                  ? 'text-primary bg-primary/10 scale-105' 
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <item.icon className="w-5 h-5" />
-              <span className="text-[10px]">{item.title}</span>
+              <item.icon className={cn("w-5 h-5", isActive && "drop-shadow-[0_0_8px_hsl(262,83%,58%)]")} />
+              <span className="text-[10px] font-medium">{item.title}</span>
             </Link>
           );
         })}
