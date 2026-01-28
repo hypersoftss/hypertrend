@@ -14,104 +14,117 @@
 $page_title = 'Dashboard';
 require_once __DIR__ . '/../includes/header.php';
 
-// Get statistics
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+// Get database connection (PDO from config.php)
+$db = getDB();
 $stats = [];
 
-// Total Users
-$result = $conn->query("SELECT COUNT(*) as count FROM users WHERE is_active = 1");
-$stats['users'] = $result ? $result->fetch_assoc()['count'] : 0;
+try {
+    // Total Users
+    $stmt = $db->query("SELECT COUNT(*) as count FROM users WHERE status = 'active'");
+    $stats['users'] = $stmt->fetch()['count'] ?? 0;
 
-// Active API Keys
-$result = $conn->query("SELECT COUNT(*) as count FROM api_keys WHERE status = 'active' AND (expires_at IS NULL OR expires_at > NOW())");
-$stats['active_keys'] = $result ? $result->fetch_assoc()['count'] : 0;
+    // Active API Keys
+    $stmt = $db->query("SELECT COUNT(*) as count FROM api_keys WHERE status = 'active' AND (expires_at IS NULL OR expires_at > NOW())");
+    $stats['active_keys'] = $stmt->fetch()['count'] ?? 0;
 
-// Today's API Calls
-$result = $conn->query("SELECT COUNT(*) as count FROM api_logs WHERE DATE(created_at) = CURDATE()");
-$stats['today_calls'] = $result ? $result->fetch_assoc()['count'] : 0;
+    // Today's API Calls
+    $stmt = $db->query("SELECT COUNT(*) as count FROM api_logs WHERE DATE(created_at) = CURDATE()");
+    $stats['today_calls'] = $stmt->fetch()['count'] ?? 0;
 
-// Yesterday's calls for comparison
-$result = $conn->query("SELECT COUNT(*) as count FROM api_logs WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)");
-$stats['yesterday_calls'] = $result ? $result->fetch_assoc()['count'] : 0;
+    // Yesterday's calls for comparison
+    $stmt = $db->query("SELECT COUNT(*) as count FROM api_logs WHERE DATE(created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)");
+    $stats['yesterday_calls'] = $stmt->fetch()['count'] ?? 0;
 
-// Calculate trend
-$trend_percent = 0;
-if ($stats['yesterday_calls'] > 0) {
-    $trend_percent = round((($stats['today_calls'] - $stats['yesterday_calls']) / $stats['yesterday_calls']) * 100, 1);
+    // Calculate trend
+    $trend_percent = 0;
+    if ($stats['yesterday_calls'] > 0) {
+        $trend_percent = round((($stats['today_calls'] - $stats['yesterday_calls']) / $stats['yesterday_calls']) * 100, 1);
+    }
+
+    // Success Rate
+    $stmt = $db->query("SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN http_status = 200 THEN 1 ELSE 0 END) as success
+        FROM api_logs WHERE DATE(created_at) = CURDATE()");
+    $row = $stmt->fetch() ?: ['total' => 0, 'success' => 0];
+    $stats['success_rate'] = $row['total'] > 0 ? round(($row['success'] / $row['total']) * 100, 1) : 100;
+
+    // Revenue placeholder
+    $stats['total_revenue'] = 0;
+
+    // Recent API Logs
+    $recent_logs = $db->query("
+        SELECT l.*, k.api_key, u.username 
+        FROM api_logs l
+        LEFT JOIN api_keys k ON l.api_key_id = k.id
+        LEFT JOIN users u ON l.user_id = u.id
+        ORDER BY l.created_at DESC LIMIT 8
+    ")->fetchAll();
+
+    // Game Type Stats for today
+    $game_stats = $db->query("
+        SELECT game_type, COUNT(*) as count
+        FROM api_logs
+        WHERE DATE(created_at) = CURDATE() AND game_type IS NOT NULL
+        GROUP BY game_type
+        ORDER BY count DESC
+        LIMIT 5
+    ")->fetchAll();
+
+    // Hourly distribution for chart
+    $hourly_result = $db->query("
+        SELECT HOUR(created_at) as hour, COUNT(*) as count
+        FROM api_logs
+        WHERE DATE(created_at) = CURDATE()
+        GROUP BY HOUR(created_at)
+        ORDER BY hour
+    ");
+
+    $hourly_data = array_fill(0, 24, 0);
+    foreach ($hourly_result as $row) {
+        $hourly_data[(int)$row['hour']] = (int)$row['count'];
+    }
+
+    // Weekly trend
+    $weekly_result = $db->query("
+        SELECT DATE(created_at) as date, COUNT(*) as count
+        FROM api_logs
+        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        GROUP BY DATE(created_at)
+        ORDER BY date
+    ");
+
+    $weekly_labels = [];
+    $weekly_data = [];
+    foreach ($weekly_result as $row) {
+        $weekly_labels[] = date('D', strtotime($row['date']));
+        $weekly_data[] = (int)$row['count'];
+    }
+
+    // Expiring keys (next 7 days)
+    $expiring_keys = $db->query("
+        SELECT k.*, u.username 
+        FROM api_keys k
+        LEFT JOIN users u ON k.user_id = u.id
+        WHERE k.expires_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 7 DAY)
+        AND k.status = 'active'
+        ORDER BY k.expires_at ASC
+        LIMIT 5
+    ")->fetchAll();
+
+} catch (Exception $e) {
+    $stats = ['users' => 0, 'active_keys' => 0, 'today_calls' => 0, 'yesterday_calls' => 0, 'success_rate' => 100];
+    $trend_percent = 0;
+    $recent_logs = [];
+    $game_stats = [];
+    $hourly_data = array_fill(0, 24, 0);
+    $weekly_labels = [];
+    $weekly_data = [];
+    $expiring_keys = [];
+    if (DEBUG_MODE) {
+        echo "<!-- Dashboard Error: " . htmlspecialchars($e->getMessage()) . " -->";
+    }
 }
-
-// Success Rate
-$result = $conn->query("SELECT 
-    COUNT(*) as total,
-    SUM(CASE WHEN http_status = 200 THEN 1 ELSE 0 END) as success
-    FROM api_logs WHERE DATE(created_at) = CURDATE()");
-$row = $result ? $result->fetch_assoc() : ['total' => 0, 'success' => 0];
-$stats['success_rate'] = $row['total'] > 0 ? round(($row['success'] / $row['total']) * 100, 1) : 100;
-
-// Revenue (if applicable - placeholder)
-$stats['total_revenue'] = 0;
-
-// Recent API Logs
-$recent_logs = $conn->query("
-    SELECT l.*, k.api_key, u.username 
-    FROM api_logs l
-    LEFT JOIN api_keys k ON l.api_key_id = k.id
-    LEFT JOIN users u ON l.user_id = u.id
-    ORDER BY l.created_at DESC LIMIT 8
-");
-
-// Game Type Stats for today
-$game_stats = $conn->query("
-    SELECT game_type, COUNT(*) as count
-    FROM api_logs
-    WHERE DATE(created_at) = CURDATE() AND game_type IS NOT NULL
-    GROUP BY game_type
-    ORDER BY count DESC
-    LIMIT 5
-");
-
-// Hourly distribution for chart
-$hourly_stats = $conn->query("
-    SELECT HOUR(created_at) as hour, COUNT(*) as count
-    FROM api_logs
-    WHERE DATE(created_at) = CURDATE()
-    GROUP BY HOUR(created_at)
-    ORDER BY hour
-");
-
-$hourly_data = array_fill(0, 24, 0);
-while ($row = $hourly_stats->fetch_assoc()) {
-    $hourly_data[(int)$row['hour']] = (int)$row['count'];
-}
-
-// Weekly trend
-$weekly_stats = $conn->query("
-    SELECT DATE(created_at) as date, COUNT(*) as count
-    FROM api_logs
-    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-    GROUP BY DATE(created_at)
-    ORDER BY date
-");
-
-$weekly_labels = [];
-$weekly_data = [];
-while ($row = $weekly_stats->fetch_assoc()) {
-    $weekly_labels[] = date('D', strtotime($row['date']));
-    $weekly_data[] = (int)$row['count'];
-}
-
-// Expiring keys (next 7 days)
-$expiring_keys = $conn->query("
-    SELECT k.*, u.username 
-    FROM api_keys k
-    LEFT JOIN users u ON k.user_id = u.id
-    WHERE k.expires_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 7 DAY)
-    AND k.status = 'active'
-    ORDER BY k.expires_at ASC
-    LIMIT 5
-");
-
-$conn->close();
 ?>
 
 <!-- Stats Grid -->
@@ -200,10 +213,9 @@ $conn->close();
             </div>
             <div style="margin-top: 16px;">
                 <?php 
-                $game_stats->data_seek(0);
                 $colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
                 $i = 0;
-                while ($game = $game_stats->fetch_assoc()): 
+                foreach ($game_stats as $game): 
                 ?>
                 <div class="flex items-center justify-between mb-2" style="padding: 8px 0;">
                     <div class="flex items-center gap-2">
@@ -212,7 +224,7 @@ $conn->close();
                     </div>
                     <span class="badge badge-primary"><?php echo number_format($game['count']); ?></span>
                 </div>
-                <?php $i++; endwhile; ?>
+                <?php $i++; endforeach; ?>
             </div>
         </div>
     </div>
@@ -244,8 +256,8 @@ $conn->close();
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if ($recent_logs && $recent_logs->num_rows > 0): ?>
-                        <?php while ($log = $recent_logs->fetch_assoc()): ?>
+                        <?php if (!empty($recent_logs)): ?>
+                        <?php foreach ($recent_logs as $log): ?>
                         <tr>
                             <td>
                                 <span class="text-muted"><?php echo date('H:i:s', strtotime($log['created_at'])); ?></span>
@@ -275,7 +287,7 @@ $conn->close();
                                 <span class="text-muted text-sm"><?php echo $log['duration_ms'] ?? 0; ?>ms</span>
                             </td>
                         </tr>
-                        <?php endwhile; ?>
+                        <?php endforeach; ?>
                         <?php else: ?>
                         <tr>
                             <td colspan="5">
@@ -324,9 +336,9 @@ $conn->close();
             <h4 class="text-sm font-semibold text-muted mb-4" style="border-top: 1px solid rgb(var(--border) / var(--border-opacity)); padding-top: 16px;">
                 <i class="fas fa-clock" style="color: rgb(var(--warning));"></i> Expiring Soon
             </h4>
-            <?php if ($expiring_keys && $expiring_keys->num_rows > 0): ?>
+            <?php if (!empty($expiring_keys)): ?>
             <div style="display: flex; flex-direction: column; gap: 8px;">
-                <?php while ($key = $expiring_keys->fetch_assoc()): ?>
+                <?php foreach ($expiring_keys as $key): ?>
                 <div style="padding: 10px; background: rgb(var(--warning) / 0.05); border: 1px solid rgb(var(--warning) / 0.2); border-radius: var(--radius-md);">
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium"><?php echo htmlspecialchars($key['username'] ?? 'Unknown'); ?></span>
@@ -338,7 +350,7 @@ $conn->close();
                         <?php echo substr($key['api_key'], 0, 8); ?>...
                     </code>
                 </div>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
             </div>
             <?php else: ?>
             <p class="text-muted text-sm text-center" style="padding: 16px 0;">No keys expiring soon</p>
@@ -419,10 +431,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Game Distribution Chart
     <?php 
-    $game_stats->data_seek(0);
     $game_labels = [];
     $game_data_arr = [];
-    while ($g = $game_stats->fetch_assoc()) {
+    foreach ($game_stats as $g) {
         $game_labels[] = ucfirst($g['game_type']);
         $game_data_arr[] = (int)$g['count'];
     }
