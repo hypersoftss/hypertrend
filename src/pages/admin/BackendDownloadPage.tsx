@@ -277,6 +277,20 @@ function get_available_durations($game) {
       const apiFolder = backend?.folder('api');
       const adminFolder = backend?.folder('admin');
       const includesFolder = backend?.folder('includes');
+      const assetsFolder = backend?.folder('assets');
+      const cssFolder = assetsFolder?.folder('css');
+      const jsFolder = assetsFolder?.folder('js');
+
+      // ==================== CSS FILES ====================
+      const mainCss = generateMainCSS();
+      cssFolder?.file('style.css', mainCss);
+      cssFolder?.file('dashboard.css', generateDashboardCSS());
+      setDownloadProgress(10);
+
+      // ==================== JS FILES ====================
+      jsFolder?.file('main.js', generateMainJS());
+      jsFolder?.file('charts.js', generateChartsJS());
+      setDownloadProgress(15);
 
       // ==================== API FILES ====================
       const apiFiles = [
@@ -298,7 +312,7 @@ function get_available_durations($game) {
         } catch (e) {
           console.log(`Could not fetch ${apiFiles[i].name}`);
         }
-        setDownloadProgress(5 + (i + 1) * 4);
+        setDownloadProgress(15 + (i + 1) * 3);
       }
 
       // ==================== ADMIN/FRONTEND FILES ====================
@@ -325,7 +339,7 @@ function get_available_durations($game) {
         } catch (e) {
           console.log(`Could not fetch ${adminFiles[i].name}`);
         }
-        setDownloadProgress(37 + (i + 1) * 3);
+        setDownloadProgress(39 + (i + 1) * 2);
       }
 
       // ==================== INCLUDES FILES ====================
@@ -343,7 +357,7 @@ function get_available_durations($game) {
         } catch (e) {
           console.log(`Could not fetch ${includesFiles[i].name}`);
         }
-        setDownloadProgress(73 + (i + 1) * 3);
+        setDownloadProgress(63 + (i + 1) * 3);
       }
 
       // ==================== ROOT FILES ====================
@@ -362,16 +376,20 @@ function get_available_durations($game) {
         } catch (e) {
           console.log(`Could not fetch ${rootFiles[i].name}`);
         }
-        setDownloadProgress(82 + (i + 1) * 2);
+        setDownloadProgress(72 + (i + 1) * 2);
       }
 
       // ==================== GENERATED FILES ====================
       // Add dynamic config
       backend?.file('config.php', generatePhpConfig());
-      setDownloadProgress(92);
+      setDownloadProgress(85);
 
       // Add README
       backend?.file('README.md', generateReadme());
+      setDownloadProgress(90);
+
+      // Add installation script
+      backend?.file('install.php', generateInstallScript());
       setDownloadProgress(95);
 
       // Generate ZIP
@@ -382,7 +400,7 @@ function get_available_durations($game) {
       
       toast({
         title: '✅ Download Complete!',
-        description: 'Complete PHP solution with Frontend + Backend + Bot downloaded!',
+        description: 'Complete PHP solution with Frontend + Backend + CSS + JS + Bot downloaded!',
       });
     } catch (error) {
       console.error('Download error:', error);
@@ -396,6 +414,1081 @@ function get_available_durations($game) {
       setDownloadProgress(0);
     }
   };
+
+  // Generate main CSS
+  const generateMainCSS = () => `/**
+ * ${config.siteName} - Main Stylesheet
+ * Generated: ${new Date().toLocaleString()}
+ */
+
+:root {
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-light: #818cf8;
+  --secondary: #f1f5f9;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --dark: #1e293b;
+  --light: #f8fafc;
+  --border: #e2e8f0;
+  --text: #334155;
+  --text-muted: #64748b;
+  --bg: #ffffff;
+  --card-bg: #ffffff;
+  --sidebar-bg: #1e293b;
+  --sidebar-text: #94a3b8;
+  --sidebar-active: #6366f1;
+  --gradient-start: #6366f1;
+  --gradient-end: #8b5cf6;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+  --radius: 0.5rem;
+  --radius-lg: 0.75rem;
+}
+
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --card-bg: #1e293b;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --secondary: #334155;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+a { color: var(--primary); text-decoration: none; transition: color 0.2s; }
+a:hover { color: var(--primary-hover); }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--radius);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  color: white;
+}
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.btn-secondary { background: var(--secondary); color: var(--text); }
+.btn-secondary:hover { background: var(--border); }
+
+.btn-success { background: var(--success); color: white; }
+.btn-danger { background: var(--danger); color: white; }
+.btn-warning { background: var(--warning); color: white; }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn-outline:hover { background: var(--secondary); }
+
+.btn-sm { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
+.btn-lg { padding: 0.875rem 1.75rem; font-size: 1rem; }
+
+/* Cards */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.card-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-body { padding: 1.5rem; }
+
+/* Forms */
+.form-group { margin-bottom: 1rem; }
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-control::placeholder { color: var(--text-muted); }
+
+/* Tables */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th, .table td {
+  padding: 0.875rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  background: var(--secondary);
+}
+
+.table tbody tr:hover { background: var(--secondary); }
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+}
+
+.badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+.badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+.badge-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+.badge-primary { background: rgba(99, 102, 241, 0.1); color: var(--primary); }
+.badge-secondary { background: var(--secondary); color: var(--text-muted); }
+
+/* Alerts */
+.alert {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.alert-success { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--success); }
+.alert-warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); color: var(--warning); }
+.alert-danger { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger); }
+.alert-info { background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); color: var(--primary); }
+
+/* Grid */
+.row { display: flex; flex-wrap: wrap; margin: -0.75rem; }
+.col { padding: 0.75rem; }
+.col-12 { width: 100%; }
+.col-6 { width: 50%; }
+.col-4 { width: 33.333%; }
+.col-3 { width: 25%; }
+
+@media (max-width: 768px) {
+  .col-md-12 { width: 100%; }
+  .col-md-6 { width: 50%; }
+}
+
+@media (max-width: 480px) {
+  .col-sm-12 { width: 100%; }
+}
+
+/* Utilities */
+.text-primary { color: var(--primary); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-danger { color: var(--danger); }
+.text-muted { color: var(--text-muted); }
+
+.bg-primary { background: var(--primary); }
+.bg-success { background: var(--success); }
+.bg-warning { background: var(--warning); }
+.bg-danger { background: var(--danger); }
+
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 1rem; }
+.mt-4 { margin-top: 1.5rem; }
+.mt-5 { margin-top: 2rem; }
+
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 1rem; }
+.mb-4 { margin-bottom: 1.5rem; }
+.mb-5 { margin-bottom: 2rem; }
+
+.p-1 { padding: 0.25rem; }
+.p-2 { padding: 0.5rem; }
+.p-3 { padding: 1rem; }
+.p-4 { padding: 1.5rem; }
+.p-5 { padding: 2rem; }
+
+.d-flex { display: flex; }
+.d-block { display: block; }
+.d-none { display: none; }
+.d-inline-flex { display: inline-flex; }
+
+.align-items-center { align-items: center; }
+.justify-content-between { justify-content: space-between; }
+.justify-content-center { justify-content: center; }
+
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 1rem; }
+.gap-4 { gap: 1.5rem; }
+
+.fw-bold { font-weight: 700; }
+.fw-semibold { font-weight: 600; }
+.fw-medium { font-weight: 500; }
+
+.fs-sm { font-size: 0.875rem; }
+.fs-xs { font-size: 0.75rem; }
+.fs-lg { font-size: 1.125rem; }
+.fs-xl { font-size: 1.25rem; }
+.fs-2xl { font-size: 1.5rem; }
+
+.rounded { border-radius: var(--radius); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-full { border-radius: 9999px; }
+
+.shadow { box-shadow: var(--shadow); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+
+.w-100 { width: 100%; }
+.h-100 { height: 100%; }
+
+.overflow-hidden { overflow: hidden; }
+.overflow-auto { overflow: auto; }
+
+.position-relative { position: relative; }
+.position-absolute { position: absolute; }
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+.animate-pulse { animation: pulse 2s infinite; }
+.animate-spin { animation: spin 1s linear infinite; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--secondary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+`;
+
+  // Generate dashboard CSS
+  const generateDashboardCSS = () => `/**
+ * ${config.siteName} - Dashboard Styles
+ */
+
+/* Layout */
+.wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  height: 100vh;
+  z-index: 1000;
+  transition: transform 0.3s;
+}
+
+.sidebar-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: white;
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.sidebar-logo img {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 0;
+}
+
+.nav-item {
+  margin: 0.25rem 0.75rem;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--sidebar-text);
+  border-radius: var(--radius);
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.nav-link:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+.nav-link.active {
+  background: var(--sidebar-active);
+  color: white;
+}
+
+.nav-link i {
+  width: 20px;
+  text-align: center;
+}
+
+.nav-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+  margin: 1rem 0;
+}
+
+.nav-header {
+  padding: 0.5rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.5);
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  margin-left: 260px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.header {
+  height: 64px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.user-menu:hover { background: var(--secondary); }
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+/* Page Content */
+.page-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+/* Stats Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.stat-icon.primary { background: rgba(99, 102, 241, 0.1); color: var(--primary); }
+.stat-icon.success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+.stat-icon.warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+.stat-icon.danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .main-content {
+    margin-left: 0;
+  }
+  
+  .mobile-toggle {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .page-content {
+    padding: 1rem;
+  }
+}
+
+/* Theme Toggle */
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.theme-toggle:hover {
+  background: var(--secondary);
+}
+
+/* Dropdown */
+.dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 200px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all 0.2s;
+}
+
+.dropdown.open .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  color: var(--text);
+  transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+  background: var(--secondary);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.5rem 0;
+}
+`;
+
+  // Generate main JS
+  const generateMainJS = () => `/**
+ * ${config.siteName} - Main JavaScript
+ * Generated: ${new Date().toLocaleString()}
+ */
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Theme Toggle
+  initTheme();
+  
+  // Mobile Sidebar Toggle
+  initSidebar();
+  
+  // Dropdown Menus
+  initDropdowns();
+  
+  // Form Validation
+  initForms();
+  
+  // Toast Notifications
+  initToasts();
+  
+  // Copy to Clipboard
+  initCopyButtons();
+});
+
+// Theme Management
+function initTheme() {
+  const toggle = document.querySelector('.theme-toggle');
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeIcon(savedTheme);
+  
+  if (toggle) {
+    toggle.addEventListener('click', function() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const newTheme = current === 'dark' ? 'light' : 'dark';
+      
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
+    });
+  }
+}
+
+function updateThemeIcon(theme) {
+  const icon = document.querySelector('.theme-toggle i');
+  if (icon) {
+    icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+  }
+}
+
+// Sidebar Toggle
+function initSidebar() {
+  const toggle = document.querySelector('.mobile-toggle');
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  
+  if (toggle && sidebar) {
+    toggle.addEventListener('click', function() {
+      sidebar.classList.toggle('open');
+      if (overlay) overlay.classList.toggle('active');
+    });
+  }
+  
+  if (overlay) {
+    overlay.addEventListener('click', function() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+    });
+  }
+}
+
+// Dropdown Menus
+function initDropdowns() {
+  document.querySelectorAll('.dropdown').forEach(function(dropdown) {
+    const trigger = dropdown.querySelector('.dropdown-trigger');
+    
+    if (trigger) {
+      trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        
+        // Close other dropdowns
+        document.querySelectorAll('.dropdown.open').forEach(function(d) {
+          if (d !== dropdown) d.classList.remove('open');
+        });
+        
+        dropdown.classList.toggle('open');
+      });
+    }
+  });
+  
+  // Close on outside click
+  document.addEventListener('click', function() {
+    document.querySelectorAll('.dropdown.open').forEach(function(d) {
+      d.classList.remove('open');
+    });
+  });
+}
+
+// Form Validation
+function initForms() {
+  document.querySelectorAll('form[data-validate]').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      let isValid = true;
+      
+      form.querySelectorAll('[required]').forEach(function(input) {
+        if (!input.value.trim()) {
+          isValid = false;
+          input.classList.add('is-invalid');
+        } else {
+          input.classList.remove('is-invalid');
+        }
+      });
+      
+      if (!isValid) {
+        e.preventDefault();
+        showToast('Please fill in all required fields', 'danger');
+      }
+    });
+  });
+}
+
+// Toast Notifications
+function initToasts() {
+  window.showToast = function(message, type = 'info') {
+    const container = document.querySelector('.toast-container') || createToastContainer();
+    
+    const toast = document.createElement('div');
+    toast.className = \`toast toast-\${type} animate-fadeIn\`;
+    toast.innerHTML = \`
+      <div class="toast-content">
+        <i class="fas fa-\${getToastIcon(type)} mr-2"></i>
+        <span>\${message}</span>
+      </div>
+      <button class="toast-close" onclick="this.parentElement.remove()">
+        <i class="fas fa-times"></i>
+      </button>
+    \`;
+    
+    container.appendChild(toast);
+    
+    setTimeout(function() {
+      toast.remove();
+    }, 5000);
+  };
+}
+
+function createToastContainer() {
+  const container = document.createElement('div');
+  container.className = 'toast-container';
+  container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;';
+  document.body.appendChild(container);
+  return container;
+}
+
+function getToastIcon(type) {
+  const icons = {
+    success: 'check-circle',
+    danger: 'exclamation-circle',
+    warning: 'exclamation-triangle',
+    info: 'info-circle'
+  };
+  return icons[type] || icons.info;
+}
+
+// Copy to Clipboard
+function initCopyButtons() {
+  document.querySelectorAll('[data-copy]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const text = btn.getAttribute('data-copy');
+      navigator.clipboard.writeText(text).then(function() {
+        showToast('Copied to clipboard!', 'success');
+      });
+    });
+  });
+}
+
+// Confirm Delete
+function confirmDelete(message) {
+  return confirm(message || 'Are you sure you want to delete this?');
+}
+
+// Format Date
+function formatDate(date) {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+// API Helper
+async function apiCall(url, options = {}) {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+      },
+      ...options
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'API request failed');
+    }
+    
+    return data;
+  } catch (error) {
+    showToast(error.message, 'danger');
+    throw error;
+  }
+}
+`;
+
+  // Generate charts JS
+  const generateChartsJS = () => `/**
+ * ${config.siteName} - Charts JavaScript
+ * Uses Chart.js for visualization
+ */
+
+// Initialize charts when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  // API Usage Chart
+  const usageCtx = document.getElementById('apiUsageChart');
+  if (usageCtx) {
+    new Chart(usageCtx, {
+      type: 'line',
+      data: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+          label: 'API Calls',
+          data: [1200, 1900, 3000, 5000, 4200, 3500, 4800],
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99, 102, 241, 0.1)',
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+  
+  // Game Distribution Chart
+  const distCtx = document.getElementById('gameDistChart');
+  if (distCtx) {
+    new Chart(distCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['WinGo', 'K3', '5D', 'TRX', 'Numeric'],
+        datasets: [{
+          data: [35, 25, 20, 12, 8],
+          backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' }
+        }
+      }
+    });
+  }
+  
+  // Hourly Distribution Chart
+  const hourlyCtx = document.getElementById('hourlyChart');
+  if (hourlyCtx) {
+    const hours = Array.from({length: 24}, (_, i) => i + ':00');
+    const data = Array.from({length: 24}, () => Math.floor(Math.random() * 500) + 100);
+    
+    new Chart(hourlyCtx, {
+      type: 'bar',
+      data: {
+        labels: hours,
+        datasets: [{
+          label: 'Requests',
+          data: data,
+          backgroundColor: '#6366f1'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  }
+});
+
+// Real-time update for live monitor
+function updateLiveStats(data) {
+  const container = document.getElementById('liveRequests');
+  if (!container) return;
+  
+  const row = document.createElement('div');
+  row.className = 'live-request animate-fadeIn';
+  row.innerHTML = \`
+    <span class="time">\${new Date().toLocaleTimeString()}</span>
+    <span class="endpoint">\${data.endpoint}</span>
+    <span class="game">\${data.game}</span>
+    <span class="status badge badge-\${data.status === 'success' ? 'success' : 'danger'}">\${data.status}</span>
+    <span class="response">\${data.responseTime}ms</span>
+  \`;
+  
+  container.insertBefore(row, container.firstChild);
+  
+  // Keep only last 50 items
+  while (container.children.length > 50) {
+    container.removeChild(container.lastChild);
+  }
+}
+`;
+
+  // Generate install script
+  const generateInstallScript = () => `<?php
+/**
+ * ${config.siteName} - Installation Script
+ * Run this script once to set up the database
+ */
+
+// Prevent direct access after installation
+$lockFile = __DIR__ . '/install.lock';
+if (file_exists($lockFile)) {
+    die('Installation already completed. Delete install.lock to reinstall.');
+}
+
+require_once 'config.php';
+
+$errors = [];
+$success = [];
+
+// Check PHP version
+if (version_compare(PHP_VERSION, '7.4.0', '<')) {
+    $errors[] = 'PHP 7.4 or higher is required. Current version: ' . PHP_VERSION;
+}
+
+// Check required extensions
+$requiredExtensions = ['pdo', 'pdo_mysql', 'curl', 'json', 'mbstring'];
+foreach ($requiredExtensions as $ext) {
+    if (!extension_loaded($ext)) {
+        $errors[] = "PHP extension '$ext' is not installed.";
+    }
+}
+
+// Test database connection
+try {
+    $pdo = new PDO(
+        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
+        DB_USER,
+        DB_PASS,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+    $success[] = '✅ Database connection successful';
+} catch (PDOException $e) {
+    $errors[] = 'Database connection failed: ' . $e->getMessage();
+}
+
+// Import database schema
+if (empty($errors) && isset($pdo)) {
+    try {
+        $sql = file_get_contents(__DIR__ . '/database.sql');
+        $pdo->exec($sql);
+        $success[] = '✅ Database schema imported';
+    } catch (PDOException $e) {
+        $errors[] = 'Schema import failed: ' . $e->getMessage();
+    }
+}
+
+// Create admin user if not exists
+if (empty($errors) && isset($pdo)) {
+    try {
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = 'admin'");
+        $stmt->execute();
+        
+        if (!$stmt->fetch()) {
+            $stmt = $pdo->prepare("INSERT INTO users (username, email, password, role, is_active) VALUES (?, ?, ?, 'admin', 1)");
+            $stmt->execute(['admin', ADMIN_EMAIL, password_hash('admin123', PASSWORD_DEFAULT)]);
+            $success[] = '✅ Admin user created (username: admin, password: admin123)';
+        } else {
+            $success[] = '✅ Admin user already exists';
+        }
+    } catch (PDOException $e) {
+        $errors[] = 'Admin user creation failed: ' . $e->getMessage();
+    }
+}
+
+// Create lock file
+if (empty($errors)) {
+    file_put_contents($lockFile, date('Y-m-d H:i:s'));
+    $success[] = '✅ Installation completed!';
+}
+
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>${config.siteName} - Installation</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+        .container { max-width: 600px; width: 100%; }
+        h1 { font-size: 2rem; margin-bottom: 2rem; text-align: center; }
+        .card { background: #1e293b; border-radius: 12px; padding: 2rem; margin-bottom: 1.5rem; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        ul { list-style: none; }
+        li { padding: 0.5rem 0; }
+        .btn { display: inline-block; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 8px; text-decoration: none; margin-top: 1rem; }
+        .btn:hover { opacity: 0.9; }
+        .warning { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 1rem; border-radius: 8px; margin-top: 1rem; color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 ${config.siteName}</h1>
+        
+        <?php if (!empty($errors)): ?>
+        <div class="card">
+            <h2 class="error">❌ Installation Errors</h2>
+            <ul>
+                <?php foreach ($errors as $error): ?>
+                <li class="error"><?= htmlspecialchars($error) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <?php endif; ?>
+        
+        <?php if (!empty($success)): ?>
+        <div class="card">
+            <h2 class="success">Installation Status</h2>
+            <ul>
+                <?php foreach ($success as $msg): ?>
+                <li class="success"><?= htmlspecialchars($msg) ?></li>
+                <?php endforeach; ?>
+            </ul>
+            
+            <?php if (empty($errors)): ?>
+            <div class="warning">
+                ⚠️ <strong>Important:</strong> Change the default admin password immediately after first login!
+            </div>
+            <a href="admin/login.php" class="btn">Go to Admin Panel →</a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+</body>
+</html>
+`;
+
 
   const generateReadme = () => `# ${config.siteName} - Complete PHP Solution
 
@@ -661,7 +1754,7 @@ Powered by ${config.siteName} Trend API
                 <div className="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center font-bold mb-3">3</div>
                 <h4 className="font-semibold mb-2">Login & Go!</h4>
                 <p className="text-sm text-muted-foreground">
-                  Visit <code className="text-primary">/admin/login.php</code> - Default: admin / admin123
+                  Visit <code className="text-primary">/admin/login.php</code> and login with your credentials
                 </p>
               </div>
             </div>
@@ -821,9 +1914,9 @@ Powered by ${config.siteName} Trend API
               <div className="p-4 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 mb-2">
                   <Server className="w-4 h-4 text-primary" />
-                  <span className="font-medium">Default Login</span>
+                  <span className="font-medium">Login Page</span>
                 </div>
-                <code className="text-xs text-primary">admin / admin123</code>
+                <code className="text-xs text-primary">/admin/login.php</code>
               </div>
               <div className="p-4 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 mb-2">

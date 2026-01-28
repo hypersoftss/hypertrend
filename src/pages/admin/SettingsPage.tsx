@@ -587,12 +587,11 @@ const SettingsPage = () => {
                       <Label htmlFor="internalApiDomain">Source API Domain</Label>
                       <Input
                         id="internalApiDomain"
-                        type="password"
                         value={settings.internalApiDomain}
                         onChange={(e) => setSettings({ ...settings, internalApiDomain: e.target.value })}
                         placeholder="https://source-api.example.com"
                       />
-                      <p className="text-xs text-muted-foreground">The actual API source your server fetches from</p>
+                      <p className="text-xs text-muted-foreground">The actual API source your server fetches from (Only you can see/edit this)</p>
                     </div>
                     
                     <div className="space-y-2">

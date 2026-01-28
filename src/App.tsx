@@ -23,8 +23,12 @@ import ApiLogsPage from "@/pages/admin/ApiLogsPage";
 import ManualReminderPage from "@/pages/admin/ManualReminderPage";
 import SettingsPage from "@/pages/admin/SettingsPage";
 import BackendDownloadPage from "@/pages/admin/BackendDownloadPage";
-import SystemMonitorPage from "@/pages/admin/SystemMonitorPage";
-import LogsToolsPage from "@/pages/admin/LogsToolsPage";
+import LiveMonitorPage from "@/pages/admin/LiveMonitorPage";
+import ServerHealthPage from "@/pages/admin/ServerHealthPage";
+import AnalyticsPage from "@/pages/admin/AnalyticsPage";
+import DnsCheckerPage from "@/pages/admin/DnsCheckerPage";
+import TelegramLogsPage from "@/pages/admin/TelegramLogsPage";
+import ActivityLogsPage from "@/pages/admin/ActivityLogsPage";
 
 // User Pages
 import UserKeysPage from "@/pages/user/UserKeysPage";
@@ -59,8 +63,12 @@ const App = () => (
                   <Route path="/admin/users" element={<UsersPage />} />
                   <Route path="/admin/keys" element={<ApiKeysPage />} />
                   <Route path="/admin/logs" element={<ApiLogsPage />} />
-                  <Route path="/admin/monitor" element={<SystemMonitorPage />} />
-                  <Route path="/admin/tools" element={<LogsToolsPage />} />
+                  <Route path="/admin/live-monitor" element={<LiveMonitorPage />} />
+                  <Route path="/admin/server-health" element={<ServerHealthPage />} />
+                  <Route path="/admin/analytics" element={<AnalyticsPage />} />
+                  <Route path="/admin/dns-checker" element={<DnsCheckerPage />} />
+                  <Route path="/admin/telegram-logs" element={<TelegramLogsPage />} />
+                  <Route path="/admin/activity-logs" element={<ActivityLogsPage />} />
                   <Route path="/admin/reminder" element={<ManualReminderPage />} />
                   <Route path="/admin/settings" element={<SettingsPage />} />
                   <Route path="/admin/download" element={<BackendDownloadPage />} />
