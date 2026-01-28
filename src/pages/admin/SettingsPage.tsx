@@ -81,17 +81,33 @@ const SettingsPage = () => {
     setIsTesting(true);
     
     try {
-      // Simulate API call to test telegram bot
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Actually send a test message via Telegram Bot API
+      const message = `🧪 *Test Message from Hyper Softs*\n\n✅ Bot connection successful!\n📅 Time: ${new Date().toLocaleString()}\n🔧 System: Admin Panel`;
       
-      toast({
-        title: '✅ Test Message Sent!',
-        description: `Message sent to Telegram ID: ${settings.adminTelegramId}`,
+      const response = await fetch(`https://api.telegram.org/bot${settings.telegramBotToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: settings.adminTelegramId,
+          text: message,
+          parse_mode: 'Markdown'
+        })
       });
-    } catch (error) {
+
+      const result = await response.json();
+      
+      if (result.ok) {
+        toast({
+          title: '✅ Test Message Sent!',
+          description: `Message delivered to Telegram ID: ${settings.adminTelegramId}`,
+        });
+      } else {
+        throw new Error(result.description || 'Unknown error');
+      }
+    } catch (error: any) {
       toast({
         title: '❌ Test Failed',
-        description: 'Could not send test message. Check your bot token.',
+        description: error.message || 'Could not send test message. Check your bot token.',
         variant: 'destructive',
       });
     } finally {
