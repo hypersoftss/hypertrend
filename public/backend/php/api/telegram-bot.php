@@ -26,7 +26,7 @@ if (!$update) {
 }
 
 // -------------------- TELEGRAM API HELPERS --------------------
-function sendTelegramMessage($chat_id, $text, $parse_mode = 'HTML', $reply_markup = null) {
+function sendTelegramMessage(string $chat_id, string $text, string $parse_mode = 'HTML', ?array $reply_markup = null): ?array {
     $url = "https://api.telegram.org/bot" . TELEGRAM_BOT_TOKEN . "/sendMessage";
     
     $data = [
@@ -50,73 +50,68 @@ function sendTelegramMessage($chat_id, $text, $parse_mode = 'HTML', $reply_marku
     ]);
     
     $result = curl_exec($ch);
+    $success = $result !== false;
     curl_close($ch);
     
     // Log to database
-    log_telegram_message($chat_id, 'outgoing', $text);
+    log_telegram_message($chat_id, 'outgoing', $text, null, null, $success);
     
-    return json_decode($result, true);
+    return $result ? json_decode($result, true) : null;
 }
 
-function log_telegram_message($chat_id, $type, $text, $command = null, $username = null) {
-    $conn = get_db_connection();
-    
-    $stmt = $conn->prepare("
-        INSERT INTO telegram_logs (chat_id, username, message_type, message_text, command, status, created_at)
-        VALUES (?, ?, ?, ?, ?, 'success', NOW())
-    ");
-    
-    if ($stmt) {
-        $stmt->bind_param("sssss", $chat_id, $username, $type, $text, $command);
-        $stmt->execute();
-        $stmt->close();
+function log_telegram_message(string $chat_id, string $type, string $text, ?string $command = null, ?string $username = null, bool $success = true): void {
+    try {
+        $db = getDB();
+        
+        $stmt = $db->prepare("
+            INSERT INTO telegram_logs (chat_id, username, message_type, message_text, command, status, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, NOW())
+        ");
+        
+        $status = $success ? 'success' : 'failed';
+        $stmt->execute([$chat_id, $username, $type, $text, $command, $status]);
+    } catch (Exception $e) {
+        error_log("Telegram log failed: " . $e->getMessage());
     }
-    
-    $conn->close();
 }
 
 // -------------------- GET USER FROM TELEGRAM ID --------------------
-function getUserByTelegramId($telegram_id) {
-    $conn = get_db_connection();
-    
-    $stmt = $conn->prepare("SELECT * FROM users WHERE telegram_id = ? LIMIT 1");
-    $stmt->bind_param("s", $telegram_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $user = $result->fetch_assoc();
-    
-    $stmt->close();
-    $conn->close();
-    
-    return $user;
+function getUserByTelegramId(string $telegram_id): ?array {
+    try {
+        $db = getDB();
+        
+        $stmt = $db->prepare("SELECT * FROM users WHERE telegram_id = ? LIMIT 1");
+        $stmt->execute([$telegram_id]);
+        $user = $stmt->fetch();
+        
+        return $user ?: null;
+    } catch (Exception $e) {
+        error_log("Get user failed: " . $e->getMessage());
+        return null;
+    }
 }
 
 // -------------------- GET USER'S API KEYS --------------------
-function getUserApiKeys($user_id) {
-    $conn = get_db_connection();
-    
-    $stmt = $conn->prepare("
-        SELECT * FROM api_keys 
-        WHERE user_id = ? 
-        ORDER BY created_at DESC
-    ");
-    $stmt->bind_param("i", $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    $keys = [];
-    while ($row = $result->fetch_assoc()) {
-        $keys[] = $row;
+function getUserApiKeys(int $user_id): array {
+    try {
+        $db = getDB();
+        
+        $stmt = $db->prepare("
+            SELECT * FROM api_keys 
+            WHERE user_id = ? 
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute([$user_id]);
+        
+        return $stmt->fetchAll() ?: [];
+    } catch (Exception $e) {
+        error_log("Get keys failed: " . $e->getMessage());
+        return [];
     }
-    
-    $stmt->close();
-    $conn->close();
-    
-    return $keys;
 }
 
 // -------------------- COMMAND HANDLERS --------------------
-function handleStartCommand($chat_id, $username) {
+function handleStartCommand(string $chat_id, string $username): void {
     $user = getUserByTelegramId($chat_id);
     
     if ($user) {
@@ -152,7 +147,7 @@ function handleStartCommand($chat_id, $username) {
     sendTelegramMessage($chat_id, $text, 'HTML', $keyboard);
 }
 
-function handleStatusCommand($chat_id) {
+function handleStatusCommand(string $chat_id): void {
     $user = getUserByTelegramId($chat_id);
     
     if (!$user) {
@@ -160,11 +155,11 @@ function handleStatusCommand($chat_id) {
         return;
     }
     
-    $keys = getUserApiKeys($user['id']);
+    $keys = getUserApiKeys((int)$user['id']);
     $active_keys = array_filter($keys, fn($k) => $k['status'] === 'active');
     
     // Get usage stats
-    $stats = get_user_api_stats($user['id']);
+    $stats = get_user_api_stats((int)$user['id']);
     
     $text = "📊 <b>Account Status</b>\n\n";
     $text .= "👤 Username: <b>{$user['username']}</b>\n";
@@ -178,7 +173,7 @@ function handleStatusCommand($chat_id) {
     sendTelegramMessage($chat_id, $text);
 }
 
-function handleKeysCommand($chat_id) {
+function handleKeysCommand(string $chat_id): void {
     $user = getUserByTelegramId($chat_id);
     
     if (!$user) {
@@ -186,7 +181,7 @@ function handleKeysCommand($chat_id) {
         return;
     }
     
-    $keys = getUserApiKeys($user['id']);
+    $keys = getUserApiKeys((int)$user['id']);
     
     if (empty($keys)) {
         sendTelegramMessage($chat_id, "🔑 You have no API keys.\nContact admin to get one.");
@@ -208,7 +203,7 @@ function handleKeysCommand($chat_id) {
     sendTelegramMessage($chat_id, $text);
 }
 
-function handleRenewCommand($chat_id, $username) {
+function handleRenewCommand(string $chat_id, string $username): void {
     $user = getUserByTelegramId($chat_id);
     
     if (!$user) {
@@ -226,16 +221,23 @@ function handleRenewCommand($chat_id, $username) {
     
     sendTelegramMessage(ADMIN_TELEGRAM_ID, $admin_text);
     
+    // Log activity
+    log_activity((int)$user['id'], 'renewal_request', 'Requested key renewal via Telegram');
+    
     // Confirm to user
     $text = "✅ <b>Renewal Request Sent!</b>\n\n";
     $text .= "Your renewal request has been sent to admin.\n";
     $text .= "You'll be notified when it's processed.\n\n";
     $text .= "📧 Or contact: " . SUPPORT_EMAIL;
     
+    if (defined('SUPPORT_TELEGRAM') && SUPPORT_TELEGRAM) {
+        $text .= "\n📱 Telegram: " . SUPPORT_TELEGRAM;
+    }
+    
     sendTelegramMessage($chat_id, $text);
 }
 
-function handleHelpCommand($chat_id) {
+function handleHelpCommand(string $chat_id): void {
     $text = "❓ <b>" . SITE_NAME . " Help</b>\n\n";
     $text .= "📋 <b>Commands:</b>\n";
     $text .= "/start - Start bot & see menu\n";
@@ -244,16 +246,21 @@ function handleHelpCommand($chat_id) {
     $text .= "/renew - Request key renewal\n";
     $text .= "/help - This help message\n\n";
     $text .= "📧 <b>Support:</b>\n";
-    $text .= SUPPORT_EMAIL . "\n\n";
-    $text .= "🌐 <b>Documentation:</b>\n";
+    $text .= SUPPORT_EMAIL . "\n";
+    
+    if (defined('SUPPORT_TELEGRAM') && SUPPORT_TELEGRAM) {
+        $text .= "📱 " . SUPPORT_TELEGRAM . "\n";
+    }
+    
+    $text .= "\n🌐 <b>Documentation:</b>\n";
     $text .= "Check your dashboard for API docs";
     
     sendTelegramMessage($chat_id, $text);
 }
 
 // -------------------- CALLBACK HANDLER --------------------
-function handleCallback($callback_query) {
-    $chat_id = $callback_query['message']['chat']['id'];
+function handleCallback(array $callback_query): void {
+    $chat_id = (string)$callback_query['message']['chat']['id'];
     $data = $callback_query['data'];
     $username = $callback_query['from']['username'] ?? '';
     
@@ -287,7 +294,7 @@ function handleCallback($callback_query) {
 }
 
 // -------------------- ADMIN NOTIFICATION FUNCTIONS --------------------
-function notifyAdminNewUser($user) {
+function notifyAdminNewUser(array $user): void {
     $text = "👤 <b>New User Registered</b>\n\n";
     $text .= "Username: <b>{$user['username']}</b>\n";
     $text .= "Email: {$user['email']}\n";
@@ -297,7 +304,7 @@ function notifyAdminNewUser($user) {
     sendTelegramMessage(ADMIN_TELEGRAM_ID, $text);
 }
 
-function notifyAdminNewKey($user, $key) {
+function notifyAdminNewKey(array $user, array $key): void {
     $text = "🔑 <b>New API Key Generated</b>\n\n";
     $text .= "👤 User: <b>{$user['username']}</b>\n";
     $text .= "🎮 Game: {$key['game_type']}\n";
@@ -318,7 +325,7 @@ function notifyAdminNewKey($user, $key) {
     }
 }
 
-function notifyAdminKeyExpiring($key, $user, $days_left) {
+function notifyAdminKeyExpiring(array $key, array $user, int $days_left): void {
     $text = "⚠️ <b>API Key Expiring Soon</b>\n\n";
     $text .= "👤 User: <b>{$user['username']}</b>\n";
     $text .= "🎮 Game: {$key['game_type']}\n";
@@ -338,13 +345,13 @@ function notifyAdminKeyExpiring($key, $user, $days_left) {
     }
 }
 
-function notifyServerHealth($status, $details) {
+function notifyServerHealth(string $status, array $details): void {
     $icon = $status === 'healthy' ? '✅' : ($status === 'degraded' ? '⚠️' : '🔴');
     
     $text = "{$icon} <b>Server Health: " . ucfirst($status) . "</b>\n\n";
     
     foreach ($details as $check => $info) {
-        $check_icon = $info['status'] === 'ok' ? '✅' : '❌';
+        $check_icon = ($info['status'] ?? 'unknown') === 'ok' ? '✅' : '❌';
         $text .= "{$check_icon} {$check}\n";
     }
     
@@ -353,15 +360,39 @@ function notifyServerHealth($status, $details) {
     sendTelegramMessage(ADMIN_TELEGRAM_ID, $text);
 }
 
+/**
+ * Send credentials to user via Telegram
+ */
+function sendUserCredentials(array $user, string $password, string $login_url): bool {
+    if (empty($user['telegram_id'])) {
+        return false;
+    }
+    
+    $text = "🎉 <b>Welcome to " . SITE_NAME . "!</b>\n\n";
+    $text .= "Your account has been created.\n\n";
+    $text .= "👤 <b>Username:</b> <code>{$user['username']}</code>\n";
+    $text .= "🔐 <b>Password:</b> <code>{$password}</code>\n\n";
+    $text .= "🌐 <b>Login URL:</b>\n{$login_url}\n\n";
+    $text .= "⚠️ Please change your password after first login.\n\n";
+    $text .= "📧 Support: " . SUPPORT_EMAIL;
+    
+    $result = sendTelegramMessage($user['telegram_id'], $text);
+    return $result !== null && ($result['ok'] ?? false);
+}
+
 // -------------------- PROCESS UPDATE --------------------
 if (isset($update['message'])) {
     $message = $update['message'];
-    $chat_id = $message['chat']['id'];
+    $chat_id = (string)$message['chat']['id'];
     $text = $message['text'] ?? '';
     $username = $message['from']['username'] ?? '';
     
     // Log incoming message
-    log_telegram_message($chat_id, 'incoming', $text, null, $username);
+    $command = null;
+    if (strpos($text, '/') === 0) {
+        $command = explode(' ', $text)[0];
+    }
+    log_telegram_message($chat_id, 'incoming', $text, $command, $username);
     
     // Handle commands
     if (strpos($text, '/start') === 0) {

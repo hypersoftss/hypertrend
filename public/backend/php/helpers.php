@@ -386,10 +386,13 @@ function log_telegram_notification(string $chat_id, string $message, bool $succe
  * Set CORS headers
  */
 function set_cors_headers(): void {
+    if (!defined('CORS_ENABLED') || !CORS_ENABLED) return;
+    
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
     
     if (in_array($origin, ALLOWED_ORIGINS)) {
         header("Access-Control-Allow-Origin: $origin");
+        header('Vary: Origin');
     }
     
     header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -509,38 +512,37 @@ function log_activity(int $user_id, string $action, string $details = '', ?strin
 }
 
 /**
- * Get setting value from database
+ * Get setting value from database (alias for getSetting in config.php)
+ * @deprecated Use getSetting() from config.php instead
  */
 function get_setting(string $key, $default = null) {
-    try {
-        $db = getDB();
-        
-        $stmt = $db->prepare("SELECT setting_value FROM settings WHERE setting_key = ? LIMIT 1");
-        $stmt->execute([$key]);
-        $row = $stmt->fetch();
-        
-        return $row ? $row['setting_value'] : $default;
-    } catch (Exception $e) {
-        return $default;
-    }
+    return getSetting($key, $default);
 }
 
 /**
- * Update setting value
+ * Update setting value (alias for updateSetting in config.php)
+ * @deprecated Use updateSetting() from config.php instead
  */
 function update_setting(string $key, string $value): bool {
+    return updateSetting($key, $value);
+}
+
+/**
+ * Upsert setting value (insert or update)
+ */
+function upsert_setting(string $key, string $value, string $type = 'text'): bool {
     try {
         $db = getDB();
         
         $stmt = $db->prepare("
-            INSERT INTO settings (setting_key, setting_value, updated_at)
-            VALUES (?, ?, NOW())
+            INSERT INTO settings (setting_key, setting_value, setting_type, updated_at)
+            VALUES (?, ?, ?, NOW())
             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()
         ");
         
-        return $stmt->execute([$key, $value]);
+        return $stmt->execute([$key, $value, $type]);
     } catch (Exception $e) {
-        error_log("Setting update failed: " . $e->getMessage());
+        error_log("Setting upsert failed: " . $e->getMessage());
         return false;
     }
 }

@@ -46,17 +46,28 @@ function telegramApiCall($method, $params = []) {
 $result = null;
 $message = '';
 
+// Webhook secret for added security (optional)
+$webhook_secret = defined('TELEGRAM_WEBHOOK_SECRET') ? TELEGRAM_WEBHOOK_SECRET : '';
+
 switch ($action) {
     case 'set':
-        $result = telegramApiCall('setWebhook', [
+        $params = [
             'url' => $webhook_url,
-            'allowed_updates' => json_encode(['message', 'callback_query'])
-        ]);
+            'allowed_updates' => json_encode(['message', 'callback_query']),
+            'drop_pending_updates' => true
+        ];
+        
+        // Add secret token if configured
+        if (!empty($webhook_secret) && $webhook_secret !== 'your_webhook_secret') {
+            $params['secret_token'] = $webhook_secret;
+        }
+        
+        $result = telegramApiCall('setWebhook', $params);
         $message = $result['ok'] ? '✅ Webhook set successfully!' : '❌ Failed: ' . ($result['description'] ?? 'Unknown error');
         break;
         
     case 'delete':
-        $result = telegramApiCall('deleteWebhook');
+        $result = telegramApiCall('deleteWebhook', ['drop_pending_updates' => true]);
         $message = $result['ok'] ? '✅ Webhook deleted!' : '❌ Failed to delete webhook';
         break;
         
@@ -71,10 +82,25 @@ switch ($action) {
     case 'test':
         $result = telegramApiCall('sendMessage', [
             'chat_id' => ADMIN_TELEGRAM_ID,
-            'text' => "🔔 Test message from " . SITE_NAME . "\n\n✅ Bot is working correctly!\n🕐 " . date('Y-m-d H:i:s'),
+            'text' => "🔔 <b>Test Message</b>\n\nFrom: " . SITE_NAME . "\nVersion: " . (defined('APP_VERSION') ? APP_VERSION : '1.0.0') . "\n\n✅ Bot is working correctly!\n🕐 " . date('Y-m-d H:i:s'),
             'parse_mode' => 'HTML'
         ]);
-        $message = $result['ok'] ? '✅ Test message sent!' : '❌ Failed to send message';
+        $message = $result['ok'] ? '✅ Test message sent to admin!' : '❌ Failed: ' . ($result['description'] ?? 'Check Admin Telegram ID');
+        break;
+        
+    case 'health':
+        // Quick health check
+        $bot_info = telegramApiCall('getMe');
+        $webhook_info = telegramApiCall('getWebhookInfo');
+        $result = [
+            'bot' => $bot_info,
+            'webhook' => $webhook_info,
+            'config' => [
+                'site_name' => SITE_NAME,
+                'admin_id_set' => !empty(ADMIN_TELEGRAM_ID) && ADMIN_TELEGRAM_ID !== 'your_telegram_id',
+                'token_set' => !empty(TELEGRAM_BOT_TOKEN) && strpos(TELEGRAM_BOT_TOKEN, 'your_bot') === false
+            ]
+        ];
         break;
 }
 
@@ -180,6 +206,7 @@ switch ($action) {
             <a href="?action=status" class="btn btn-secondary">ℹ️ Webhook Status</a>
             <a href="?action=me" class="btn btn-secondary">🤖 Bot Info</a>
             <a href="?action=test" class="btn btn-success">📨 Send Test Message</a>
+            <a href="?action=health" class="btn btn-secondary">💚 Health Check</a>
         </div>
         
         <?php if ($result): ?>
