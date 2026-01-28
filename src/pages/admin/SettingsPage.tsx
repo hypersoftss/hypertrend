@@ -30,7 +30,6 @@ const SettingsPage = () => {
     telegramBotToken: config.telegramBotToken,
     adminTelegramId: config.adminTelegramId,
     webhookUrl: '',
-    telegramBotStatus: 'stopped' as 'stopped' | 'running' | 'testing',
     
     // API Configuration
     apiDomain: config.apiDomain,
@@ -127,17 +126,7 @@ const SettingsPage = () => {
     }
   };
 
-  const toggleBotStatus = () => {
-    const newStatus = settings.telegramBotStatus === 'running' ? 'stopped' : 'running';
-    setSettings({ ...settings, telegramBotStatus: newStatus });
-    
-    toast({
-      title: newStatus === 'running' ? '🤖 Bot Started!' : '⏹️ Bot Stopped',
-      description: newStatus === 'running' 
-        ? 'Telegram bot is now running and listening for commands' 
-        : 'Telegram bot has been stopped',
-    });
-  };
+  // Bot is always running - no toggle needed
 
   return (
     <DashboardLayout>
@@ -360,47 +349,32 @@ const SettingsPage = () => {
                 <CardDescription>Configure your Telegram bot integration</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Bot Status Card */}
-                <div className={`p-4 rounded-lg border-2 ${settings.telegramBotStatus === 'running' ? 'bg-success/10 border-success/30' : 'bg-muted/50 border-muted'}`}>
+                {/* Bot Status Card - Always Running */}
+                <div className="p-4 rounded-lg border-2 bg-success/10 border-success/30">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${settings.telegramBotStatus === 'running' ? 'bg-success animate-pulse' : 'bg-muted-foreground'}`} />
+                      <div className="w-3 h-3 rounded-full bg-success animate-pulse" />
                       <div>
-                        <p className="font-semibold">Bot Status: {settings.telegramBotStatus === 'running' ? '🟢 Running' : '⏹️ Stopped'}</p>
+                        <p className="font-semibold text-foreground">🟢 Bot Status: Running</p>
                         <p className="text-xs text-muted-foreground">
-                          {settings.telegramBotStatus === 'running' 
-                            ? 'Bot is active and listening for commands' 
-                            : 'Bot is not running. Click Run to start.'}
+                          Bot is always active and listening for commands
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant={settings.telegramBotStatus === 'running' ? 'destructive' : 'default'}
-                        className={settings.telegramBotStatus !== 'running' ? 'bg-success hover:bg-success/90 text-success-foreground' : ''}
-                        onClick={toggleBotStatus}
-                      >
-                        {settings.telegramBotStatus === 'running' ? (
-                          <>⏹️ Stop Bot</>
-                        ) : (
-                          <>▶️ Run Bot</>
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={testTelegramBot}
-                        disabled={isTesting}
-                      >
-                        {isTesting ? (
-                          <>
-                            <span className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent mr-2" />
-                            Testing...
-                          </>
-                        ) : (
-                          <>🧪 Test Bot</>
-                        )}
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={testTelegramBot}
+                      disabled={isTesting}
+                    >
+                      {isTesting ? (
+                        <>
+                          <span className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent mr-2" />
+                          Testing...
+                        </>
+                      ) : (
+                        <>🧪 Test Bot</>
+                      )}
+                    </Button>
                   </div>
                 </div>
 
