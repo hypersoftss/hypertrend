@@ -27,10 +27,10 @@ const DocumentationPage = () => {
       game: 'WinGo',
       path: '/api/trend/wingo/:typeId',
       durations: [
+        { id: 'wg30s', label: '30 Seconds', example: '/api/trend/wingo/wg30s' },
         { id: 'wg1', label: '1 Minute', example: '/api/trend/wingo/wg1' },
         { id: 'wg3', label: '3 Minutes', example: '/api/trend/wingo/wg3' },
         { id: 'wg5', label: '5 Minutes', example: '/api/trend/wingo/wg5' },
-        { id: 'wg30', label: '30 Minutes', example: '/api/trend/wingo/wg30' },
       ]
     },
     {
@@ -233,8 +233,8 @@ function getTrendData($gameType, $typeId) {
 
 // Usage Examples
 
-// WinGo all durations
-$wingo_types = ['wg1', 'wg3', 'wg5', 'wg30'];
+// WinGo all durations (30sec, 1min, 3min, 5min)
+$wingo_types = ['wg30s', 'wg1', 'wg3', 'wg5'];
 foreach ($wingo_types as $type) {
     $data = getTrendData('wingo', $type);
     echo "WinGo $type: " . json_encode($data) . "\\n";
