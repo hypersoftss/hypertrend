@@ -43,10 +43,10 @@ const App = () => (
               {/* Public Routes */}
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/docs" element={<DocumentationPage />} />
 
               {/* Protected Routes - All Users */}
               <Route element={<ProtectedRoute />}>
+                <Route path="/docs" element={<DocumentationPage />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/user/keys" element={<UserKeysPage />} />
               </Route>

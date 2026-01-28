@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Link } from 'react-router-dom';
-import { Moon, Sun, Zap, ArrowLeft, Copy, CheckCircle, Code, Globe, Key, Shield, Clock, AlertTriangle, Server, Database } from 'lucide-react';
+import { Moon, Sun, Zap, ArrowLeft, Copy, CheckCircle, Code, Globe, Shield, AlertTriangle, Server, Database, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const DocumentationPage = () => {
+  const { user, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
   const copyCode = (code: string, id: string) => {
     navigator.clipboard.writeText(code);
@@ -21,249 +28,127 @@ const DocumentationPage = () => {
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  // Game types with all their durations
-  const gameEndpoints = [
-    {
-      game: 'WinGo',
-      path: '/api/trend/wingo/:typeId',
-      durations: [
-        { id: 'wg30s', label: '30 Seconds', example: '/api/trend/wingo/wg30s' },
-        { id: 'wg1', label: '1 Minute', example: '/api/trend/wingo/wg1' },
-        { id: 'wg3', label: '3 Minutes', example: '/api/trend/wingo/wg3' },
-        { id: 'wg5', label: '5 Minutes', example: '/api/trend/wingo/wg5' },
-      ]
-    },
-    {
-      game: 'K3',
-      path: '/api/trend/k3/:typeId',
-      durations: [
-        { id: 'k31', label: '1 Minute', example: '/api/trend/k3/k31' },
-        { id: 'k33', label: '3 Minutes', example: '/api/trend/k3/k33' },
-        { id: 'k35', label: '5 Minutes', example: '/api/trend/k3/k35' },
-        { id: 'k310', label: '10 Minutes', example: '/api/trend/k3/k310' },
-      ]
-    },
-    {
-      game: '5D',
-      path: '/api/trend/5d/:typeId',
-      durations: [
-        { id: '5d1', label: '1 Minute', example: '/api/trend/5d/5d1' },
-        { id: '5d3', label: '3 Minutes', example: '/api/trend/5d/5d3' },
-        { id: '5d5', label: '5 Minutes', example: '/api/trend/5d/5d5' },
-        { id: '5d10', label: '10 Minutes', example: '/api/trend/5d/5d10' },
-      ]
-    },
-    {
-      game: 'TRX',
-      path: '/api/trend/trx/:typeId',
-      durations: [
-        { id: 'trx1', label: '1 Minute', example: '/api/trend/trx/trx1' },
-        { id: 'trx3', label: '3 Minutes', example: '/api/trend/trx/trx3' },
-        { id: 'trx5', label: '5 Minutes', example: '/api/trend/trx/trx5' },
-        { id: 'trx10', label: '10 Minutes', example: '/api/trend/trx/trx10' },
-      ]
-    },
-    {
-      game: 'Numeric',
-      path: '/api/trend/numeric/:typeId',
-      durations: [
-        { id: '1', label: '1 Minute', example: '/api/trend/numeric/1' },
-        { id: '2', label: '3 Minutes', example: '/api/trend/numeric/2' },
-        { id: '3', label: '5 Minutes', example: '/api/trend/numeric/3' },
-        { id: '30', label: '30 Minutes', example: '/api/trend/numeric/30' },
-      ]
-    },
+  // Your actual API base URL
+  const API_BASE = 'https://betapi.space';
+
+  // All endpoints with actual URLs
+  const allEndpoints = [
+    { game: 'Numeric', typeId: '1', label: '1 Minute', url: `${API_BASE}/Xdrtrend?typeId=1` },
+    { game: 'Numeric', typeId: '2', label: '3 Minutes', url: `${API_BASE}/Xdrtrend?typeId=2` },
+    { game: 'Numeric', typeId: '3', label: '5 Minutes', url: `${API_BASE}/Xdrtrend?typeId=3` },
+    { game: 'Numeric', typeId: '30', label: '30 Minutes', url: `${API_BASE}/Xdrtrend?typeId=30` },
+    { game: 'WinGo', typeId: 'wg1', label: '1 Minute', url: `${API_BASE}/Xdrtrend?typeId=wg1` },
+    { game: 'WinGo', typeId: 'wg3', label: '3 Minutes', url: `${API_BASE}/Xdrtrend?typeId=wg3` },
+    { game: 'WinGo', typeId: 'wg5', label: '5 Minutes', url: `${API_BASE}/Xdrtrend?typeId=wg5` },
+    { game: 'WinGo', typeId: 'wg30', label: '30 Seconds', url: `${API_BASE}/Xdrtrend?typeId=wg30` },
+    { game: 'K3', typeId: 'k31', label: '1 Minute', url: `${API_BASE}/Xdrtrend?typeId=k31` },
+    { game: 'K3', typeId: 'k33', label: '3 Minutes', url: `${API_BASE}/Xdrtrend?typeId=k33` },
+    { game: 'K3', typeId: 'k35', label: '5 Minutes', url: `${API_BASE}/Xdrtrend?typeId=k35` },
+    { game: 'K3', typeId: 'k310', label: '10 Minutes', url: `${API_BASE}/Xdrtrend?typeId=k310` },
+    { game: '5D', typeId: '5d1', label: '1 Minute', url: `${API_BASE}/Xdrtrend?typeId=5d1` },
+    { game: '5D', typeId: '5d3', label: '3 Minutes', url: `${API_BASE}/Xdrtrend?typeId=5d3` },
+    { game: '5D', typeId: '5d5', label: '5 Minutes', url: `${API_BASE}/Xdrtrend?typeId=5d5` },
+    { game: '5D', typeId: '5d10', label: '10 Minutes', url: `${API_BASE}/Xdrtrend?typeId=5d10` },
+    { game: 'TRX', typeId: 'trx1', label: '1 Minute', url: `${API_BASE}/Xdrtrend?typeId=trx1` },
+    { game: 'TRX', typeId: 'trx3', label: '3 Minutes', url: `${API_BASE}/Xdrtrend?typeId=trx3` },
+    { game: 'TRX', typeId: 'trx5', label: '5 Minutes', url: `${API_BASE}/Xdrtrend?typeId=trx5` },
+    { game: 'TRX', typeId: 'trx10', label: '10 Minutes', url: `${API_BASE}/Xdrtrend?typeId=trx10` },
   ];
 
+  // Group by game
+  const gameGroups = allEndpoints.reduce((acc, ep) => {
+    if (!acc[ep.game]) acc[ep.game] = [];
+    acc[ep.game].push(ep);
+    return acc;
+  }, {} as Record<string, typeof allEndpoints>);
+
   const codeExamples = {
-    curl: `# WinGo 1-Minute Data
-curl -X GET "https://hyperapi.in/api/trend/wingo/wg1" \\
-  -H "X-API-Key: HYPER_your_api_key_here" \\
-  -H "Content-Type: application/json"
+    curl: `# Numeric 1-Minute
+curl "${API_BASE}/Xdrtrend?typeId=1"
 
-# K3 3-Minute Data
-curl -X GET "https://hyperapi.in/api/trend/k3/k33" \\
-  -H "X-API-Key: HYPER_your_api_key_here"
+# WinGo 30-Seconds
+curl "${API_BASE}/Xdrtrend?typeId=wg30"
 
-# 5D 5-Minute Data
-curl -X GET "https://hyperapi.in/api/trend/5d/5d5" \\
-  -H "X-API-Key: HYPER_your_api_key_here"
+# K3 3-Minutes
+curl "${API_BASE}/Xdrtrend?typeId=k33"
 
-# TRX 10-Minute Data
-curl -X GET "https://hyperapi.in/api/trend/trx/trx10" \\
-  -H "X-API-Key: HYPER_your_api_key_here"`,
+# 5D 5-Minutes
+curl "${API_BASE}/Xdrtrend?typeId=5d5"
+
+# TRX 10-Minutes
+curl "${API_BASE}/Xdrtrend?typeId=trx10"`,
     
     javascript: `// JavaScript / Node.js Example
-const API_KEY = 'HYPER_your_api_key_here';
-const BASE_URL = 'https://hyperapi.in/api';
+const BASE_URL = '${API_BASE}';
 
-// Function to get trend data
-async function getTrendData(gameType, typeId) {
+async function getTrendData(typeId) {
   try {
-    const response = await fetch(\`\${BASE_URL}/trend/\${gameType}/\${typeId}\`, {
-      method: 'GET',
-      headers: {
-        'X-API-Key': API_KEY,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(\`HTTP error! status: \${response.status}\`);
-    }
-
-    const data = await response.json();
-    return data;
+    const response = await fetch(\`\${BASE_URL}/Xdrtrend?typeId=\${typeId}\`);
+    if (!response.ok) throw new Error(\`HTTP \${response.status}\`);
+    return await response.json();
   } catch (error) {
-    console.error('Error fetching trend data:', error);
+    console.error('Error:', error);
     throw error;
   }
 }
 
 // Usage Examples
-async function main() {
-  // Get WinGo 1-minute data
-  const wingoData = await getTrendData('wingo', 'wg1');
-  console.log('WinGo 1-min:', wingoData);
-
-  // Get K3 3-minute data
-  const k3Data = await getTrendData('k3', 'k33');
-  console.log('K3 3-min:', k3Data);
-
-  // Get 5D 5-minute data
-  const fiveData = await getTrendData('5d', '5d5');
-  console.log('5D 5-min:', fiveData);
-
-  // Get TRX 10-minute data
-  const trxData = await getTrendData('trx', 'trx10');
-  console.log('TRX 10-min:', trxData);
-}
-
-main();`,
+const numericData = await getTrendData('1');     // Numeric 1-min
+const wingoData = await getTrendData('wg30');    // WinGo 30-sec
+const k3Data = await getTrendData('k33');        // K3 3-min
+const fiveDData = await getTrendData('5d5');     // 5D 5-min
+const trxData = await getTrendData('trx10');     // TRX 10-min`,
     
     python: `# Python Example
 import requests
 
-API_KEY = "HYPER_your_api_key_here"
-BASE_URL = "https://hyperapi.in/api"
+BASE_URL = "${API_BASE}"
 
-def get_trend_data(game_type, type_id):
-    """Fetch trend data for specified game and duration"""
-    url = f"{BASE_URL}/trend/{game_type}/{type_id}"
-    headers = {
-        "X-API-Key": API_KEY,
-        "Content-Type": "application/json"
-    }
-    
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"Error: {e}")
-        return None
+def get_trend_data(type_id):
+    url = f"{BASE_URL}/Xdrtrend?typeId={type_id}"
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.json()
 
 # Usage Examples
-if __name__ == "__main__":
-    # WinGo 1-minute
-    wingo_1min = get_trend_data("wingo", "wg1")
-    print("WinGo 1-min:", wingo_1min)
-    
-    # WinGo 3-minute
-    wingo_3min = get_trend_data("wingo", "wg3")
-    print("WinGo 3-min:", wingo_3min)
-    
-    # K3 all durations
-    for type_id in ["k31", "k33", "k35", "k310"]:
-        data = get_trend_data("k3", type_id)
-        print(f"K3 {type_id}:", data)
-    
-    # 5D 5-minute
-    five_d = get_trend_data("5d", "5d5")
-    print("5D 5-min:", five_d)
-    
-    # TRX 10-minute
-    trx_10min = get_trend_data("trx", "trx10")
-    print("TRX 10-min:", trx_10min)`,
+numeric_1min = get_trend_data("1")      # Numeric 1-min
+wingo_30sec = get_trend_data("wg30")    # WinGo 30-sec
+k3_3min = get_trend_data("k33")         # K3 3-min
+five_d_5min = get_trend_data("5d5")     # 5D 5-min
+trx_10min = get_trend_data("trx10")     # TRX 10-min`,
     
     php: `<?php
 // PHP Example
+\$baseUrl = "${API_BASE}";
 
-$apiKey = "HYPER_your_api_key_here";
-$baseUrl = "https://hyperapi.in/api";
-
-/**
- * Get trend data for specified game and duration
- */
-function getTrendData($gameType, $typeId) {
-    global $apiKey, $baseUrl;
+function getTrendData(\$typeId) {
+    global \$baseUrl;
+    \$url = "\$baseUrl/Xdrtrend?typeId=\$typeId";
     
-    $url = "$baseUrl/trend/$gameType/$typeId";
+    \$curl = curl_init(\$url);
+    curl_setopt(\$curl, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt(\$curl, CURLOPT_TIMEOUT, 30);
     
-    $curl = curl_init();
+    \$response = curl_exec(\$curl);
+    curl_close(\$curl);
     
-    curl_setopt_array($curl, [
-        CURLOPT_URL => $url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            "X-API-Key: $apiKey",
-            "Content-Type: application/json"
-        ],
-        CURLOPT_TIMEOUT => 30,
-    ]);
-    
-    $response = curl_exec($curl);
-    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-    
-    if (curl_errno($curl)) {
-        echo 'Error: ' . curl_error($curl);
-        curl_close($curl);
-        return null;
-    }
-    
-    curl_close($curl);
-    
-    if ($httpCode !== 200) {
-        echo "HTTP Error: $httpCode\\n";
-        return null;
-    }
-    
-    return json_decode($response, true);
+    return json_decode(\$response, true);
 }
 
 // Usage Examples
-
-// WinGo all durations (30sec, 1min, 3min, 5min)
-$wingo_types = ['wg30s', 'wg1', 'wg3', 'wg5'];
-foreach ($wingo_types as $type) {
-    $data = getTrendData('wingo', $type);
-    echo "WinGo $type: " . json_encode($data) . "\\n";
-}
-
-// K3 3-minute
-$k3_3min = getTrendData('k3', 'k33');
-print_r($k3_3min);
-
-// 5D 5-minute
-$five_d = getTrendData('5d', '5d5');
-print_r($five_d);
-
-// TRX 10-minute
-$trx_10min = getTrendData('trx', 'trx10');
-print_r($trx_10min);
-
-// Numeric 30-minute
-$numeric_30min = getTrendData('numeric', '30');
-print_r($numeric_30min);
+\$numeric = getTrendData('1');      // Numeric 1-min
+\$wingo = getTrendData('wg30');     // WinGo 30-sec
+\$k3 = getTrendData('k33');         // K3 3-min
+\$fiveD = getTrendData('5d5');      // 5D 5-min
+\$trx = getTrendData('trx10');      // TRX 10-min
 ?>`,
   };
 
   const errorCodes = [
     { code: 200, message: 'Success', description: 'Request completed successfully', color: 'bg-success' },
     { code: 400, message: 'Bad Request', description: 'Invalid request parameters', color: 'bg-warning' },
-    { code: 401, message: 'Unauthorized', description: 'Invalid or missing API key', color: 'bg-destructive' },
     { code: 403, message: 'Forbidden', description: 'IP or domain not whitelisted', color: 'bg-destructive' },
-    { code: 404, message: 'Not Found', description: 'Endpoint or resource not found', color: 'bg-warning' },
+    { code: 404, message: 'Not Found', description: 'Invalid typeId', color: 'bg-warning' },
     { code: 429, message: 'Too Many Requests', description: 'Rate limit exceeded', color: 'bg-warning' },
     { code: 500, message: 'Server Error', description: 'Internal server error', color: 'bg-destructive' },
   ];
@@ -289,9 +174,14 @@ print_r($numeric_30min);
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
-            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">
+              👤 {user?.username}
+            </Badge>
+            <Button variant="ghost" size="icon" onClick={toggleTheme}>
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -302,84 +192,107 @@ print_r($numeric_30min);
             <Badge className="mb-4">v1.0</Badge>
             <h1 className="text-4xl font-bold text-foreground">Hyper Softs Trend API</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Complete API documentation for WinGo, K3, 5D, TRX, and Numeric game trend data
+              Complete API documentation for Numeric, WinGo, K3, 5D, and TRX game trend data
             </p>
           </div>
 
-          {/* Quick Start */}
+          {/* Base URL */}
           <Card className="gradient-primary text-primary-foreground overflow-hidden">
             <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-lg bg-primary-foreground/20">
-                  <Zap className="w-6 h-6" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold mb-2">🚀 Quick Start</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                    <div className="p-3 rounded-lg bg-primary-foreground/10">
-                      <div className="font-bold mb-1">1. Get API Key</div>
-                      <p className="text-sm opacity-80">Request API key from admin</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-primary-foreground/10">
-                      <div className="font-bold mb-1">2. Whitelist IP</div>
-                      <p className="text-sm opacity-80">Provide your server IP address</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-primary-foreground/10">
-                      <div className="font-bold mb-1">3. Make Requests</div>
-                      <p className="text-sm opacity-80">Start calling the API</p>
-                    </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Server className="w-8 h-8" />
+                  <div>
+                    <h2 className="text-xl font-bold">Base URL</h2>
+                    <code className="text-lg opacity-90">{API_BASE}/Xdrtrend?typeId=</code>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Base URL */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Server className="w-5 h-5 text-primary" />
-                Base URL
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-muted font-mono">
-                <code className="text-lg text-primary flex-1">https://hyperapi.in/api</code>
-                <Button variant="ghost" size="sm" onClick={() => copyCode('https://hyperapi.in/api', 'baseurl')}>
-                  {copiedCode === 'baseurl' ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => copyCode(`${API_BASE}/Xdrtrend?typeId=`, 'baseurl')}
+                >
+                  {copiedCode === 'baseurl' ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Authentication */}
+          {/* All Endpoints - Inline */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Key className="w-5 h-5 text-primary" />
-                Authentication
+                <Database className="w-5 h-5 text-primary" />
+                All API Endpoints
               </CardTitle>
-              <CardDescription>All API requests require authentication via API key</CardDescription>
+              <CardDescription>Complete list of all available endpoints with direct URLs</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {Object.entries(gameGroups).map(([game, endpoints]) => (
+                <div key={game} className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Badge className="text-sm px-3 py-1">{game}</Badge>
+                    <span className="text-sm text-muted-foreground">({endpoints.length} endpoints)</span>
+                  </div>
+                  <div className="grid gap-2">
+                    {endpoints.map((ep) => (
+                      <div 
+                        key={ep.typeId} 
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border hover:border-primary/50 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Badge variant="secondary" className="font-mono">{ep.typeId}</Badge>
+                          <span className="text-sm text-muted-foreground">{ep.label}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs text-primary font-mono hidden sm:block">{ep.url}</code>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => copyCode(ep.url, ep.typeId)}
+                          >
+                            {copiedCode === ep.typeId ? (
+                              <CheckCircle className="w-4 h-4 text-success" />
+                            ) : (
+                              <Copy className="w-4 h-4" />
+                            )}
+                          </Button>
+                          <a href={ep.url} target="_blank" rel="noopener noreferrer">
+                            <Button variant="ghost" size="sm">
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Security Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-primary" />
+                Security & Access
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 rounded-lg bg-muted">
-                <p className="text-sm text-muted-foreground mb-2">Required Header:</p>
-                <code className="text-foreground font-mono">X-API-Key: HYPER_your_api_key_here</code>
-              </div>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg bg-muted/50 border">
+                <div className="p-4 rounded-lg bg-success/10 border border-success/20">
                   <h4 className="font-medium mb-2 flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-success" />
+                    <Globe className="w-4 h-4 text-success" />
                     IP Whitelisting
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    Only requests from whitelisted IPs are accepted. Supports IPv4 & IPv6.
+                    Only requests from whitelisted IPs are accepted. Configure in admin panel.
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/50 border">
+                <div className="p-4 rounded-lg bg-success/10 border border-success/20">
                   <h4 className="font-medium mb-2 flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-success" />
+                    <Shield className="w-4 h-4 text-success" />
                     Domain Verification
                   </h4>
                   <p className="text-sm text-muted-foreground">
@@ -393,47 +306,9 @@ print_r($numeric_30min);
                 <div>
                   <p className="font-medium text-foreground">Security Notice</p>
                   <p className="text-sm text-muted-foreground">
-                    Never expose your API key in frontend code. Always call from your backend server.
+                    Always call from your backend server. Never expose API calls in frontend code.
                   </p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Endpoints - Detailed */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="w-5 h-5 text-primary" />
-                API Endpoints
-              </CardTitle>
-              <CardDescription>All available endpoints with their duration types</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {gameEndpoints.map((endpoint) => (
-                  <div key={endpoint.game} className="p-4 rounded-lg border bg-muted/30">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <Badge className="text-lg px-4 py-1">{endpoint.game}</Badge>
-                        <Badge variant="outline">GET</Badge>
-                      </div>
-                      <code className="text-sm font-mono text-primary">{endpoint.path}</code>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {endpoint.durations.map((dur) => (
-                        <div key={dur.id} className="p-3 rounded-lg bg-background border hover:border-primary/50 transition-colors">
-                          <div className="flex items-center justify-between mb-2">
-                            <Badge variant="secondary">{dur.id}</Badge>
-                            <span className="text-xs text-muted-foreground">{dur.label}</span>
-                          </div>
-                          <code className="text-xs text-primary break-all">{dur.example}</code>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
               </div>
             </CardContent>
           </Card>
@@ -458,75 +333,21 @@ print_r($numeric_30min);
                 {Object.entries(codeExamples).map(([lang, code]) => (
                   <TabsContent key={lang} value={lang}>
                     <div className="relative">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="absolute top-2 right-2 z-10"
+                      <pre className="p-4 rounded-lg bg-muted overflow-x-auto">
+                        <code className="text-sm text-foreground whitespace-pre">{code}</code>
+                      </pre>
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="absolute top-2 right-2"
                         onClick={() => copyCode(code, lang)}
                       >
-                        {copiedCode === lang ? (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2 text-success" />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-4 h-4 mr-2" />
-                            Copy Code
-                          </>
-                        )}
+                        {copiedCode === lang ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                       </Button>
-                      <ScrollArea className="h-[400px]">
-                        <pre className="bg-muted rounded-lg p-4 text-sm overflow-x-auto">
-                          <code className="text-foreground">{code}</code>
-                        </pre>
-                      </ScrollArea>
                     </div>
                   </TabsContent>
                 ))}
               </Tabs>
-            </CardContent>
-          </Card>
-
-          {/* Response Format */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-primary" />
-                Response Format
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-success mb-2">✅ Success Response</h4>
-                  <pre className="bg-muted rounded-lg p-4 text-sm overflow-x-auto">
-                    <code className="text-foreground">{`{
-  "success": true,
-  "game": "WINGO",
-  "duration": "1min",
-  "data": {
-    "period": "20260128001",
-    "number": 5,
-    "color": "green",
-    "size": "small",
-    "timestamp": "2026-01-28T10:00:00Z"
-  }
-}`}</code>
-                  </pre>
-                </div>
-                <div>
-                  <h4 className="font-medium text-destructive mb-2">❌ Error Response</h4>
-                  <pre className="bg-muted rounded-lg p-4 text-sm overflow-x-auto">
-                    <code className="text-foreground">{`{
-  "success": false,
-  "error": "IP address not whitelisted",
-  "your_ip": "192.168.1.1",
-  "code": 403
-}`}</code>
-                  </pre>
-                </div>
-              </div>
             </CardContent>
           </Card>
 
@@ -535,47 +356,30 @@ print_r($numeric_30min);
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-primary" />
-                Error Codes
+                Response Codes
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {errorCodes.map((error) => (
-                  <div key={error.code} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Badge className={error.code < 400 ? 'bg-success' : error.code < 500 ? 'bg-warning' : 'bg-destructive'}>
-                        {error.code}
-                      </Badge>
-                      <span className="font-medium text-foreground">{error.message}</span>
+              <div className="grid gap-2">
+                {errorCodes.map((err) => (
+                  <div key={err.code} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                    <Badge className={`${err.color} text-white min-w-[60px] justify-center`}>
+                      {err.code}
+                    </Badge>
+                    <div className="flex-1">
+                      <span className="font-medium">{err.message}</span>
+                      <span className="text-muted-foreground ml-2 text-sm">— {err.description}</span>
                     </div>
-                    <span className="text-sm text-muted-foreground">{error.description}</span>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          {/* Support */}
-          <Card className="border-primary/30">
-            <CardContent className="p-6">
-              <div className="text-center">
-                <h3 className="text-xl font-bold text-foreground mb-2">Need Help?</h3>
-                <p className="text-muted-foreground mb-4">
-                  Contact our support team via Telegram for assistance
-                </p>
-                <div className="flex justify-center gap-4">
-                  <Button className="gradient-primary text-primary-foreground">
-                    📱 Contact Support
-                  </Button>
-                  <Link to="/dashboard">
-                    <Button variant="outline">
-                      Go to Dashboard
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Footer */}
+          <div className="text-center py-8 text-muted-foreground">
+            <p>© 2025 Hyper Softs. All rights reserved.</p>
+          </div>
         </div>
       </main>
     </div>
