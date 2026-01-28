@@ -24,139 +24,16 @@ import {
   FolderArchive,
   Server,
   Globe,
-  Zap
+  Zap,
+  Code2,
+  Shield
 } from 'lucide-react';
-
-// Backend file contents
-const serverJsContent = `// Full server.js content - see public/backend/server.js`;
-const databaseSqlContent = `-- Full database.sql content - see public/backend/database.sql`;
-const telegramBotContent = `// Full telegram-bot.js content - see public/backend/telegram-bot.js`;
-
-const packageJsonContent = `{
-  "name": "hyper-softs-trend-backend",
-  "version": "1.0.0",
-  "description": "Hyper Softs Trend API Management System",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
-    "bot": "node telegram-bot.js",
-    "start:all": "concurrently \\"npm run start\\" \\"npm run bot\\"",
-    "db:setup": "mysql -u root -p < database.sql"
-  },
-  "dependencies": {
-    "axios": "^1.6.2",
-    "bcryptjs": "^2.4.3",
-    "compression": "^1.7.4",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "express-rate-limit": "^7.1.5",
-    "helmet": "^7.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.6.5",
-    "node-cron": "^3.0.3",
-    "node-telegram-bot-api": "^0.64.0",
-    "uuid": "^9.0.1"
-  },
-  "devDependencies": {
-    "concurrently": "^8.2.2",
-    "nodemon": "^3.0.2"
-  }
-}`;
-
-const envExampleContent = `# =====================================================
-# HYPER SOFTS TREND - ENVIRONMENT CONFIGURATION
-# Path: /www/wwwroot/hyperapi.in/backend/.env
-# =====================================================
-
-PORT=3000
-NODE_ENV=production
-FRONTEND_URL=https://your-frontend-url.lovable.app
-
-# JWT Secret (Generate: openssl rand -hex 32)
-JWT_SECRET=change-this-to-a-random-string
-
-# MySQL Database
-DB_HOST=localhost
-DB_USER=hyper_user
-DB_PASSWORD=your_password
-DB_NAME=hyper_softs_db
-
-# Telegram Bot
-TELEGRAM_BOT_TOKEN=your_bot_token_from_botfather
-ADMIN_TELEGRAM_ID=your_telegram_id
-
-# BetAPI
-BETAPI_URL=https://betapi.space/api
-BETAPI_KEY=your_betapi_key`;
-
-const setupScriptContent = `#!/bin/bash
-# =====================================================
-# HYPER SOFTS TREND - AUTO SETUP SCRIPT
-# Run this on your VPS: bash setup.sh
-# =====================================================
-
-echo "🚀 Starting Hyper Softs Trend Setup..."
-
-# Check if Node.js is installed
-if ! command -v node &> /dev/null; then
-    echo "📦 Installing Node.js..."
-    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-    sudo apt-get install -y nodejs
-fi
-
-# Check if PM2 is installed
-if ! command -v pm2 &> /dev/null; then
-    echo "📦 Installing PM2..."
-    npm install -g pm2
-fi
-
-# Install dependencies
-echo "📦 Installing dependencies..."
-npm install
-
-# Copy env file if not exists
-if [ ! -f .env ]; then
-    cp .env.example .env
-    echo "⚠️  Please edit .env file with your configuration!"
-    echo "    nano .env"
-fi
-
-echo ""
-echo "✅ Setup complete!"
-echo ""
-echo "📋 Next steps:"
-echo "1. Edit .env file: nano .env"
-echo "2. Setup database: mysql -u root -p < database.sql"
-echo "3. Start server: pm2 start server.js --name hyper-api"
-echo "4. Start bot: pm2 start telegram-bot.js --name hyper-bot"
-echo "5. Save PM2: pm2 save && pm2 startup"
-echo ""
-`;
-
-const nginxConfigContent = `# =====================================================
-# NGINX REVERSE PROXY CONFIGURATION
-# Add this to your domain's Nginx config in aaPanel
-# =====================================================
-
-location /api {
-    proxy_pass http://127.0.0.1:3000;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection 'upgrade';
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_cache_bypass $http_upgrade;
-    proxy_read_timeout 86400;
-}`;
 
 const BackendDownloadPage = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [copiedFile, setCopiedFile] = useState<string | null>(null);
+  const [backendType, setBackendType] = useState<'php' | 'nodejs'>('php');
   const { toast } = useToast();
   const { config } = useConfig();
 
@@ -178,38 +55,80 @@ const BackendDownloadPage = () => {
     }
   };
 
-  // Generate .env content dynamically from config
-  const generateEnvContent = () => `# =====================================================
-# ${config.siteName.toUpperCase()} - ENVIRONMENT CONFIGURATION
-# Generated on: ${new Date().toLocaleString()}
-# =====================================================
+  // Generate PHP config content dynamically
+  const generatePhpConfig = () => `<?php
+/**
+ * =====================================================
+ * 🔒 ${config.siteName.toUpperCase()} - CONFIGURATION
+ * Generated: ${new Date().toLocaleString()}
+ * =====================================================
+ */
 
-PORT=3000
-NODE_ENV=production
-FRONTEND_URL=https://your-frontend-url.lovable.app
+// Database Configuration
+define('DB_HOST', 'localhost');
+define('DB_USER', 'your_db_user');
+define('DB_PASS', 'your_db_password');
+define('DB_NAME', 'hyper_softs_db');
 
-# JWT Secret (Generate: openssl rand -hex 32)
-JWT_SECRET=change-this-to-a-random-string
+// HIDDEN UPSTREAM API (NEVER EXPOSE TO USERS!)
+define('UPSTREAM_API_BASE', '${config.apiDomain}');
+define('UPSTREAM_API_ENDPOINT', '${config.apiEndpoint}');
 
-# MySQL Database
-DB_HOST=localhost
-DB_USER=hyper_user
-DB_PASSWORD=your_password
-DB_NAME=hyper_softs_db
+// Telegram Bot
+define('TELEGRAM_BOT_TOKEN', '${config.telegramBotToken}');
+define('ADMIN_TELEGRAM_ID', '${config.adminTelegramId}');
 
-# Telegram Bot
-TELEGRAM_BOT_TOKEN=${config.telegramBotToken}
-ADMIN_TELEGRAM_ID=${config.adminTelegramId}
+// Site Info
+define('SITE_NAME', '${config.siteName}');
+define('SITE_DESCRIPTION', '${config.siteDescription}');
+define('ADMIN_EMAIL', '${config.adminEmail}');
+define('SUPPORT_EMAIL', '${config.supportEmail}');
 
-# API Configuration
-API_DOMAIN=${config.apiDomain}
-API_ENDPOINT=${config.apiEndpoint}
+// Game Type IDs (Internal Mapping - HIDDEN!)
+define('GAME_TYPES', [
+    'wingo_30s'  => ['typeId' => 'wg30s', 'name' => 'WinGo 30 Seconds'],
+    'wingo_1min' => ['typeId' => 'wg1', 'name' => 'WinGo 1 Minute'],
+    'wingo_3min' => ['typeId' => 'wg3', 'name' => 'WinGo 3 Minutes'],
+    'wingo_5min' => ['typeId' => 'wg5', 'name' => 'WinGo 5 Minutes'],
+    'k3_1min'    => ['typeId' => 'k3_1', 'name' => 'K3 1 Minute'],
+    'k3_3min'    => ['typeId' => 'k3_3', 'name' => 'K3 3 Minutes'],
+    'k3_5min'    => ['typeId' => 'k3_5', 'name' => 'K3 5 Minutes'],
+    'k3_10min'   => ['typeId' => 'k3_10', 'name' => 'K3 10 Minutes'],
+    '5d_1min'    => ['typeId' => '5d_1', 'name' => '5D 1 Minute'],
+    '5d_3min'    => ['typeId' => '5d_3', 'name' => '5D 3 Minutes'],
+    '5d_5min'    => ['typeId' => '5d_5', 'name' => '5D 5 Minutes'],
+    '5d_10min'   => ['typeId' => '5d_10', 'name' => '5D 10 Minutes'],
+    'trx_1min'   => ['typeId' => 'trx_1', 'name' => 'TRX 1 Minute'],
+    'trx_3min'   => ['typeId' => 'trx_3', 'name' => 'TRX 3 Minutes'],
+    'trx_5min'   => ['typeId' => 'trx_5', 'name' => 'TRX 5 Minutes'],
+    'numeric_1min' => ['typeId' => 'num_1', 'name' => 'Numeric 1 Minute'],
+    'numeric_3min' => ['typeId' => 'num_3', 'name' => 'Numeric 3 Minutes'],
+    'numeric_5min' => ['typeId' => 'num_5', 'name' => 'Numeric 5 Minutes'],
+]);
 
-# Site Info
-SITE_NAME=${config.siteName}
-SITE_DESCRIPTION=${config.siteDescription}
-ADMIN_EMAIL=${config.adminEmail}
-SUPPORT_EMAIL=${config.supportEmail}`;
+// Security
+define('ENABLE_IP_WHITELIST', true);
+define('ENABLE_DOMAIN_WHITELIST', true);
+define('LOG_ALL_REQUESTS', true);
+define('RATE_LIMIT_ENABLED', true);
+
+// CORS
+define('ALLOWED_ORIGINS', [
+    'https://your-frontend-domain.com',
+]);
+
+// Error Messages
+define('ERROR_MESSAGES', [
+    'invalid_key' => 'Invalid or expired API key.',
+    'ip_blocked' => 'Access denied. Your IP is not authorized.',
+    'domain_blocked' => 'Access denied. Domain not authorized.',
+    'rate_limited' => 'Too many requests. Please slow down.',
+    'key_expired' => 'Your API key has expired. Please renew.',
+    'key_disabled' => 'Your API key has been disabled.',
+    'server_error' => 'Internal server error. Please try again later.',
+    'upstream_error' => 'Data source temporarily unavailable.',
+]);
+`;
 
   const downloadAllFiles = async () => {
     setIsDownloading(true);
@@ -217,57 +136,98 @@ SUPPORT_EMAIL=${config.supportEmail}`;
 
     try {
       const zip = new JSZip();
-      
-      // Create backend folder with config site name
       const folderName = config.siteName.toLowerCase().replace(/\s+/g, '-') + '-backend';
       const backend = zip.folder(folderName);
       
       setDownloadProgress(10);
 
-      // Fetch actual file contents
-      const files = [
-        { name: 'server.js', path: '/backend/server.js' },
-        { name: 'database.sql', path: '/backend/database.sql' },
-        { name: 'telegram-bot.js', path: '/backend/telegram-bot.js' },
-        { name: 'README.md', path: '/backend/README.md' },
-      ];
+      if (backendType === 'php') {
+        // PHP Backend
+        const phpFolder = backend?.folder('php');
+        const apiFolder = phpFolder?.folder('api');
 
-      for (let i = 0; i < files.length; i++) {
-        try {
-          const response = await fetch(files[i].path);
-          const content = await response.text();
-          backend?.file(files[i].name, content);
-        } catch (e) {
-          console.log(`Could not fetch ${files[i].name}, using template`);
+        // Fetch PHP files
+        const phpFiles = [
+          { name: 'helpers.php', path: '/backend/php/helpers.php' },
+          { name: 'database.sql', path: '/backend/php/database.sql' },
+          { name: '.htaccess', path: '/backend/php/.htaccess' },
+          { name: 'README.md', path: '/backend/php/README.md' },
+        ];
+
+        const apiFiles = [
+          { name: 'wingo.php', path: '/backend/php/api/wingo.php' },
+          { name: 'k3.php', path: '/backend/php/api/k3.php' },
+          { name: '5d.php', path: '/backend/php/api/5d.php' },
+          { name: 'trx.php', path: '/backend/php/api/trx.php' },
+          { name: 'numeric.php', path: '/backend/php/api/numeric.php' },
+          { name: 'health.php', path: '/backend/php/api/health.php' },
+        ];
+
+        // Fetch helper files
+        for (let i = 0; i < phpFiles.length; i++) {
+          try {
+            const response = await fetch(phpFiles[i].path);
+            const content = await response.text();
+            phpFolder?.file(phpFiles[i].name, content);
+          } catch (e) {
+            console.log(`Could not fetch ${phpFiles[i].name}`);
+          }
+          setDownloadProgress(10 + (i + 1) * 8);
         }
-        setDownloadProgress(10 + (i + 1) * 15);
+
+        // Fetch API files
+        for (let i = 0; i < apiFiles.length; i++) {
+          try {
+            const response = await fetch(apiFiles[i].path);
+            const content = await response.text();
+            apiFolder?.file(apiFiles[i].name, content);
+          } catch (e) {
+            console.log(`Could not fetch ${apiFiles[i].name}`);
+          }
+          setDownloadProgress(45 + (i + 1) * 8);
+        }
+
+        // Add dynamic config
+        phpFolder?.file('config.php', generatePhpConfig());
+        
+      } else {
+        // Node.js Backend (existing)
+        const nodeFiles = [
+          { name: 'server.js', path: '/backend/server.js' },
+          { name: 'database.sql', path: '/backend/database.sql' },
+          { name: 'telegram-bot.js', path: '/backend/telegram-bot.js' },
+          { name: 'README.md', path: '/backend/README.md' },
+        ];
+
+        for (let i = 0; i < nodeFiles.length; i++) {
+          try {
+            const response = await fetch(nodeFiles[i].path);
+            const content = await response.text();
+            backend?.file(nodeFiles[i].name, content);
+          } catch (e) {
+            console.log(`Could not fetch ${nodeFiles[i].name}`);
+          }
+          setDownloadProgress(10 + (i + 1) * 15);
+        }
       }
 
-      // Add dynamically generated files with current config
-      backend?.file('package.json', packageJsonContent.replace('hyper-softs-trend-backend', folderName));
-      backend?.file('.env.example', generateEnvContent());
-      backend?.file('setup.sh', setupScriptContent);
-      backend?.file('nginx.conf', nginxConfigContent);
-      
-      setDownloadProgress(80);
+      setDownloadProgress(85);
 
       // Generate ZIP
       const content = await zip.generateAsync({ type: 'blob' });
-      
       setDownloadProgress(100);
       
-      // Download with config site name
-      saveAs(content, `${folderName}.zip`);
+      saveAs(content, `${folderName}-${backendType}.zip`);
       
       toast({
         title: '✅ Download Complete!',
-        description: `${folderName}.zip downloaded with your current settings`,
+        description: `${backendType.toUpperCase()} backend downloaded with your settings`,
       });
     } catch (error) {
       console.error('Download error:', error);
       toast({
         title: '❌ Download Failed',
-        description: 'Please try downloading individual files',
+        description: 'Please try again',
         variant: 'destructive'
       });
     } finally {
@@ -276,13 +236,17 @@ SUPPORT_EMAIL=${config.supportEmail}`;
     }
   };
 
-  const files = [
-    { name: 'server.js', icon: FileCode, description: 'Express API Server', size: '~25 KB', color: 'text-yellow-500' },
+  const phpFiles = [
+    { name: 'config.php', icon: Settings, description: 'Configuration (HIDDEN!)', size: '~3 KB', color: 'text-red-500' },
+    { name: 'helpers.php', icon: Code2, description: 'Helper Functions', size: '~8 KB', color: 'text-purple-500' },
+    { name: 'wingo.php', icon: FileCode, description: 'WinGo API (All Durations)', size: '~6 KB', color: 'text-yellow-500' },
+    { name: 'k3.php', icon: FileCode, description: 'K3 API (All Durations)', size: '~5 KB', color: 'text-blue-500' },
+    { name: '5d.php', icon: FileCode, description: '5D API (All Durations)', size: '~5 KB', color: 'text-green-500' },
+    { name: 'trx.php', icon: FileCode, description: 'TRX API (All Durations)', size: '~5 KB', color: 'text-orange-500' },
+    { name: 'numeric.php', icon: FileCode, description: 'Numeric API (All Durations)', size: '~5 KB', color: 'text-cyan-500' },
+    { name: 'health.php', icon: Shield, description: 'Health Check', size: '~4 KB', color: 'text-emerald-500' },
     { name: 'database.sql', icon: Database, description: 'MySQL Schema', size: '~12 KB', color: 'text-blue-500' },
-    { name: 'telegram-bot.js', icon: Bot, description: 'Telegram Bot', size: '~18 KB', color: 'text-cyan-500' },
-    { name: 'package.json', icon: Package, description: 'Dependencies', size: '~1 KB', color: 'text-green-500' },
-    { name: '.env.example', icon: Settings, description: 'Environment Template', size: '~1 KB', color: 'text-purple-500' },
-    { name: 'setup.sh', icon: FileText, description: 'Auto Setup Script', size: '~1 KB', color: 'text-orange-500' },
+    { name: '.htaccess', icon: FileText, description: 'Apache Security', size: '~2 KB', color: 'text-gray-500' },
   ];
 
   return (
@@ -296,7 +260,7 @@ SUPPORT_EMAIL=${config.supportEmail}`;
               Backend Download
             </h1>
             <p className="text-muted-foreground mt-1">
-              One-click download for VPS deployment
+              Complete PHP backend with hidden upstream API
             </p>
           </div>
           <Badge variant="outline" className="text-sm px-3 py-1.5 font-mono">
@@ -304,96 +268,179 @@ SUPPORT_EMAIL=${config.supportEmail}`;
           </Badge>
         </div>
 
-        {/* One-Click Download Card */}
-        <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-accent/5 to-background overflow-hidden">
+        {/* Backend Type Selection */}
+        <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-accent/5 to-background">
           <CardContent className="pt-6">
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center">
-                  <FolderArchive className="w-8 h-8 text-primary-foreground" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold">One-Click Download</h3>
-                  <p className="text-muted-foreground">
-                    Download all files as ready-to-use ZIP
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-3 w-full lg:w-auto">
-                <Button 
+            <div className="flex flex-col gap-6">
+              {/* Backend Type Toggle */}
+              <div className="flex items-center justify-center gap-4">
+                <Button
                   size="lg"
-                  className="gradient-primary text-primary-foreground h-14 px-8 text-lg"
-                  onClick={downloadAllFiles}
-                  disabled={isDownloading}
+                  variant={backendType === 'php' ? 'default' : 'outline'}
+                  onClick={() => setBackendType('php')}
+                  className={backendType === 'php' ? 'gradient-primary text-primary-foreground' : ''}
                 >
-                  {isDownloading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Downloading... {downloadProgress}%
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-5 h-5 mr-2" />
-                      Download All (ZIP)
-                    </>
-                  )}
+                  <Code2 className="w-5 h-5 mr-2" />
+                  PHP Backend
+                  <Badge variant="secondary" className="ml-2 text-xs">Recommended</Badge>
                 </Button>
-                {isDownloading && (
-                  <Progress value={downloadProgress} className="h-2" />
-                )}
+                <Button
+                  size="lg"
+                  variant={backendType === 'nodejs' ? 'default' : 'outline'}
+                  onClick={() => setBackendType('nodejs')}
+                  className={backendType === 'nodejs' ? 'gradient-primary text-primary-foreground' : ''}
+                >
+                  <Server className="w-5 h-5 mr-2" />
+                  Node.js Backend
+                </Button>
               </div>
-            </div>
 
-            {/* What's Included */}
-            <div className="mt-6 p-4 rounded-xl bg-background/50 border">
-              <h4 className="font-semibold mb-3 flex items-center gap-2">
-                <Package className="w-4 h-4 text-primary" />
-                ZIP Contains:
-              </h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-                {files.map((file) => (
-                  <div key={file.name} className="flex items-center gap-2 text-sm">
-                    <file.icon className={`w-4 h-4 ${file.color}`} />
-                    <span>{file.name}</span>
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center">
+                    <FolderArchive className="w-8 h-8 text-primary-foreground" />
                   </div>
-                ))}
+                  <div>
+                    <h3 className="text-2xl font-bold">One-Click Download</h3>
+                    <p className="text-muted-foreground">
+                      {backendType === 'php' 
+                        ? 'PHP files with your upstream API hidden' 
+                        : 'Node.js + Express + MySQL'}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col gap-3 w-full lg:w-auto">
+                  <Button 
+                    size="lg"
+                    className="gradient-primary text-primary-foreground h-14 px-8 text-lg"
+                    onClick={downloadAllFiles}
+                    disabled={isDownloading}
+                  >
+                    {isDownloading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Downloading... {downloadProgress}%
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-5 h-5 mr-2" />
+                        Download {backendType.toUpperCase()} Backend
+                      </>
+                    )}
+                  </Button>
+                  {isDownloading && (
+                    <Progress value={downloadProgress} className="h-2" />
+                  )}
+                </div>
               </div>
+
+              {/* Security Notice */}
+              <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30">
+                <div className="flex items-start gap-3">
+                  <Shield className="w-5 h-5 text-destructive mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-destructive">Upstream API Hidden!</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Your real data source (<code className="text-destructive">{config.apiDomain}</code>) is completely hidden. 
+                      Users will only see your domain: <code className="text-primary">{config.userApiDomain}</code>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* What's Included */}
+              {backendType === 'php' && (
+                <div className="p-4 rounded-xl bg-background/50 border">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Package className="w-4 h-4 text-primary" />
+                    PHP Backend Contains:
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    {phpFiles.slice(0, 10).map((file) => (
+                      <div key={file.name} className="flex items-center gap-2 text-sm">
+                        <file.icon className={`w-4 h-4 ${file.color}`} />
+                        <span>{file.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Quick Start Steps */}
+        {/* API Endpoints Preview */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="w-5 h-5 text-primary" />
+              Your API Endpoints (What Users See)
+            </CardTitle>
+            <CardDescription>
+              Users will call these endpoints on YOUR domain - upstream API is hidden
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                { game: 'WinGo', durations: ['30s', '1min', '3min', '5min'], endpoint: 'wingo.php' },
+                { game: 'K3', durations: ['1min', '3min', '5min', '10min'], endpoint: 'k3.php' },
+                { game: '5D', durations: ['1min', '3min', '5min', '10min'], endpoint: '5d.php' },
+                { game: 'TRX', durations: ['1min', '3min', '5min'], endpoint: 'trx.php' },
+                { game: 'Numeric', durations: ['1min', '3min', '5min'], endpoint: 'numeric.php' },
+                { game: 'Health', durations: ['check'], endpoint: 'health.php' },
+              ].map((item) => (
+                <div key={item.game} className="p-3 rounded-lg bg-muted/50 border">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold">{item.game}</span>
+                    <Badge variant="secondary" className="text-xs">{item.durations.length} endpoints</Badge>
+                  </div>
+                  <code className="text-xs text-primary break-all">
+                    {config.userApiDomain}/api/{item.endpoint}
+                  </code>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {item.durations.map(d => (
+                      <Badge key={d} variant="outline" className="text-xs">{d}</Badge>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Start */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Zap className="w-5 h-5 text-warning" />
-              Quick Start (3 Easy Steps)
+              PHP Quick Start (3 Steps)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
                 <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold mb-3">1</div>
-                <h4 className="font-semibold mb-2">Upload & Extract</h4>
+                <h4 className="font-semibold mb-2">Upload to VPS</h4>
                 <p className="text-sm text-muted-foreground">
-                  Upload ZIP to <code className="text-primary">/www/wwwroot/hyperapi.in/</code> and extract
+                  Extract ZIP to <code className="text-primary">/www/wwwroot/hyperapi.in/php/</code>
                 </p>
               </div>
               
               <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
                 <div className="w-10 h-10 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold mb-3">2</div>
-                <h4 className="font-semibold mb-2">Configure .env</h4>
+                <h4 className="font-semibold mb-2">Update config.php</h4>
                 <p className="text-sm text-muted-foreground">
-                  Copy <code className="text-primary">.env.example</code> to <code className="text-primary">.env</code> and fill your values
+                  Edit database credentials in <code className="text-primary">config.php</code>
                 </p>
               </div>
               
               <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
                 <div className="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center font-bold mb-3">3</div>
-                <h4 className="font-semibold mb-2">Run Setup Script</h4>
+                <h4 className="font-semibold mb-2">Import Database</h4>
                 <p className="text-sm text-muted-foreground">
-                  Run <code className="text-primary">bash setup.sh</code> and follow instructions
+                  Run <code className="text-primary">mysql -u root -p {'<'} database.sql</code>
                 </p>
               </div>
             </div>
@@ -402,16 +449,16 @@ SUPPORT_EMAIL=${config.supportEmail}`;
 
         <Tabs defaultValue="files" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="files">📁 Individual Files</TabsTrigger>
-            <TabsTrigger value="commands">🛠️ Commands</TabsTrigger>
-            <TabsTrigger value="nginx">🌐 Nginx Config</TabsTrigger>
+            <TabsTrigger value="files">📁 PHP Files</TabsTrigger>
+            <TabsTrigger value="example">📋 Usage Example</TabsTrigger>
+            <TabsTrigger value="htaccess">🔒 Security Config</TabsTrigger>
           </TabsList>
 
           {/* Files Tab */}
           <TabsContent value="files">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {files.map((file) => (
-                <Card key={file.name} className="hover:border-primary/50 transition-all group">
+              {phpFiles.map((file) => (
+                <Card key={file.name} className="hover:border-primary/50 transition-all">
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center justify-between text-base">
                       <span className="flex items-center gap-2">
@@ -423,112 +470,47 @@ SUPPORT_EMAIL=${config.supportEmail}`;
                     <CardDescription>{file.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex gap-2">
-                      <Button 
-                        className="flex-1"
-                        variant="outline"
-                        onClick={() => window.open(`/backend/${file.name}`, '_blank')}
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        View
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = `/backend/${file.name}`;
-                          link.download = file.name;
-                          link.click();
-                        }}
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <Button 
+                      className="w-full"
+                      variant="outline"
+                      onClick={() => {
+                        const basePath = file.name === 'config.php' 
+                          ? '' 
+                          : ['wingo.php', 'k3.php', '5d.php', 'trx.php', 'numeric.php', 'health.php'].includes(file.name)
+                            ? '/backend/php/api/'
+                            : '/backend/php/';
+                        if (basePath) {
+                          window.open(basePath + file.name, '_blank');
+                        } else {
+                          toast({
+                            title: '🔒 Protected File',
+                            description: 'config.php contains secrets - included in ZIP only',
+                          });
+                        }
+                      }}
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      View File
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
             </div>
           </TabsContent>
 
-          {/* Commands Tab */}
-          <TabsContent value="commands">
+          {/* Example Tab */}
+          <TabsContent value="example">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span>VPS Setup Commands</span>
+                  <span>API Usage Examples</span>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => copyToClipboard(setupScriptContent, 'commands')}
+                    onClick={() => copyToClipboard(`curl "${config.userApiDomain}/api/wingo.php?api_key=YOUR_KEY&duration=1min"`, 'example')}
                   >
-                    {copiedFile === 'commands' ? (
-                      <Check className="w-4 h-4 mr-2 text-success" />
-                    ) : (
-                      <Copy className="w-4 h-4 mr-2" />
-                    )}
-                    Copy
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[400px]">
-                  <pre className="p-4 rounded-lg bg-muted/50 text-sm font-mono whitespace-pre-wrap">
-{`# =====================================================
-# SSH into your VPS
-# =====================================================
-ssh root@your-server-ip
-
-# Navigate to your domain folder
-cd /www/wwwroot/hyperapi.in/
-
-# Upload and extract the ZIP file
-# (Use SFTP to upload hyper-softs-backend.zip)
-unzip hyper-softs-backend.zip
-cd hyper-softs-backend
-
-# Run the setup script
-chmod +x setup.sh
-bash setup.sh
-
-# Edit your configuration
-nano .env
-
-# Setup MySQL database
-mysql -u root -p
-# In MySQL: CREATE DATABASE hyper_softs_db;
-# Exit and run:
-mysql -u root -p hyper_softs_db < database.sql
-
-# Start with PM2
-pm2 start server.js --name "hyper-api"
-pm2 start telegram-bot.js --name "hyper-bot"
-pm2 save
-pm2 startup
-
-# Check status
-pm2 status
-
-# View logs
-pm2 logs hyper-api`}
-                  </pre>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Nginx Tab */}
-          <TabsContent value="nginx">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Nginx Reverse Proxy Configuration</span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => copyToClipboard(nginxConfigContent, 'nginx')}
-                  >
-                    {copiedFile === 'nginx' ? (
-                      <Check className="w-4 h-4 mr-2 text-success" />
+                    {copiedFile === 'example' ? (
+                      <Check className="w-4 h-4 mr-2 text-green-500" />
                     ) : (
                       <Copy className="w-4 h-4 mr-2" />
                     )}
@@ -536,12 +518,98 @@ pm2 logs hyper-api`}
                   </Button>
                 </CardTitle>
                 <CardDescription>
-                  Add this to your domain's Nginx config in aaPanel/CyberPanel
+                  These examples show what YOUR users will use - upstream is hidden!
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[400px]">
+                  <pre className="p-4 rounded-lg bg-muted/50 text-sm font-mono whitespace-pre-wrap">
+{`# =====================================================
+# YOUR API ENDPOINTS (Upstream Hidden!)
+# =====================================================
+
+# WinGo API
+curl "${config.userApiDomain}/api/wingo.php?api_key=YOUR_KEY&duration=30s"
+curl "${config.userApiDomain}/api/wingo.php?api_key=YOUR_KEY&duration=1min"
+curl "${config.userApiDomain}/api/wingo.php?api_key=YOUR_KEY&duration=3min"
+curl "${config.userApiDomain}/api/wingo.php?api_key=YOUR_KEY&duration=5min"
+
+# K3 API
+curl "${config.userApiDomain}/api/k3.php?api_key=YOUR_KEY&duration=1min"
+curl "${config.userApiDomain}/api/k3.php?api_key=YOUR_KEY&duration=3min"
+
+# 5D API
+curl "${config.userApiDomain}/api/5d.php?api_key=YOUR_KEY&duration=1min"
+
+# TRX API
+curl "${config.userApiDomain}/api/trx.php?api_key=YOUR_KEY&duration=1min"
+
+# Numeric API
+curl "${config.userApiDomain}/api/numeric.php?api_key=YOUR_KEY&duration=1min"
+
+# Health Check (No API key needed)
+curl "${config.userApiDomain}/api/health.php"
+
+# =====================================================
+# RESPONSE FORMAT
+# =====================================================
+{
+  "success": true,
+  "game": "wingo",
+  "duration": "1min",
+  "game_name": "WinGo 1 Minute",
+  "data": { ... },
+  "meta": {
+    "response_time_ms": 245,
+    "timestamp": "2024-01-15T10:30:00+00:00",
+    "powered_by": "${config.siteName} Trend API"
+  }
+}
+
+# =====================================================
+# NOTE: Users NEVER see your upstream API!
+# They only see: ${config.userApiDomain}
+# Hidden source: ${config.apiDomain} (only you know this!)
+# =====================================================`}
+                  </pre>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* htaccess Tab */}
+          <TabsContent value="htaccess">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>.htaccess Security Configuration</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.open('/backend/php/.htaccess', '_blank')}
+                  >
+                    View Full File
+                  </Button>
+                </CardTitle>
+                <CardDescription>
+                  Protects config.php and adds security headers
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <pre className="p-4 rounded-lg bg-muted/50 text-sm font-mono whitespace-pre-wrap">
-                  {nginxConfigContent}
+{`# Block access to config files
+<FilesMatch "^(config\\.php|helpers\\.php|\\.env)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Security Headers
+Header always set X-Content-Type-Options "nosniff"
+Header always set X-Frame-Options "DENY"
+Header always set X-XSS-Protection "1; mode=block"
+
+# Clean URLs
+RewriteRule ^(wingo|k3|5d|trx|numeric)/([0-9]+min?)$ api/$1.php?duration=$2 [L,QSA]`}
                 </pre>
               </CardContent>
             </Card>
@@ -560,14 +628,21 @@ pm2 logs hyper-api`}
                   <Server className="w-4 h-4 text-primary" />
                   <span className="font-medium">VPS Path</span>
                 </div>
-                <code className="text-xs text-primary break-all">/www/wwwroot/hyperapi.in/</code>
+                <code className="text-xs text-primary break-all">/www/wwwroot/hyperapi.in/php/</code>
               </div>
               <div className="p-4 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 mb-2">
                   <Globe className="w-4 h-4 text-blue-500" />
-                  <span className="font-medium">API Port</span>
+                  <span className="font-medium">User API</span>
                 </div>
-                <code className="text-xs text-primary">3000</code>
+                <code className="text-xs text-primary break-all">{config.userApiDomain}</code>
+              </div>
+              <div className="p-4 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield className="w-4 h-4 text-red-500" />
+                  <span className="font-medium">Hidden Source</span>
+                </div>
+                <code className="text-xs text-destructive break-all">{config.apiDomain}</code>
               </div>
               <div className="p-4 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 mb-2">
@@ -575,13 +650,6 @@ pm2 logs hyper-api`}
                   <span className="font-medium">Database</span>
                 </div>
                 <code className="text-xs text-primary">hyper_softs_db</code>
-              </div>
-              <div className="p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <Bot className="w-4 h-4 text-cyan-500" />
-                  <span className="font-medium">PM2 Apps</span>
-                </div>
-                <code className="text-xs text-primary">hyper-api, hyper-bot</code>
               </div>
             </div>
           </CardContent>

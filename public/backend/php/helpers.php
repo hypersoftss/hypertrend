@@ -410,3 +410,91 @@ function set_cors_headers(): void {
         exit;
     }
 }
+
+/**
+ * Update API key usage stats
+ */
+function update_api_key_usage(int $api_key_id, string $client_ip): void {
+    $conn = get_db_connection();
+    
+    $stmt = $conn->prepare("
+        UPDATE api_keys 
+        SET calls_today = calls_today + 1,
+            calls_this_month = calls_this_month + 1,
+            total_calls = total_calls + 1,
+            last_used_at = NOW(),
+            last_used_ip = ?
+        WHERE id = ?
+    ");
+    
+    if ($stmt) {
+        $stmt->bind_param("si", $client_ip, $api_key_id);
+        $stmt->execute();
+        $stmt->close();
+    }
+    
+    $conn->close();
+}
+
+/**
+ * Check rate limit
+ */
+function check_rate_limit(int $api_key_id, array $key_data): bool {
+    if (!RATE_LIMIT_ENABLED) return true;
+    
+    $daily_limit = $key_data['daily_limit'] ?? 10000;
+    $monthly_limit = $key_data['monthly_limit'] ?? 300000;
+    $calls_today = $key_data['calls_today'] ?? 0;
+    $calls_this_month = $key_data['calls_this_month'] ?? 0;
+    
+    if ($calls_today >= $daily_limit) return false;
+    if ($calls_this_month >= $monthly_limit) return false;
+    
+    return true;
+}
+
+/**
+ * Get API stats for a user
+ */
+function get_user_api_stats(int $user_id): array {
+    $conn = get_db_connection();
+    
+    $stats = [
+        'total_calls' => 0,
+        'calls_today' => 0,
+        'success_rate' => 0,
+        'avg_response_time' => 0
+    ];
+    
+    // Get from api_logs
+    $stmt = $conn->prepare("
+        SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN http_status = 200 THEN 1 ELSE 0 END) as success,
+            AVG(duration_ms) as avg_time,
+            SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) as today
+        FROM api_logs 
+        WHERE user_id = ?
+    ");
+    
+    if ($stmt) {
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            $stats['total_calls'] = (int)$row['total'];
+            $stats['calls_today'] = (int)$row['today'];
+            $stats['avg_response_time'] = round((float)$row['avg_time'], 2);
+            
+            if ($row['total'] > 0) {
+                $stats['success_rate'] = round(($row['success'] / $row['total']) * 100, 1);
+            }
+        }
+        
+        $stmt->close();
+    }
+    
+    $conn->close();
+    return $stats;
+}
