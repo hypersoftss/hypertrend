@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import { useConfig } from '@/contexts/ConfigContext';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { 
@@ -157,6 +158,7 @@ const BackendDownloadPage = () => {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [copiedFile, setCopiedFile] = useState<string | null>(null);
   const { toast } = useToast();
+  const { config } = useConfig();
 
   const copyToClipboard = async (text: string, fileName: string) => {
     try {
@@ -176,6 +178,39 @@ const BackendDownloadPage = () => {
     }
   };
 
+  // Generate .env content dynamically from config
+  const generateEnvContent = () => `# =====================================================
+# ${config.siteName.toUpperCase()} - ENVIRONMENT CONFIGURATION
+# Generated on: ${new Date().toLocaleString()}
+# =====================================================
+
+PORT=3000
+NODE_ENV=production
+FRONTEND_URL=https://your-frontend-url.lovable.app
+
+# JWT Secret (Generate: openssl rand -hex 32)
+JWT_SECRET=change-this-to-a-random-string
+
+# MySQL Database
+DB_HOST=localhost
+DB_USER=hyper_user
+DB_PASSWORD=your_password
+DB_NAME=hyper_softs_db
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=${config.telegramBotToken}
+ADMIN_TELEGRAM_ID=${config.adminTelegramId}
+
+# API Configuration
+API_DOMAIN=${config.apiDomain}
+API_ENDPOINT=${config.apiEndpoint}
+
+# Site Info
+SITE_NAME=${config.siteName}
+SITE_DESCRIPTION=${config.siteDescription}
+ADMIN_EMAIL=${config.adminEmail}
+SUPPORT_EMAIL=${config.supportEmail}`;
+
   const downloadAllFiles = async () => {
     setIsDownloading(true);
     setDownloadProgress(0);
@@ -183,8 +218,9 @@ const BackendDownloadPage = () => {
     try {
       const zip = new JSZip();
       
-      // Create backend folder
-      const backend = zip.folder('hyper-softs-backend');
+      // Create backend folder with config site name
+      const folderName = config.siteName.toLowerCase().replace(/\s+/g, '-') + '-backend';
+      const backend = zip.folder(folderName);
       
       setDownloadProgress(10);
 
@@ -207,9 +243,9 @@ const BackendDownloadPage = () => {
         setDownloadProgress(10 + (i + 1) * 15);
       }
 
-      // Add other files with content
-      backend?.file('package.json', packageJsonContent);
-      backend?.file('.env.example', envExampleContent);
+      // Add dynamically generated files with current config
+      backend?.file('package.json', packageJsonContent.replace('hyper-softs-trend-backend', folderName));
+      backend?.file('.env.example', generateEnvContent());
       backend?.file('setup.sh', setupScriptContent);
       backend?.file('nginx.conf', nginxConfigContent);
       
@@ -220,12 +256,12 @@ const BackendDownloadPage = () => {
       
       setDownloadProgress(100);
       
-      // Download
-      saveAs(content, 'hyper-softs-backend.zip');
+      // Download with config site name
+      saveAs(content, `${folderName}.zip`);
       
       toast({
         title: '✅ Download Complete!',
-        description: 'All backend files downloaded as ZIP',
+        description: `${folderName}.zip downloaded with your current settings`,
       });
     } catch (error) {
       console.error('Download error:', error);
