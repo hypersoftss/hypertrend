@@ -15,23 +15,25 @@ const SettingsPage = () => {
   const { config, updateConfig } = useConfig();
   
   const [settings, setSettings] = useState({
-    // General
-    siteName: 'Hyper Softs Trend',
-    siteDescription: 'Professional API Management System',
-    adminEmail: 'admin@hypersofts.com',
-    supportEmail: 'support@hypersofts.com',
+    // General - synced from config
+    siteName: config.siteName,
+    siteDescription: config.siteDescription,
+    adminEmail: config.adminEmail,
+    supportEmail: config.supportEmail,
+    logoUrl: config.logoUrl,
+    faviconUrl: config.faviconUrl,
     
     // URLs
     frontendUrl: 'https://hyper-softs-trend.lovable.app',
     backendUrl: 'https://api.hypersofts.com',
     docsUrl: 'https://docs.hypersofts.com',
     
-    // Telegram
+    // Telegram - synced from config
     telegramBotToken: config.telegramBotToken,
     adminTelegramId: config.adminTelegramId,
     webhookUrl: '',
     
-    // API Configuration
+    // API Configuration - synced from config
     apiDomain: config.apiDomain,
     apiEndpoint: config.apiEndpoint,
     rateLimitPerMinute: 100,
@@ -63,8 +65,14 @@ const SettingsPage = () => {
   const handleSave = async () => {
     setIsSaving(true);
     
-    // Update global config
+    // Update global config with ALL site settings
     updateConfig({
+      siteName: settings.siteName,
+      siteDescription: settings.siteDescription,
+      adminEmail: settings.adminEmail,
+      supportEmail: settings.supportEmail,
+      logoUrl: settings.logoUrl,
+      faviconUrl: settings.faviconUrl,
       apiDomain: settings.apiDomain,
       apiEndpoint: settings.apiEndpoint,
       telegramBotToken: settings.telegramBotToken,
@@ -74,7 +82,7 @@ const SettingsPage = () => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     toast({
       title: '✅ Settings Saved',
-      description: 'Your settings have been updated successfully',
+      description: 'Site name, logo, and all settings updated everywhere!',
     });
     setIsSaving(false);
   };
@@ -238,16 +246,36 @@ const SettingsPage = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="logo">Site Logo</Label>
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border-2 border-dashed border-primary/30">
-                      <Upload className="w-8 h-8 text-primary/50" />
-                    </div>
-                    <div className="space-y-2">
-                      <Button variant="outline">Upload Logo</Button>
-                      <p className="text-xs text-muted-foreground">PNG, JPG up to 2MB</p>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="logoUrl">Logo URL</Label>
+                    <Input
+                      id="logoUrl"
+                      value={settings.logoUrl}
+                      onChange={(e) => setSettings({ ...settings, logoUrl: e.target.value })}
+                      placeholder="https://example.com/logo.png"
+                    />
+                    <p className="text-xs text-muted-foreground">Enter URL of your logo image</p>
+                    {settings.logoUrl && (
+                      <div className="mt-2">
+                        <img src={settings.logoUrl} alt="Logo Preview" className="w-16 h-16 rounded-lg object-cover border" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="faviconUrl">Favicon URL</Label>
+                    <Input
+                      id="faviconUrl"
+                      value={settings.faviconUrl}
+                      onChange={(e) => setSettings({ ...settings, faviconUrl: e.target.value })}
+                      placeholder="https://example.com/favicon.ico"
+                    />
+                    <p className="text-xs text-muted-foreground">Enter URL of your favicon</p>
+                    {settings.faviconUrl && (
+                      <div className="mt-2">
+                        <img src={settings.faviconUrl} alt="Favicon Preview" className="w-8 h-8 object-cover" />
+                      </div>
+                    )}
                   </div>
                 </div>
 

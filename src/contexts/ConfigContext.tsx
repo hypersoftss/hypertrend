@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-interface ApiConfig {
+interface SiteConfig {
+  siteName: string;
+  siteDescription: string;
+  supportEmail: string;
+  adminEmail: string;
+  logoUrl: string;
+  faviconUrl: string;
   apiDomain: string;
   apiEndpoint: string;
   telegramBotToken: string;
@@ -8,11 +14,17 @@ interface ApiConfig {
 }
 
 interface ConfigContextType {
-  config: ApiConfig;
-  updateConfig: (updates: Partial<ApiConfig>) => void;
+  config: SiteConfig;
+  updateConfig: (updates: Partial<SiteConfig>) => void;
 }
 
-const defaultConfig: ApiConfig = {
+const defaultConfig: SiteConfig = {
+  siteName: 'Hyper Softs',
+  siteDescription: 'Trend API Management System',
+  supportEmail: 'support@hypersofts.com',
+  adminEmail: 'admin@hypersofts.com',
+  logoUrl: '',
+  faviconUrl: '',
   apiDomain: 'https://betapi.space',
   apiEndpoint: '/Xdrtrend',
   telegramBotToken: '7843243355:AAFaHx7XrIAehoIqVRw83uEkZGjT8G75HO8',
@@ -22,8 +34,7 @@ const defaultConfig: ApiConfig = {
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
 
 export const ConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [config, setConfig] = useState<ApiConfig>(() => {
-    // Load from localStorage if available
+  const [config, setConfig] = useState<SiteConfig>(() => {
     const stored = localStorage.getItem('hyper_config');
     if (stored) {
       try {
@@ -35,7 +46,7 @@ export const ConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     return defaultConfig;
   });
 
-  const updateConfig = (updates: Partial<ApiConfig>) => {
+  const updateConfig = (updates: Partial<SiteConfig>) => {
     const newConfig = { ...config, ...updates };
     setConfig(newConfig);
     localStorage.setItem('hyper_config', JSON.stringify(newConfig));
@@ -56,7 +67,8 @@ export const useConfig = () => {
   return context;
 };
 
-// Helper to build full API URL
-export const buildApiUrl = (typeId: string, config: ApiConfig): string => {
+export const buildApiUrl = (typeId: string, config: SiteConfig): string => {
   return `${config.apiDomain}${config.apiEndpoint}?typeId=${typeId}`;
 };
+
+export type { SiteConfig };

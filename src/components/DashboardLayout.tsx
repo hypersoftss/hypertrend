@@ -2,8 +2,17 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useConfig } from '@/contexts/ConfigContext';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -23,6 +32,9 @@ import {
   Globe,
   Download,
   BarChart3,
+  User,
+  Lock,
+  ChevronDown,
 } from 'lucide-react';
 
 interface NavItem {
@@ -53,6 +65,7 @@ const navItems: NavItem[] = [
 const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { config } = useConfig();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -76,12 +89,16 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
         {/* Logo */}
         <div className="p-6 border-b border-border">
           <Link to="/dashboard" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
-              <Zap className="w-6 h-6 text-primary-foreground" />
-            </div>
+            {config.logoUrl ? (
+              <img src={config.logoUrl} alt={config.siteName} className="w-10 h-10 rounded-lg object-cover" />
+            ) : (
+              <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
+                <Zap className="w-6 h-6 text-primary-foreground" />
+              </div>
+            )}
             <div>
-              <h1 className="font-bold text-foreground">Hyper Softs</h1>
-              <p className="text-xs text-muted-foreground">Trend API</p>
+              <h1 className="font-bold text-foreground">{config.siteName}</h1>
+              <p className="text-xs text-muted-foreground">{config.siteDescription}</p>
             </div>
           </Link>
         </div>
@@ -117,10 +134,14 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
         <header className="h-16 border-b border-border bg-card px-6 flex items-center justify-between">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-              <Zap className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-foreground">Hyper Softs</span>
+            {config.logoUrl ? (
+              <img src={config.logoUrl} alt={config.siteName} className="w-8 h-8 rounded-lg object-cover" />
+            ) : (
+              <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
+                <Zap className="w-5 h-5 text-primary-foreground" />
+              </div>
+            )}
+            <span className="font-bold text-foreground">{config.siteName}</span>
           </div>
           
           {/* Page Title - Desktop */}
@@ -130,23 +151,63 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
             </h2>
           </div>
 
-          {/* Right Side - Profile, Theme Toggle, Logout */}
-          <div className="flex items-center gap-3">
-            {/* User Profile */}
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center">
-                <span className="text-accent-foreground font-semibold text-sm">
-                  {user?.username?.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-sm font-medium text-foreground">{user?.username}</p>
-                <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
-              </div>
-            </div>
+          {/* Right Side - Profile Dropdown, Theme Toggle, Logout */}
+          <div className="flex items-center gap-2">
+            {/* Profile Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2 h-10 px-2">
+                  <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
+                    <span className="text-accent-foreground font-semibold text-sm">
+                      {user?.username?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="hidden sm:block text-left">
+                    <p className="text-sm font-medium text-foreground leading-none">{user?.username}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-popover border z-50">
+                <DropdownMenuLabel>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
+                      <span className="text-accent-foreground font-semibold">
+                        {user?.username?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{user?.username}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    </div>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
+                  <User className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/change-password')} className="cursor-pointer">
+                  <Lock className="w-4 h-4 mr-2" />
+                  Change Password
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem onClick={() => navigate('/admin/settings')} className="cursor-pointer">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Site Settings
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Divider */}
-            <div className="h-8 w-px bg-border mx-1" />
+            <div className="h-8 w-px bg-border" />
 
             {/* Theme Toggle */}
             <Button 
@@ -156,16 +217,6 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
               className="h-9 w-9"
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-
-            {/* Logout */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleLogout}
-              className="h-9 w-9 text-muted-foreground hover:text-destructive"
-            >
-              <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </header>
