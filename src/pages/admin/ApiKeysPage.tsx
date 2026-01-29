@@ -87,7 +87,7 @@ const validityOptions = [
 ];
 
 const ApiKeysPage = () => {
-  const { apiKeys: keys, users, addApiKey, updateApiKey, deleteApiKey: removeApiKey, generateApiKey } = useApiData();
+  const { apiKeys: keys, users, addApiKey, updateApiKey, deleteApiKey: removeApiKey, generateApiKey, addActivityLog, addTelegramLog } = useApiData();
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDurations, setSelectedDurations] = useState<string[]>(['1min']);
@@ -223,6 +223,16 @@ const ApiKeysPage = () => {
 
     // Use context to add key - this syncs across all pages
     addApiKey(newKey);
+    
+    // Log the activity
+    const selectedUser = users.find(u => u.id === formData.userId);
+    addActivityLog('CREATE_KEY', `Created API key for ${selectedUser?.username || 'user'} (${currentGameConfig.label})`);
+    
+    // Log telegram notification (simulated)
+    if (selectedUser?.telegramId) {
+      addTelegramLog('new_key', selectedUser.telegramId, `New ${currentGameConfig.label} API Key Generated`);
+    }
+    
     setIsDialogOpen(false);
     
     toast({
@@ -248,7 +258,10 @@ const ApiKeysPage = () => {
   };
 
   const deleteKey = (keyId: string) => {
+    const key = keys.find(k => k.id === keyId);
+    const keyUser = key ? users.find(u => u.id === key.userId) : null;
     removeApiKey(keyId);
+    addActivityLog('DELETE_KEY', `Deleted API key for ${keyUser?.username || 'user'} (${key?.gameType.toUpperCase() || 'unknown'})`);
     toast({ title: '🗑️ Deleted', description: 'API key has been removed' });
   };
 

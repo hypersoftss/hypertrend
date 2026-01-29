@@ -3,11 +3,12 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { mockActivityLogs, mockUsers, formatDate } from '@/lib/mockData';
+import { useApiData } from '@/contexts/ApiDataContext';
+import { formatDate } from '@/lib/mockData';
 import { Activity, Search, LogIn, Key, Send, Settings, User, Trash2 } from 'lucide-react';
 
 const ActivityLogsPage = () => {
-  const [logs] = useState(mockActivityLogs);
+  const { activityLogs: logs, users } = useApiData();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredLogs = logs.filter((log) =>
@@ -82,7 +83,7 @@ const ActivityLogsPage = () => {
           <CardContent>
             <div className="space-y-4">
               {filteredLogs.map((log) => {
-                const user = mockUsers.find(u => u.id === log.userId);
+                const user = users.find(u => u.id === log.userId);
                 return (
                   <div
                     key={log.id}
