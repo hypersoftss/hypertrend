@@ -17,6 +17,7 @@ User-agent: *
 Allow: /
 Allow: /login
 Allow: /docs
+Allow: /install
 
 # Disallow admin and user-specific pages
 Disallow: /admin/
