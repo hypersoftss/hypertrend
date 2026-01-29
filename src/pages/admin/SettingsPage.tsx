@@ -53,9 +53,10 @@ const SettingsPage = () => {
     lockoutMinutes: 30,
     requireStrongPassword: true,
     
-    // Maintenance
-    maintenanceMode: false,
-    maintenanceMessage: 'System is under maintenance. Please try again later.',
+    // Maintenance - synced from config
+    maintenanceMode: config.maintenanceMode || false,
+    maintenanceMessage: config.maintenanceMessage || 'System is under maintenance. Please try again later.',
+    ownerTelegramId: config.ownerTelegramId || 'Hyperdeveloperr',
   });
   
   const [isSaving, setIsSaving] = useState(false);
@@ -81,6 +82,10 @@ const SettingsPage = () => {
       userApiEndpoint: settings.userApiEndpoint,
       telegramBotToken: settings.telegramBotToken,
       adminTelegramId: settings.adminTelegramId,
+      // Maintenance mode
+      maintenanceMode: settings.maintenanceMode,
+      maintenanceMessage: settings.maintenanceMessage,
+      ownerTelegramId: settings.ownerTelegramId,
     });
     
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -295,13 +300,28 @@ const SettingsPage = () => {
                 </div>
 
                 {settings.maintenanceMode && (
-                  <div className="space-y-2 pl-4 border-l-2 border-warning/50">
-                    <Label htmlFor="maintenanceMessage">Maintenance Message</Label>
-                    <Input
-                      id="maintenanceMessage"
-                      value={settings.maintenanceMessage}
-                      onChange={(e) => setSettings({ ...settings, maintenanceMessage: e.target.value })}
-                    />
+                  <div className="space-y-4 pl-4 border-l-2 border-warning/50">
+                    <div className="space-y-2">
+                      <Label htmlFor="maintenanceMessage">Maintenance Message</Label>
+                      <Input
+                        id="maintenanceMessage"
+                        value={settings.maintenanceMessage}
+                        onChange={(e) => setSettings({ ...settings, maintenanceMessage: e.target.value })}
+                        placeholder="System is under maintenance..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ownerTelegramId">Owner Telegram ID (without @)</Label>
+                      <Input
+                        id="ownerTelegramId"
+                        value={settings.ownerTelegramId}
+                        onChange={(e) => setSettings({ ...settings, ownerTelegramId: e.target.value })}
+                        placeholder="Hyperdeveloperr"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Users will see "Connect Hyper Softs Owner" button linking to @{settings.ownerTelegramId}
+                      </p>
+                    </div>
                   </div>
                 )}
               </CardContent>

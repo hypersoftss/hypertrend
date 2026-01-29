@@ -96,7 +96,6 @@ const adminStandaloneItems: NavItem[] = [
   { title: 'API Logs', href: '/admin/logs', icon: FileText, adminOnly: true },
   { title: 'Manual Reminder', href: '/admin/reminder', icon: Bell, adminOnly: true },
   { title: 'Settings', href: '/admin/settings', icon: Settings, adminOnly: true },
-  { title: 'Backend Download', href: '/admin/download', icon: Download, adminOnly: true },
   { title: 'Documentation', href: '/docs', icon: BookOpen },
 ];
 

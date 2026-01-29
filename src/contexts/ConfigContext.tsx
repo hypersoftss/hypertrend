@@ -15,6 +15,10 @@ interface SiteConfig {
   userApiEndpoint: string;
   telegramBotToken: string;
   adminTelegramId: string;
+  // Maintenance Mode
+  maintenanceMode: boolean;
+  maintenanceMessage: string;
+  ownerTelegramId: string;
 }
 
 interface ConfigContextType {
@@ -37,6 +41,10 @@ const defaultConfig: SiteConfig = {
   userApiEndpoint: '/api/trend',
   telegramBotToken: '7843243355:AAFaHx7XrIAehoIqVRw83uEkZGjT8G75HO8',
   adminTelegramId: '1896145195',
+  // Maintenance Mode
+  maintenanceMode: false,
+  maintenanceMessage: 'System is under maintenance. Please try again later.',
+  ownerTelegramId: 'Hyperdeveloperr',
 };
 
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
