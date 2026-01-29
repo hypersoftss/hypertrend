@@ -36,9 +36,9 @@ const defaultConfig: SiteConfig = {
   // Internal - the REAL API source (hidden)
   apiDomain: 'https://betapi.space',
   apiEndpoint: '/Xdrtrend',
-  // User-facing - Edge Function API
-  userApiDomain: 'https://xynoldhqgtrmmsccutfp.supabase.co/functions/v1/trend-api',
-  userApiEndpoint: '',
+  // User-facing - Your custom domain
+  userApiDomain: 'https://trend.hyperapi.in',
+  userApiEndpoint: '/api',
   telegramBotToken: '7843243355:AAFaHx7XrIAehoIqVRw83uEkZGjT8G75HO8',
   adminTelegramId: '1896145195',
   // Maintenance Mode
