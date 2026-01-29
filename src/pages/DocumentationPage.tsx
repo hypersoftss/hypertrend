@@ -84,7 +84,7 @@ curl -X GET "${API_BASE}/wingo?api_key=YOUR_KEY&duration=1min"
 curl -X GET "${API_BASE}/k3?api_key=YOUR_KEY&duration=3min"
 
 # Health Check (No auth required)
-curl -X GET "${API_BASE}"`,
+curl -X GET "${API_BASE}/health"`,
     
     javascript: `// Fetch Trend Data
 const API_KEY = 'your_api_key_here';
@@ -242,7 +242,7 @@ print_r($k3['data']);
               
               <div className="mt-6 p-3 rounded-lg bg-muted/50 border">
                 <p className="text-xs text-muted-foreground mb-2">Base URL</p>
-                <code className="text-[10px] sm:text-xs text-primary break-all">{API_BASE}/api/</code>
+                <code className="text-[10px] sm:text-xs text-primary break-all">{API_BASE}</code>
               </div>
             </div>
           </aside>
@@ -253,7 +253,7 @@ print_r($k3['data']);
             <div className="space-y-4">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge className="gradient-primary text-white">API v2.0</Badge>
-                <Badge variant="outline" className="text-xs">PHP Backend</Badge>
+                <Badge variant="outline" className="text-xs">Edge Functions</Badge>
               </div>
               <h1 className="text-2xl sm:text-4xl font-bold text-foreground">{config.siteName} API</h1>
               <p className="text-sm sm:text-base text-muted-foreground">
@@ -263,7 +263,7 @@ print_r($k3['data']);
               
               {/* Quick Actions */}
               <div className="flex flex-wrap gap-2 pt-2">
-                <Button size="sm" className="gap-2 text-xs" onClick={() => copyCode(`${API_BASE}/api/`, 'base-url')}>
+                <Button size="sm" className="gap-2 text-xs" onClick={() => copyCode(`${API_BASE}`, 'base-url')}>
                   {copiedCode === 'base-url' ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                   Copy Base URL
                 </Button>
@@ -308,13 +308,13 @@ print_r($k3['data']);
                     </div>
                     <div className="relative">
                       <pre className="p-2 rounded bg-muted overflow-x-auto text-xs">
-                        <code>curl "{API_BASE}/api/wingo.php?api_key=YOUR_KEY&duration=1min"</code>
+                        <code>curl "{API_BASE}/wingo?api_key=YOUR_KEY&duration=1min"</code>
                       </pre>
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         className="absolute top-1 right-1 h-6 w-6 p-0"
-                        onClick={() => copyCode(`curl "${API_BASE}/api/wingo.php?api_key=YOUR_KEY&duration=1min"`, 'quick-test')}
+                        onClick={() => copyCode(`curl "${API_BASE}/wingo?api_key=YOUR_KEY&duration=1min"`, 'quick-test')}
                       >
                         {copiedCode === 'quick-test' ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                       </Button>
@@ -432,7 +432,7 @@ print_r($k3['data']);
                         <span className="text-sm font-medium">Health Check</span>
                         <Badge variant="outline" className="text-[10px]">No Auth</Badge>
                       </div>
-                      <code className="text-xs font-mono text-success">/api/health.php</code>
+                      <code className="text-xs font-mono text-success">/health</code>
                     </div>
                   </div>
                 </CardContent>
