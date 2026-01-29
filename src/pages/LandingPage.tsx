@@ -9,8 +9,20 @@ import ScrollAnimation from '@/components/ScrollAnimation';
 import { 
   Zap, ArrowRight, Shield, Activity, BarChart3, 
   Globe, Clock, Users, CheckCircle, Moon, Sun,
-  Code, Server, Smartphone, Send, MessageCircle, ExternalLink
+  Code, Server, Smartphone, Send, MessageCircle, ExternalLink,
+  Star, Quote, Sparkles, TrendingUp, Lock, Cpu, Award
 } from 'lucide-react';
+
+// Animated Gradient Orbs Background
+const GradientOrbs: React.FC = () => {
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute top-3/4 -right-32 w-80 h-80 bg-accent/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/5 to-accent/5 rounded-full blur-3xl" />
+    </div>
+  );
+};
 
 // Network Particle Animation Component
 const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
@@ -41,15 +53,15 @@ const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
     };
 
     const createParticles = () => {
-      const numParticles = Math.min(80, Math.floor((canvas.width * canvas.height) / 15000));
+      const numParticles = Math.min(60, Math.floor((canvas.width * canvas.height) / 20000));
       particles = [];
       for (let i = 0; i < numParticles; i++) {
         particles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: (Math.random() - 0.5) * 0.3,
-          radius: Math.random() * 1.5 + 0.5,
+          vx: (Math.random() - 0.5) * 0.2,
+          vy: (Math.random() - 0.5) * 0.2,
+          radius: Math.random() * 2 + 1,
         });
       }
     };
@@ -63,11 +75,11 @@ const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
           const dy = particles[i].y - particles[j].y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < 150) {
-            const opacity = (1 - distance / 150) * 0.1;
+          if (distance < 180) {
+            const opacity = (1 - distance / 180) * 0.15;
             ctx.beginPath();
             ctx.strokeStyle = `rgba(${lineColor}, ${opacity})`;
-            ctx.lineWidth = 0.5;
+            ctx.lineWidth = 1;
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
             ctx.stroke();
@@ -78,7 +90,7 @@ const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
       particles.forEach((particle) => {
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${particleColor}, 0.3)`;
+        ctx.fillStyle = `rgba(${particleColor}, 0.5)`;
         ctx.fill();
       });
     };
@@ -125,40 +137,97 @@ const features = [
   {
     icon: Activity,
     title: 'Real-time Trends',
-    description: 'Get instant access to live game trends with millisecond accuracy'
+    description: 'Get instant access to live game trends with millisecond accuracy',
+    gradient: 'from-red-500 to-orange-500'
   },
   {
     icon: Shield,
     title: 'Secure & Reliable',
-    description: '99.9% uptime with enterprise-grade security and encryption'
+    description: '99.9% uptime with enterprise-grade security and encryption',
+    gradient: 'from-blue-500 to-cyan-500'
   },
   {
     icon: BarChart3,
     title: 'Advanced Analytics',
-    description: 'Detailed statistics and performance metrics at your fingertips'
+    description: 'Detailed statistics and performance metrics at your fingertips',
+    gradient: 'from-purple-500 to-pink-500'
   },
   {
     icon: Globe,
     title: 'Global Access',
-    description: 'Low-latency API endpoints available worldwide 24/7'
+    description: 'Low-latency API endpoints available worldwide 24/7',
+    gradient: 'from-emerald-500 to-teal-500'
   },
   {
     icon: Clock,
     title: 'Lightning Fast',
-    description: 'Average response time under 50ms for all API calls'
+    description: 'Average response time under 50ms for all API calls',
+    gradient: 'from-amber-500 to-yellow-500'
   },
   {
-    icon: Users,
-    title: 'Developer Friendly',
-    description: 'Easy integration with comprehensive documentation'
+    icon: Cpu,
+    title: 'AI-Powered',
+    description: 'Smart predictions powered by advanced machine learning',
+    gradient: 'from-indigo-500 to-violet-500'
   }
 ];
 
 const games = [
-  { name: 'Wingo', color: 'from-red-500 to-orange-500' },
-  { name: 'K3', color: 'from-blue-500 to-cyan-500' },
-  { name: '5D', color: 'from-purple-500 to-pink-500' },
-  { name: 'TRX', color: 'from-green-500 to-emerald-500' }
+  { name: 'Wingo', color: 'from-red-500 to-orange-500', icon: '🎯' },
+  { name: 'K3', color: 'from-blue-500 to-cyan-500', icon: '🎲' },
+  { name: '5D', color: 'from-purple-500 to-pink-500', icon: '⭐' },
+  { name: 'TRX', color: 'from-emerald-500 to-teal-500', icon: '💎' }
+];
+
+const reviews = [
+  {
+    name: 'Rahul Sharma',
+    role: 'Full Stack Developer',
+    avatar: 'RS',
+    rating: 5,
+    text: 'Best API service I have ever used. The accuracy is incredible and support is very responsive. Highly recommended for serious developers!',
+    date: '2 days ago'
+  },
+  {
+    name: 'Amit Kumar',
+    role: 'App Developer',
+    avatar: 'AK',
+    rating: 5,
+    text: 'Hyper Softs trend API has completely transformed my application. 99.9% uptime and lightning-fast responses. Worth every penny!',
+    date: '5 days ago'
+  },
+  {
+    name: 'Priya Singh',
+    role: 'Tech Lead',
+    avatar: 'PS',
+    rating: 5,
+    text: 'We integrated this API into our platform and the results exceeded our expectations. The documentation is excellent and implementation was smooth.',
+    date: '1 week ago'
+  },
+  {
+    name: 'Vikash Verma',
+    role: 'Backend Developer',
+    avatar: 'VV',
+    rating: 5,
+    text: 'Amazing accuracy and reliability! The Telegram support from @Hyperdeveloperr is quick and helpful. Best in the market!',
+    date: '1 week ago'
+  },
+  {
+    name: 'Deepak Patel',
+    role: 'Freelancer',
+    avatar: 'DP',
+    rating: 5,
+    text: 'I have tried many APIs but Hyper Softs is on another level. The trend predictions are accurate and the API is very stable.',
+    date: '2 weeks ago'
+  },
+  {
+    name: 'Suresh Yadav',
+    role: 'Startup Founder',
+    avatar: 'SY',
+    rating: 5,
+    text: 'Our users love the real-time data. Hyper Developer team provides excellent support. This API is a game-changer for our business!',
+    date: '2 weeks ago'
+  }
 ];
 
 const LandingPage = () => {
@@ -168,7 +237,6 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const isDark = theme === 'dark';
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
@@ -177,21 +245,25 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
+      <GradientOrbs />
       <NetworkBackground isDark={isDark} />
 
       {/* Header */}
-      <header className="relative z-10 border-b border-border/50 backdrop-blur-sm bg-background/80 sticky top-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="relative z-20 border-b border-border/50 backdrop-blur-xl bg-background/60 sticky top-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {config.logoUrl ? (
-                <img src={config.logoUrl} alt={config.siteName} className="w-10 h-10 rounded-lg object-cover" />
+                <img src={config.logoUrl} alt={config.siteName} className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover ring-2 ring-primary/20" />
               ) : (
-                <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-primary-foreground" />
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                  <Zap className="w-5 h-5 text-white" />
                 </div>
               )}
-              <span className="font-bold text-xl text-foreground hidden sm:block">{config.siteName}</span>
+              <div className="hidden sm:block">
+                <span className="font-bold text-lg text-foreground">{config.siteName}</span>
+                <p className="text-xs text-muted-foreground -mt-0.5">by Hyper Developer</p>
+              </div>
             </div>
             
             <div className="flex items-center gap-2 sm:gap-3">
@@ -199,17 +271,17 @@ const LandingPage = () => {
                 variant="ghost"
                 size="icon"
                 onClick={toggleTheme}
-                className="rounded-full"
+                className="rounded-full w-9 h-9"
               >
                 {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
               <Link to="/login">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="h-9 border-border/50">
                   Sign In
                 </Button>
               </Link>
               <Link to="/login" className="hidden sm:block">
-                <Button size="sm" className="bg-primary hover:bg-primary/90">
+                <Button size="sm" className="h-9 bg-gradient-to-r from-primary to-accent hover:opacity-90 border-0 shadow-lg shadow-primary/25">
                   Get Started <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
@@ -219,19 +291,20 @@ const LandingPage = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative z-10 py-16 lg:py-28">
+      <section className="relative z-10 py-12 sm:py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <ScrollAnimation animation="fade-up" delay={0}>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6">
-              <Zap className="w-4 h-4" />
-              <span>Trusted by 1000+ Developers</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-primary text-sm font-medium mb-6 backdrop-blur-sm">
+              <Sparkles className="w-4 h-4" />
+              <span>Trusted by 1000+ Developers Worldwide</span>
+              <Award className="w-4 h-4" />
             </div>
           </ScrollAnimation>
           
           <ScrollAnimation animation="fade-up" delay={100}>
-            <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-foreground mb-6">
-              Professional{' '}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-extrabold text-foreground mb-6 leading-tight">
+              India's #1{' '}
+              <span className="bg-gradient-to-r from-primary via-purple-500 to-accent bg-clip-text text-transparent">
                 Same Trend API
               </span>
               <br className="hidden sm:block" />
@@ -241,9 +314,9 @@ const LandingPage = () => {
           </ScrollAnimation>
           
           <ScrollAnimation animation="fade-up" delay={200}>
-            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
+            <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
               Get reliable, real-time game trend predictions with our enterprise-grade API. 
-              Built by Hyper Developer for seamless integration and maximum accuracy.
+              Built by <span className="text-primary font-semibold">Hyper Developer</span> for seamless integration and maximum accuracy.
             </p>
           </ScrollAnimation>
 
@@ -251,27 +324,29 @@ const LandingPage = () => {
           <ScrollAnimation animation="fade-up" delay={300}>
             <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8">
               {games.map((game, i) => (
-                <span 
+                <div 
                   key={game.name}
-                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-gradient-to-r ${game.color} text-white text-xs sm:text-sm font-semibold shadow-lg`}
+                  className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-gradient-to-r ${game.color} text-white text-sm font-semibold shadow-lg flex items-center gap-2 hover:scale-105 transition-transform cursor-default`}
                   style={{ animationDelay: `${i * 100}ms` }}
                 >
-                  {game.name}
-                </span>
+                  <span>{game.icon}</span>
+                  <span>{game.name}</span>
+                </div>
               ))}
             </div>
           </ScrollAnimation>
 
           <ScrollAnimation animation="fade-up" delay={400}>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-12">
               <Link to="/login" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 group">
+                <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent hover:opacity-90 text-base sm:text-lg px-8 py-6 shadow-xl shadow-primary/30 border-0 group">
+                  <Zap className="w-5 h-5 mr-2" />
                   Start Free Trial
                   <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
               <Link to="/docs" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-8 py-6 border-border/50 backdrop-blur-sm">
                   <Code className="w-5 h-5 mr-2" />
                   View Docs
                 </Button>
@@ -281,15 +356,21 @@ const LandingPage = () => {
 
           {/* Stats */}
           <ScrollAnimation animation="fade-up" delay={500}>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-12 sm:mt-16">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               {[
-                { value: '99.9%', label: 'Uptime' },
-                { value: '<50ms', label: 'Response' },
-                { value: '10M+', label: 'API Calls' },
-                { value: '24/7', label: 'Support' }
+                { value: '99.9%', label: 'Uptime', icon: TrendingUp },
+                { value: '<50ms', label: 'Response', icon: Zap },
+                { value: '10M+', label: 'API Calls', icon: Activity },
+                { value: '24/7', label: 'Support', icon: Shield }
               ].map((stat, i) => (
-                <div key={i} className="text-center p-4 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50">
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary">{stat.value}</div>
+                <div 
+                  key={i} 
+                  className="relative group p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 hover:border-primary/30 transition-all hover:-translate-y-1"
+                >
+                  <stat.icon className="w-5 h-5 text-primary mb-2 mx-auto" />
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    {stat.value}
+                  </div>
                   <div className="text-xs sm:text-sm text-muted-foreground mt-1">{stat.label}</div>
                 </div>
               ))}
@@ -299,12 +380,16 @@ const LandingPage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="relative z-10 py-16 sm:py-20 bg-muted/30">
+      <section className="relative z-10 py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollAnimation animation="fade-up">
-            <div className="text-center mb-10 sm:mb-12">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">
+                <Sparkles className="w-3 h-3" />
+                FEATURES
+              </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                Why Choose Hyper Softs?
+                Why Choose <span className="text-primary">Hyper Softs</span>?
               </h2>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
                 Built for developers who demand reliability, speed, and accuracy in their trend predictions.
@@ -314,14 +399,15 @@ const LandingPage = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {features.map((feature, i) => (
-              <ScrollAnimation key={i} animation="fade-up" delay={i * 100}>
-                <Card className="h-full bg-card border-border hover:border-primary/50 transition-all hover:-translate-y-1 hover:shadow-lg">
-                  <CardContent className="p-5 sm:p-6">
-                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                      <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+              <ScrollAnimation key={i} animation="fade-up" delay={i * 80}>
+                <Card className="h-full group bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all hover:-translate-y-2 hover:shadow-xl hover:shadow-primary/10 overflow-hidden">
+                  <CardContent className="p-5 sm:p-6 relative">
+                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${feature.gradient} opacity-5 rounded-full blur-2xl group-hover:opacity-10 transition-opacity`} />
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 shadow-lg`}>
+                      <feature.icon className="w-6 h-6 text-white" />
                     </div>
-                    <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
-                    <p className="text-muted-foreground text-sm">{feature.description}</p>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
                   </CardContent>
                 </Card>
               </ScrollAnimation>
@@ -330,13 +416,86 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Reviews Section */}
+      <section className="relative z-10 py-16 sm:py-20 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ScrollAnimation animation="fade-up">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">
+                <Star className="w-3 h-3 fill-current" />
+                TESTIMONIALS
+              </div>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
+                Loved by <span className="text-primary">Developers</span>
+              </h2>
+              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
+                See what our users are saying about Hyper Softs API
+              </p>
+            </div>
+          </ScrollAnimation>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {reviews.map((review, i) => (
+              <ScrollAnimation key={i} animation="fade-up" delay={i * 100}>
+                <Card className="h-full bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border-border/50 hover:border-primary/30 transition-all hover:-translate-y-1">
+                  <CardContent className="p-5 sm:p-6">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                        {review.avatar}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-foreground truncate">{review.name}</h4>
+                        <p className="text-xs text-muted-foreground">{review.role}</p>
+                        <div className="flex items-center gap-0.5 mt-1">
+                          {[...Array(review.rating)].map((_, j) => (
+                            <Star key={j} className="w-3 h-3 text-yellow-500 fill-current" />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <Quote className="absolute -top-1 -left-1 w-6 h-6 text-primary/20" />
+                      <p className="text-sm text-muted-foreground leading-relaxed pl-4">
+                        {review.text}
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground/60 mt-4">{review.date}</p>
+                  </CardContent>
+                </Card>
+              </ScrollAnimation>
+            ))}
+          </div>
+
+          {/* Trust Badges */}
+          <ScrollAnimation animation="fade-up" delay={300}>
+            <div className="flex flex-wrap items-center justify-center gap-6 mt-12 pt-8 border-t border-border/50">
+              {[
+                { icon: Shield, text: 'SSL Secured' },
+                { icon: Lock, text: '256-bit Encryption' },
+                { icon: Award, text: 'ISO Certified' },
+                { icon: CheckCircle, text: '99.9% Uptime' }
+              ].map((badge, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <badge.icon className="w-4 h-4 text-primary" />
+                  <span>{badge.text}</span>
+                </div>
+              ))}
+            </div>
+          </ScrollAnimation>
+        </div>
+      </section>
+
       {/* How It Works */}
       <section className="relative z-10 py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollAnimation animation="fade-up">
-            <div className="text-center mb-10 sm:mb-12">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">
+                <Code className="w-3 h-3" />
+                HOW IT WORKS
+              </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                Simple Integration
+                Simple <span className="text-primary">Integration</span>
               </h2>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
                 Get started in minutes with our easy-to-use API
@@ -346,17 +505,22 @@ const LandingPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {[
-              { icon: Users, step: '01', title: 'Create Account', desc: 'Sign up and get your API key instantly' },
-              { icon: Server, step: '02', title: 'Integrate API', desc: 'Use our comprehensive documentation' },
-              { icon: Smartphone, step: '03', title: 'Go Live', desc: 'Start receiving real-time trends' }
+              { icon: Users, step: '01', title: 'Create Account', desc: 'Sign up and get your API key instantly', color: 'from-blue-500 to-cyan-500' },
+              { icon: Server, step: '02', title: 'Integrate API', desc: 'Use our comprehensive documentation', color: 'from-purple-500 to-pink-500' },
+              { icon: Smartphone, step: '03', title: 'Go Live', desc: 'Start receiving real-time trends', color: 'from-emerald-500 to-teal-500' }
             ].map((item, i) => (
               <ScrollAnimation key={i} animation="scale" delay={i * 150}>
-                <div className="text-center p-6 rounded-2xl bg-card/50 border border-border/50">
-                  <div className="relative inline-block mb-5">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                      <item.icon className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
+                <div className="relative text-center p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 hover:border-primary/30 transition-all hover:-translate-y-1">
+                  {i < 2 && (
+                    <div className="hidden md:block absolute top-1/2 -right-4 w-8 text-muted-foreground/30">
+                      <ArrowRight className="w-8 h-8" />
                     </div>
-                    <span className="absolute -top-2 -right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary text-primary-foreground text-xs sm:text-sm font-bold flex items-center justify-center">
+                  )}
+                  <div className="relative inline-block mb-5">
+                    <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center shadow-lg`}>
+                      <item.icon className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                    </div>
+                    <span className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-background border-2 border-primary text-primary text-sm font-bold flex items-center justify-center shadow-lg">
                       {item.step}
                     </span>
                   </div>
@@ -370,19 +534,20 @@ const LandingPage = () => {
       </section>
 
       {/* Contact Developer Section */}
-      <section className="relative z-10 py-16 sm:py-20 bg-muted/30">
+      <section className="relative z-10 py-16 sm:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollAnimation animation="fade-up">
-            <Card className="bg-gradient-to-br from-blue-500/10 via-primary/5 to-cyan-500/10 border-primary/20 overflow-hidden">
-              <CardContent className="p-6 sm:p-10 text-center">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center mx-auto mb-6 shadow-lg">
-                  <Send className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+            <Card className="bg-gradient-to-br from-blue-500/10 via-primary/5 to-cyan-500/10 border-primary/20 overflow-hidden backdrop-blur-xl">
+              <CardContent className="p-6 sm:p-10 text-center relative">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-primary to-cyan-500" />
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-500/30">
+                  <Send className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
                   Contact Developer
                 </h2>
                 <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-                  Need help or have questions? Connect directly with the developer on Telegram.
+                  Need help or have questions? Connect directly with the developer on Telegram for instant support.
                 </p>
                 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
@@ -392,10 +557,10 @@ const LandingPage = () => {
                     rel="noopener noreferrer"
                     className="w-full sm:w-auto"
                   >
-                    <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-5 group">
+                    <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-5 shadow-lg shadow-blue-500/30 group">
                       <MessageCircle className="w-5 h-5 mr-2" />
                       @Hyperdeveloperr
-                      <ExternalLink className="w-4 h-4 ml-2 opacity-70" />
+                      <ExternalLink className="w-4 h-4 ml-2 opacity-70 group-hover:opacity-100" />
                     </Button>
                   </a>
                   <a
@@ -407,13 +572,13 @@ const LandingPage = () => {
                     <Button size="lg" variant="outline" className="w-full sm:w-auto border-blue-500/50 text-blue-500 hover:bg-blue-500/10 px-6 py-5 group">
                       <Users className="w-5 h-5 mr-2" />
                       Join Channel
-                      <ExternalLink className="w-4 h-4 ml-2 opacity-70" />
+                      <ExternalLink className="w-4 h-4 ml-2 opacity-70 group-hover:opacity-100" />
                     </Button>
                   </a>
                 </div>
                 
                 <p className="text-xs text-muted-foreground mt-6">
-                  Join our Telegram channel for updates, announcements, and support
+                  Join our Telegram channel for updates, announcements, and 24/7 support
                 </p>
               </CardContent>
             </Card>
@@ -425,27 +590,34 @@ const LandingPage = () => {
       <section className="relative z-10 py-16 sm:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <ScrollAnimation animation="scale">
-            <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20 p-6 sm:p-10 lg:p-12">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                Ready to Get Started?
-              </h2>
-              <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
-                Join thousands of developers using Hyper Softs for reliable trend predictions.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-                <Link to="/login" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-base sm:text-lg px-6 sm:px-8">
-                    Get Your API Key <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mt-6 text-sm text-muted-foreground">
-                <span className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-success" /> Free trial available
-                </span>
-                <span className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-success" /> No credit card required
-                </span>
+            <Card className="relative overflow-hidden bg-gradient-to-br from-primary/20 via-accent/10 to-primary/20 border-primary/30 p-8 sm:p-12 backdrop-blur-xl">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5" />
+              <div className="relative z-10">
+                <Zap className="w-12 h-12 text-primary mx-auto mb-4" />
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
+                  Ready to Get Started?
+                </h2>
+                <p className="text-base sm:text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+                  Join thousands of developers using Hyper Softs for reliable trend predictions. Start your free trial today!
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <Link to="/login" className="w-full sm:w-auto">
+                    <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent hover:opacity-90 text-base sm:text-lg px-8 shadow-xl shadow-primary/30 border-0">
+                      Get Your API Key <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mt-6 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-primary" /> Free trial available
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-primary" /> No credit card required
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-primary" /> Cancel anytime
+                  </span>
+                </div>
               </div>
             </Card>
           </ScrollAnimation>
@@ -453,29 +625,29 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-border py-6 sm:py-8">
+      <footer className="relative z-10 border-t border-border/50 py-8 backdrop-blur-sm bg-background/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {config.logoUrl ? (
                 <img src={config.logoUrl} alt={config.siteName} className="w-8 h-8 rounded-lg object-cover" />
               ) : (
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-primary-foreground" />
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <Zap className="w-4 h-4 text-white" />
                 </div>
               )}
               <span className="font-semibold text-foreground">{config.siteName}</span>
             </div>
             <div className="flex items-center gap-4">
-              <a href="https://t.me/Hyperdeveloperr" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                <MessageCircle className="w-5 h-5" />
+              <a href="https://t.me/Hyperdeveloperr" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all">
+                <MessageCircle className="w-4 h-4" />
               </a>
-              <a href="https://t.me/hypersoftstech" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                <Send className="w-5 h-5" />
+              <a href="https://t.me/hypersoftstech" target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all">
+                <Send className="w-4 h-4" />
               </a>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-right">
-              © {new Date().getFullYear()} {config.siteName}. Built by Hyper Developer.
+              © {new Date().getFullYear()} {config.siteName}. Built with ❤️ by Hyper Developer
             </p>
           </div>
         </div>
