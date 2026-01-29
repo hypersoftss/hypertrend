@@ -280,17 +280,18 @@ function get_available_durations($game) {
       const assetsFolder = backend?.folder('assets');
       const cssFolder = assetsFolder?.folder('css');
       const jsFolder = assetsFolder?.folder('js');
+      const imagesFolder = assetsFolder?.folder('images');
 
       // ==================== CSS FILES ====================
       const mainCss = generateMainCSS();
       cssFolder?.file('style.css', mainCss);
       cssFolder?.file('dashboard.css', generateDashboardCSS());
-      setDownloadProgress(10);
+      setDownloadProgress(8);
 
       // ==================== JS FILES ====================
       jsFolder?.file('main.js', generateMainJS());
       jsFolder?.file('charts.js', generateChartsJS());
-      setDownloadProgress(15);
+      setDownloadProgress(10);
 
       // ==================== API FILES ====================
       const apiFiles = [
@@ -312,7 +313,7 @@ function get_available_durations($game) {
         } catch (e) {
           console.log(`Could not fetch ${apiFiles[i].name}`);
         }
-        setDownloadProgress(15 + (i + 1) * 3);
+        setDownloadProgress(10 + (i + 1) * 2);
       }
 
       // ==================== ADMIN/FRONTEND FILES ====================
@@ -339,7 +340,7 @@ function get_available_durations($game) {
         } catch (e) {
           console.log(`Could not fetch ${adminFiles[i].name}`);
         }
-        setDownloadProgress(39 + (i + 1) * 2);
+        setDownloadProgress(26 + (i + 1) * 2);
       }
 
       // ==================== INCLUDES FILES ====================
@@ -357,7 +358,7 @@ function get_available_durations($game) {
         } catch (e) {
           console.log(`Could not fetch ${includesFiles[i].name}`);
         }
-        setDownloadProgress(63 + (i + 1) * 3);
+        setDownloadProgress(50 + (i + 1) * 3);
       }
 
       // ==================== ROOT FILES ====================
@@ -376,20 +377,44 @@ function get_available_durations($game) {
         } catch (e) {
           console.log(`Could not fetch ${rootFiles[i].name}`);
         }
-        setDownloadProgress(72 + (i + 1) * 2);
+        setDownloadProgress(59 + (i + 1) * 3);
       }
 
       // ==================== GENERATED FILES ====================
-      // Add dynamic config
+      // Add dynamic config with ALL settings
       backend?.file('config.php', generatePhpConfig());
-      setDownloadProgress(85);
+      setDownloadProgress(75);
+
+      // Add JSON config for frontend settings
+      backend?.file('settings.json', JSON.stringify({
+        siteName: config.siteName,
+        siteDescription: config.siteDescription,
+        apiDomain: config.apiDomain,
+        apiEndpoint: config.apiEndpoint,
+        userApiDomain: config.userApiDomain,
+        supportEmail: config.supportEmail,
+        adminEmail: config.adminEmail,
+        telegramBotToken: config.telegramBotToken ? '***configured***' : '',
+        adminTelegramId: config.adminTelegramId,
+        generatedAt: new Date().toISOString(),
+        version: '1.0.0',
+      }, null, 2));
+      setDownloadProgress(80);
 
       // Add README
       backend?.file('README.md', generateReadme());
-      setDownloadProgress(90);
+      setDownloadProgress(85);
 
       // Add installation script
       backend?.file('install.php', generateInstallScript());
+      setDownloadProgress(90);
+
+      // Add .env.example for reference
+      backend?.file('.env.example', generateEnvExample());
+      setDownloadProgress(92);
+
+      // Add deployment guide
+      backend?.file('DEPLOYMENT.md', generateDeploymentGuide());
       setDownloadProgress(95);
 
       // Generate ZIP
@@ -400,7 +425,7 @@ function get_available_durations($game) {
       
       toast({
         title: '✅ Download Complete!',
-        description: 'Complete PHP solution with Frontend + Backend + CSS + JS + Bot downloaded!',
+        description: 'Complete PHP solution with Frontend + Backend + Database + Telegram Bot + CSS + JS downloaded!',
       });
     } catch (error) {
       console.error('Download error:', error);
@@ -414,6 +439,168 @@ function get_available_durations($game) {
       setDownloadProgress(0);
     }
   };
+
+  // Generate .env.example
+  const generateEnvExample = () => `# ${config.siteName} Environment Configuration
+# Copy this file to .env and fill in your values
+
+# Database Configuration
+DB_HOST=localhost
+DB_NAME=your_database_name
+DB_USER=your_database_user
+DB_PASS=your_database_password
+
+# Site Configuration
+SITE_NAME="${config.siteName}"
+SITE_URL=https://your-domain.com
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+ADMIN_TELEGRAM_ID=${config.adminTelegramId || 'your_telegram_id'}
+
+# API Configuration (HIDDEN - Never expose to users!)
+UPSTREAM_API_BASE=${config.apiDomain}
+UPSTREAM_API_ENDPOINT=${config.apiEndpoint}
+
+# Your branded domain (What users will see)
+USER_API_DOMAIN=${config.userApiDomain || 'https://api.your-domain.com'}
+
+# Security
+DEBUG_MODE=false
+ENABLE_IP_WHITELIST=true
+ENABLE_DOMAIN_WHITELIST=true
+`;
+
+  // Generate Deployment Guide
+  const generateDeploymentGuide = () => `# ${config.siteName} - cPanel Deployment Guide
+
+## 📋 Requirements
+- PHP 7.4 or higher
+- MySQL 5.7+ or MariaDB 10.3+
+- cPanel / Shared Hosting OR VPS with Apache/Nginx
+
+## 🚀 Step-by-Step Deployment
+
+### Option 1: Using install.php (Recommended)
+
+1. **Upload Files**
+   - Go to cPanel → File Manager
+   - Navigate to \`public_html\` (or your desired folder)
+   - Upload the ZIP file and extract it
+
+2. **Run Installer**
+   - Visit: \`https://your-domain.com/install.php\`
+   - Enter database credentials
+   - Create admin account
+   - Done!
+
+3. **Security**
+   - DELETE \`install.php\` after installation!
+
+### Option 2: Manual Installation
+
+1. **Create Database**
+   - Go to cPanel → MySQL Databases
+   - Create a new database (e.g., \`hypersofts_db\`)
+   - Create a new user with a strong password
+   - Add user to database with ALL PRIVILEGES
+
+2. **Edit config.php**
+   \`\`\`php
+   define('DB_HOST', 'localhost');
+   define('DB_NAME', 'hypersofts_db');
+   define('DB_USER', 'your_username');
+   define('DB_PASS', 'your_password');
+   \`\`\`
+
+3. **Import Database**
+   - Go to cPanel → phpMyAdmin
+   - Select your database
+   - Click "Import" tab
+   - Choose \`database.sql\` and import
+
+4. **Set Permissions**
+   \`\`\`
+   chmod 644 config.php
+   chmod 755 api/
+   chmod 755 admin/
+   \`\`\`
+
+5. **Login**
+   - URL: \`https://your-domain.com/admin/login.php\`
+   - Username: \`admin\`
+   - Password: \`admin123\`
+   - ⚠️ CHANGE PASSWORD IMMEDIATELY!
+
+## 🤖 Telegram Bot Setup
+
+1. Create bot via @BotFather on Telegram
+2. Copy the bot token
+3. Get your Chat ID via @userinfobot
+4. Update config.php with these values
+5. Visit \`/api/telegram-setup.php\` to set webhook
+
+## 🔒 Security Checklist
+
+- [ ] Delete \`install.php\` after setup
+- [ ] Change default admin password
+- [ ] Verify \`.htaccess\` is working
+- [ ] Test API endpoints
+- [ ] Configure Telegram notifications
+- [ ] Enable SSL (HTTPS)
+
+## 📁 File Structure After Deployment
+
+\`\`\`
+public_html/
+├── config.php          ← Edit this!
+├── database.sql        ← Import to MySQL
+├── install.php         ← DELETE after install!
+├── index.php
+├── helpers.php
+├── .htaccess
+├── api/
+│   ├── wingo.php
+│   ├── k3.php
+│   ├── 5d.php
+│   ├── trx.php
+│   ├── numeric.php
+│   ├── health.php
+│   └── telegram-*.php
+├── admin/
+│   ├── login.php
+│   ├── dashboard.php
+│   └── ... more pages
+├── includes/
+│   ├── auth.php
+│   ├── header.php
+│   └── footer.php
+└── assets/
+    ├── css/
+    └── js/
+\`\`\`
+
+## ❓ Troubleshooting
+
+**500 Error?**
+- Check PHP version (7.4+)
+- Verify database credentials
+- Check file permissions
+
+**Can't Login?**
+- Re-import database.sql
+- Check if users table exists
+
+**API Not Working?**
+- Check .htaccess is enabled
+- Verify API key is valid
+- Check IP/Domain whitelist
+
+## 📞 Support
+
+- Email: ${config.supportEmail}
+- Generated: ${new Date().toLocaleString()}
+`;
 
   // Generate main CSS
   const generateMainCSS = () => `/**
