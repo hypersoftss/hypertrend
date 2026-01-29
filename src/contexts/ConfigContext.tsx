@@ -47,14 +47,33 @@ const defaultConfig: SiteConfig = {
   ownerTelegramId: 'Hyperdeveloperr',
 };
 
+// Config version - increment this to force update cached values
+const CONFIG_VERSION = 2;
+
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
 
 export const ConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [config, setConfig] = useState<SiteConfig>(() => {
     const stored = localStorage.getItem('hyper_config');
+    const storedVersion = localStorage.getItem('hyper_config_version');
+    
+    // If version mismatch or no version, use defaults and update storage
+    if (!storedVersion || parseInt(storedVersion) < CONFIG_VERSION) {
+      localStorage.setItem('hyper_config', JSON.stringify(defaultConfig));
+      localStorage.setItem('hyper_config_version', CONFIG_VERSION.toString());
+      return defaultConfig;
+    }
+    
     if (stored) {
       try {
-        return { ...defaultConfig, ...JSON.parse(stored) };
+        const parsedConfig = JSON.parse(stored);
+        // Always ensure userApiDomain is correct (override old cached values)
+        return { 
+          ...defaultConfig, 
+          ...parsedConfig,
+          userApiDomain: 'https://trend.hyperapi.in',
+          userApiEndpoint: ''
+        };
       } catch {
         return defaultConfig;
       }
