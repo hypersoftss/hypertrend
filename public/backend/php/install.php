@@ -213,19 +213,88 @@ define("DB_CHARSET", "utf8mb4");
 
 // Site Configuration
 define("SITE_NAME", "' . addslashes($siteNameInput) . '");
+define("SITE_DESCRIPTION", "Trend API Management System");
 define("SITE_URL", (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === "on" ? "https" : "http") . "://" . ($_SERVER["HTTP_HOST"] ?? "localhost"));
+define("YOUR_DOMAIN", SITE_URL);
+define("ADMIN_EMAIL", "' . addslashes($adminEmail) . '");
+define("SUPPORT_EMAIL", "' . addslashes($adminEmail) . '");
+define("SUPPORT_TELEGRAM", "");
 
 // Upstream API Configuration (Hidden from users)
 define("UPSTREAM_API_BASE", "https://betapi.space");
 define("UPSTREAM_API_ENDPOINT", "/Xdrtrend");
 
+// Game Type Mapping
+define("GAME_TYPES", [
+    "wingo" => ["30s" => "wg30s", "30sec" => "wg30s", "1min" => "wg1", "1" => "wg1", "3min" => "wg3", "3" => "wg3", "5min" => "wg5", "5" => "wg5"],
+    "k3" => ["1min" => "k3_1", "1" => "k3_1", "3min" => "k3_3", "3" => "k3_3", "5min" => "k3_5", "5" => "k3_5", "10min" => "k3_10", "10" => "k3_10"],
+    "5d" => ["1min" => "5d_1", "1" => "5d_1", "3min" => "5d_3", "3" => "5d_3", "5min" => "5d_5", "5" => "5d_5", "10min" => "5d_10", "10" => "5d_10"],
+    "trx" => ["1min" => "trx_1", "1" => "trx_1", "3min" => "trx_3", "3" => "trx_3", "5min" => "trx_5", "5" => "trx_5"],
+    "numeric" => ["1min" => "num_1", "1" => "num_1", "3min" => "num_3", "3" => "num_3", "5min" => "num_5", "5" => "num_5"]
+]);
+
+define("GAME_NAMES", [
+    "wingo" => ["30s" => "WinGo 30 Seconds", "1min" => "WinGo 1 Minute", "3min" => "WinGo 3 Minutes", "5min" => "WinGo 5 Minutes"],
+    "k3" => ["1min" => "K3 1 Minute", "3min" => "K3 3 Minutes", "5min" => "K3 5 Minutes", "10min" => "K3 10 Minutes"],
+    "5d" => ["1min" => "5D 1 Minute", "3min" => "5D 3 Minutes", "5min" => "5D 5 Minutes", "10min" => "5D 10 Minutes"],
+    "trx" => ["1min" => "TRX 1 Minute", "3min" => "TRX 3 Minutes", "5min" => "TRX 5 Minutes"],
+    "numeric" => ["1min" => "Numeric 1 Minute", "3min" => "Numeric 3 Minutes", "5min" => "Numeric 5 Minutes"]
+]);
+
 // Telegram Bot Configuration
 define("TELEGRAM_BOT_TOKEN", "");
 define("ADMIN_TELEGRAM_ID", "");
+define("TELEGRAM_WEBHOOK_SECRET", "");
 
 // Security Configuration
 define("DEBUG_MODE", false);
-define("SESSION_LIFETIME", 86400); // 24 hours
+define("SESSION_LIFETIME", 86400);
+define("JWT_SECRET", "' . bin2hex(random_bytes(32)) . '");
+define("ENABLE_IP_WHITELIST", true);
+define("ENABLE_DOMAIN_WHITELIST", true);
+define("LOG_ALL_REQUESTS", true);
+define("MASK_API_KEYS_IN_LOGS", true);
+
+// Rate Limiting
+define("RATE_LIMIT_ENABLED", true);
+define("RATE_LIMIT_PER_MINUTE", 60);
+define("RATE_LIMIT_PER_HOUR", 1000);
+define("RATE_LIMIT_PER_DAY", 10000);
+
+// Key Expiry Reminders
+define("REMINDER_DAYS_BEFORE", [7, 3, 1]);
+define("AUTO_REMINDERS_ENABLED", true);
+
+// CORS
+define("CORS_ENABLED", true);
+define("ALLOWED_ORIGINS", [SITE_URL]);
+
+// Error Messages
+define("ERROR_MESSAGES", [
+    "invalid_key" => "Invalid or expired API key.",
+    "ip_blocked" => "Access denied. Your IP is not authorized.",
+    "domain_blocked" => "Access denied. Domain not authorized.",
+    "rate_limited" => "Too many requests. Please slow down.",
+    "key_expired" => "Your API key has expired. Please renew.",
+    "key_disabled" => "Your API key has been disabled.",
+    "server_error" => "Internal server error. Please try again later.",
+    "upstream_error" => "Data source temporarily unavailable.",
+    "invalid_duration" => "Invalid duration parameter.",
+    "missing_key" => "API key is required."
+]);
+
+// Timezone
+define("APP_TIMEZONE", "Asia/Kolkata");
+date_default_timezone_set(APP_TIMEZONE);
+
+// Paths
+define("APP_ROOT", __DIR__);
+define("INCLUDES_PATH", APP_ROOT . "/includes");
+define("ADMIN_PATH", APP_ROOT . "/admin");
+define("API_PATH", APP_ROOT . "/api");
+
+// Version
+define("APP_VERSION", "1.0.0");
 
 // Error handling
 if (!DEBUG_MODE) {
@@ -240,6 +309,11 @@ if (!DEBUG_MODE) {
 if (session_status() === PHP_SESSION_NONE) {
     ini_set("session.cookie_httponly", 1);
     ini_set("session.use_strict_mode", 1);
+    ini_set("session.cookie_samesite", "Strict");
+    ini_set("session.gc_maxlifetime", SESSION_LIFETIME);
+    if (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === "on") {
+        ini_set("session.cookie_secure", 1);
+    }
     session_start();
 }
 
@@ -278,14 +352,68 @@ function getSetting(string $key, $default = null) {
     
     try {
         $db = getDB();
-        $stmt = $db->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
+        $stmt = $db->prepare("SELECT setting_value, setting_type FROM settings WHERE setting_key = ?");
         $stmt->execute([$key]);
-        $result = $stmt->fetchColumn();
-        $cache[$key] = $result !== false ? $result : $default;
-        return $cache[$key];
+        $row = $stmt->fetch();
+        
+        if ($row === false) {
+            $cache[$key] = $default;
+            return $default;
+        }
+        
+        $value = $row["setting_value"];
+        switch ($row["setting_type"] ?? "string") {
+            case "number": $value = is_numeric($value) ? (float)$value : $default; break;
+            case "boolean": $value = in_array(strtolower($value), ["true", "1", "yes"]); break;
+            case "json": $decoded = json_decode($value, true); $value = $decoded !== null ? $decoded : $default; break;
+        }
+        
+        $cache[$key] = $value;
+        return $value;
     } catch (PDOException $e) {
         return $default;
     }
+}
+
+/**
+ * Update setting value in database
+ */
+function updateSetting(string $key, $value): bool {
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("UPDATE settings SET setting_value = ?, updated_at = NOW() WHERE setting_key = ?");
+        return $stmt->execute([(string)$value, $key]);
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+// Helper functions
+function get_type_id($game, $duration) {
+    $game = strtolower(trim($game));
+    $duration = strtolower(trim($duration));
+    if (!isset(GAME_TYPES[$game])) return null;
+    return GAME_TYPES[$game][$duration] ?? null;
+}
+
+function get_game_name($game, $duration) {
+    $game = strtolower(trim($game));
+    $duration = strtolower(trim($duration));
+    $duration = str_replace(["sec", "minute", "minutes"], ["s", "min", "min"], $duration);
+    if (!isset(GAME_NAMES[$game])) return ucfirst($game) . " " . $duration;
+    return GAME_NAMES[$game][$duration] ?? ucfirst($game) . " " . $duration;
+}
+
+function get_available_durations($game) {
+    $game = strtolower(trim($game));
+    $durations = [
+        "wingo" => ["30s", "1min", "3min", "5min"],
+        "k3" => ["1min", "3min", "5min", "10min"],
+        "5d" => ["1min", "3min", "5min", "10min"],
+        "trx" => ["1min", "3min", "5min"],
+        "numeric" => ["1min", "3min", "5min"]
+    ];
+    return $durations[$game] ?? [];
 }
 ';
                 
