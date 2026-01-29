@@ -38,38 +38,38 @@ const DocumentationPage = () => {
 
   const API_BASE = config.userApiDomain;
 
-  const phpEndpoints = [
+  const endpoints = [
     { 
       game: 'WinGo', 
-      endpoint: '/api/wingo.php',
+      endpoint: '/wingo',
       durations: ['30s', '1min', '3min', '5min'],
       description: 'WinGo lottery trend data',
       color: 'bg-purple-500'
     },
     { 
       game: 'K3', 
-      endpoint: '/api/k3.php',
+      endpoint: '/k3',
       durations: ['1min', '3min', '5min', '10min'],
       description: 'K3 dice game trend data',
       color: 'bg-blue-500'
     },
     { 
       game: '5D', 
-      endpoint: '/api/5d.php',
+      endpoint: '/5d',
       durations: ['1min', '3min', '5min', '10min'],
       description: '5D lottery trend data',
       color: 'bg-green-500'
     },
     { 
       game: 'TRX', 
-      endpoint: '/api/trx.php',
+      endpoint: '/trx',
       durations: ['1min', '3min', '5min'],
       description: 'TRX blockchain game trend data',
       color: 'bg-orange-500'
     },
     { 
       game: 'Numeric', 
-      endpoint: '/api/numeric.php',
+      endpoint: '/numeric',
       durations: ['1min', '3min', '5min'],
       description: 'Numeric lottery trend data',
       color: 'bg-pink-500'
@@ -78,20 +78,20 @@ const DocumentationPage = () => {
 
   const codeExamples = {
     curl: `# WinGo API Call
-curl -X GET "${API_BASE}/api/wingo.php?api_key=YOUR_KEY&duration=1min"
+curl -X GET "${API_BASE}/wingo?api_key=YOUR_KEY&duration=1min"
 
 # K3 API Call
-curl -X GET "${API_BASE}/api/k3.php?api_key=YOUR_KEY&duration=3min"
+curl -X GET "${API_BASE}/k3?api_key=YOUR_KEY&duration=3min"
 
 # Health Check (No auth required)
-curl -X GET "${API_BASE}/api/health.php"`,
+curl -X GET "${API_BASE}"`,
     
     javascript: `// Fetch Trend Data
 const API_KEY = 'your_api_key_here';
 const BASE_URL = '${API_BASE}';
 
 async function getTrend(game, duration) {
-  const url = \`\${BASE_URL}/api/\${game}.php?api_key=\${API_KEY}&duration=\${duration}\`;
+  const url = \`\${BASE_URL}/\${game}?api_key=\${API_KEY}&duration=\${duration}\`;
   
   const response = await fetch(url);
   if (!response.ok) {
@@ -115,7 +115,7 @@ BASE_URL = "${API_BASE}"
 
 def get_trend(game: str, duration: str) -> dict:
     """Fetch trend data from API"""
-    url = f"{BASE_URL}/api/{game}.php"
+    url = f"{BASE_URL}/{game}"
     params = {"api_key": API_KEY, "duration": duration}
     
     response = requests.get(url, params=params)
@@ -136,7 +136,7 @@ $BASE_URL = "${API_BASE}";
 function getTrend($game, $duration) {
     global $API_KEY, $BASE_URL;
     
-    $url = "$BASE_URL/api/$game.php?" . http_build_query([
+    $url = "$BASE_URL/$game?" . http_build_query([
         'api_key' => $API_KEY,
         'duration' => $duration
     ]);
@@ -150,14 +150,13 @@ function getTrend($game, $duration) {
 }
 
 // Usage Examples
-$wingo = getTrend('wingo', '1min');
+$wingo = getTrend("wingo", "1min");
 print_r($wingo['data']);
 
-$k3 = getTrend('k3', '3min');
+$k3 = getTrend("k3", "3min");
 print_r($k3['data']);
 ?>`,
   };
-
   const errorCodes = [
     { code: 200, status: 'success', message: 'OK', description: 'Request completed successfully', color: 'bg-success' },
     { code: 400, status: 'error', message: 'Bad Request', description: 'Invalid duration or missing parameters', color: 'bg-warning' },
@@ -380,7 +379,7 @@ print_r($k3['data']);
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Accordion type="single" collapsible className="w-full">
-                    {phpEndpoints.map((ep) => (
+                    {endpoints.map((ep) => (
                       <AccordionItem key={ep.game} value={ep.game} className="border rounded-lg mb-2 px-3">
                         <AccordionTrigger className="hover:no-underline py-3">
                           <div className="flex items-center gap-3">

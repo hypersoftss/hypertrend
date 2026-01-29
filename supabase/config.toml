@@ -1,1 +1,4 @@
 project_id = "xynoldhqgtrmmsccutfp"
+
+[functions.trend-api]
+verify_jwt = false
