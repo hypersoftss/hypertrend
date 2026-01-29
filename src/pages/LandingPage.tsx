@@ -586,44 +586,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="relative z-10 py-16 sm:py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <ScrollAnimation animation="scale">
-            <Card className="relative overflow-hidden bg-gradient-to-br from-primary/20 via-accent/10 to-primary/20 border-primary/30 p-8 sm:p-12 backdrop-blur-xl">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5" />
-              <div className="relative z-10">
-                <Zap className="w-12 h-12 text-primary mx-auto mb-4" />
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                  Ready to Get Started?
-                </h2>
-                <p className="text-base sm:text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-                  Join thousands of developers using Hyper Softs for reliable trend predictions. Start your free trial today!
-                </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <Link to="/login" className="w-full sm:w-auto">
-                    <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent hover:opacity-90 text-base sm:text-lg px-8 shadow-xl shadow-primary/30 border-0">
-                      Get Your API Key <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mt-6 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-primary" /> Free trial available
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-primary" /> No credit card required
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-primary" /> Cancel anytime
-                  </span>
-                </div>
-              </div>
-            </Card>
-          </ScrollAnimation>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="relative z-10 border-t border-border/50 py-8 backdrop-blur-sm bg-background/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
