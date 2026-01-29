@@ -14,16 +14,297 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      allowed_domains: {
+        Row: {
+          api_key_id: string
+          created_at: string | null
+          domain: string
+          id: string
+        }
+        Insert: {
+          api_key_id: string
+          created_at?: string | null
+          domain: string
+          id?: string
+        }
+        Update: {
+          api_key_id?: string
+          created_at?: string | null
+          domain?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "allowed_domains_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      allowed_ips: {
+        Row: {
+          api_key_id: string
+          created_at: string | null
+          id: string
+          ip_address: string
+        }
+        Insert: {
+          api_key_id: string
+          created_at?: string | null
+          id?: string
+          ip_address: string
+        }
+        Update: {
+          api_key_id?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "allowed_ips_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_keys: {
+        Row: {
+          api_key: string
+          calls_today: number | null
+          calls_total: number | null
+          created_at: string | null
+          daily_limit: number | null
+          expires_at: string | null
+          id: string
+          key_name: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          calls_today?: number | null
+          calls_total?: number | null
+          created_at?: string | null
+          daily_limit?: number | null
+          expires_at?: string | null
+          id?: string
+          key_name: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          calls_today?: number | null
+          calls_total?: number | null
+          created_at?: string | null
+          daily_limit?: number | null
+          expires_at?: string | null
+          id?: string
+          key_name?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      api_logs: {
+        Row: {
+          api_key_id: string | null
+          created_at: string | null
+          domain: string | null
+          duration: string | null
+          endpoint: string
+          error_message: string | null
+          game_type: string | null
+          id: string
+          ip_address: string | null
+          response_time_ms: number | null
+          status: string
+        }
+        Insert: {
+          api_key_id?: string | null
+          created_at?: string | null
+          domain?: string | null
+          duration?: string | null
+          endpoint: string
+          error_message?: string | null
+          game_type?: string | null
+          id?: string
+          ip_address?: string | null
+          response_time_ms?: number | null
+          status?: string
+        }
+        Update: {
+          api_key_id?: string | null
+          created_at?: string | null
+          domain?: string | null
+          duration?: string | null
+          endpoint?: string
+          error_message?: string | null
+          game_type?: string | null
+          id?: string
+          ip_address?: string | null
+          response_time_ms?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string | null
+          value: string | null
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string | null
+        }
+        Relationships: []
+      }
+      telegram_logs: {
+        Row: {
+          chat_id: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          message: string | null
+          message_type: string
+          status: string
+        }
+        Insert: {
+          chat_id: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message?: string | null
+          message_type: string
+          status?: string
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message?: string | null
+          message_type?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +431,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
