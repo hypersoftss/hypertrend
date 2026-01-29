@@ -38,7 +38,7 @@ const defaultConfig: SiteConfig = {
   apiEndpoint: '/Xdrtrend',
   // User-facing - Your custom domain
   userApiDomain: 'https://trend.hyperapi.in',
-  userApiEndpoint: '/api',
+  userApiEndpoint: '',
   telegramBotToken: '7843243355:AAFaHx7XrIAehoIqVRw83uEkZGjT8G75HO8',
   adminTelegramId: '1896145195',
   // Maintenance Mode
