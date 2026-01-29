@@ -11,7 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { mockApiKeys, mockUsers, generateApiKey, formatDate, getDaysUntilExpiry, isExpired } from '@/lib/mockData';
+import { useApiData } from '@/contexts/ApiDataContext';
+import { formatDate, getDaysUntilExpiry, isExpired } from '@/lib/mockData';
 import { ApiKey, GameType, GameDuration } from '@/types';
 import { Key, Plus, Search, Copy, Trash2, RefreshCw, Clock, Globe, Server, Shield, CheckCircle, AlertCircle, Zap, User, Calendar, Activity, Eye, EyeOff, MoreVertical, Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -86,7 +87,7 @@ const validityOptions = [
 ];
 
 const ApiKeysPage = () => {
-  const [keys, setKeys] = useState<ApiKey[]>(mockApiKeys);
+  const { apiKeys: keys, users, addApiKey, updateApiKey, deleteApiKey: removeApiKey, generateApiKey } = useApiData();
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDurations, setSelectedDurations] = useState<string[]>(['1min']);
@@ -220,7 +221,8 @@ const ApiKeysPage = () => {
       totalCalls: 0,
     };
 
-    setKeys([newKey, ...keys]);
+    // Use context to add key - this syncs across all pages
+    addApiKey(newKey);
     setIsDialogOpen(false);
     
     toast({
@@ -246,17 +248,19 @@ const ApiKeysPage = () => {
   };
 
   const deleteKey = (keyId: string) => {
-    setKeys(keys.filter(k => k.id !== keyId));
+    removeApiKey(keyId);
     toast({ title: '🗑️ Deleted', description: 'API key has been removed' });
   };
 
   const toggleKeyStatus = (keyId: string) => {
-    setKeys(keys.map(k => k.id === keyId ? { ...k, isActive: !k.isActive } : k));
     const key = keys.find(k => k.id === keyId);
-    toast({ 
-      title: key?.isActive ? '⏸️ Disabled' : '▶️ Enabled', 
-      description: `API key has been ${key?.isActive ? 'disabled' : 'enabled'}` 
-    });
+    if (key) {
+      updateApiKey(keyId, { isActive: !key.isActive });
+      toast({ 
+        title: key.isActive ? '⏸️ Disabled' : '▶️ Enabled', 
+        description: `API key has been ${key.isActive ? 'disabled' : 'enabled'}` 
+      });
+    }
   };
 
   const toggleShowKey = (keyId: string) => {
@@ -342,7 +346,7 @@ const ApiKeysPage = () => {
                         <SelectValue placeholder="Choose a user" />
                       </SelectTrigger>
                       <SelectContent>
-                        {mockUsers.filter(u => u.role === 'user').map((user) => (
+                        {users.filter(u => u.role === 'user').map((user) => (
                           <SelectItem key={user.id} value={user.id}>
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{user.username}</span>
