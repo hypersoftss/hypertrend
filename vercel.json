@@ -1,7 +1,31 @@
 {
   "rewrites": [
     {
-      "source": "/((?!api/).*)",
+      "source": "/wingo",
+      "destination": "https://xynoldhqgtrmmsccutfp.supabase.co/functions/v1/trend-api/wingo"
+    },
+    {
+      "source": "/k3",
+      "destination": "https://xynoldhqgtrmmsccutfp.supabase.co/functions/v1/trend-api/k3"
+    },
+    {
+      "source": "/5d",
+      "destination": "https://xynoldhqgtrmmsccutfp.supabase.co/functions/v1/trend-api/5d"
+    },
+    {
+      "source": "/trx",
+      "destination": "https://xynoldhqgtrmmsccutfp.supabase.co/functions/v1/trend-api/trx"
+    },
+    {
+      "source": "/numeric",
+      "destination": "https://xynoldhqgtrmmsccutfp.supabase.co/functions/v1/trend-api/numeric"
+    },
+    {
+      "source": "/health",
+      "destination": "https://xynoldhqgtrmmsccutfp.supabase.co/functions/v1/trend-api"
+    },
+    {
+      "source": "/((?!wingo|k3|5d|trx|numeric|health).*)",
       "destination": "/index.html"
     }
   ]
