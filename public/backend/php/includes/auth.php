@@ -238,9 +238,10 @@ function change_password(int $user_id, string $old_password, string $new_passwor
 }
 
 /**
- * Get current user data
+ * Get current logged in user data
+ * Note: Named get_logged_in_user() to avoid conflict with PHP's built-in get_current_user()
  */
-function get_current_user(): ?array {
+function get_logged_in_user(): ?array {
     if (!is_logged_in()) return null;
     
     try {
@@ -265,8 +266,8 @@ function get_current_user(): ?array {
 /**
  * Get current user data (with fallback to session)
  */
-function get_current_user_data(): array {
-    $user = get_current_user();
+function get_session_user_data(): array {
+    $user = get_logged_in_user();
     
     if ($user) {
         return $user;
