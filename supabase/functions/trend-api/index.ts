@@ -60,6 +60,31 @@ Deno.serve(async (req) => {
     const apiKey = url.searchParams.get('api_key');
     const duration = url.searchParams.get('duration');
 
+    // IP check endpoint - to find outbound IP for whitelisting
+    if (game === 'ipcheck') {
+      try {
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        return new Response(JSON.stringify({
+          status: 'ok',
+          message: 'Supabase Edge Function IP',
+          outbound_ip: ipData.ip,
+          timestamp: new Date().toISOString(),
+          note: 'Whitelist this IP on betapi.space'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({
+          status: 'error',
+          message: 'Could not fetch IP',
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Health check endpoint
     if (game === 'health' || game === 'trend-api') {
       return new Response(JSON.stringify({
