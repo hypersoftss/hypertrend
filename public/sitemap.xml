@@ -3,7 +3,7 @@
   <url>
     <loc>https://trend.hyperapi.in/</loc>
     <lastmod>2025-01-29</lastmod>
-    <changefreq>daily</changefreq>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
@@ -22,6 +22,6 @@
     <loc>https://trend.hyperapi.in/dashboard</loc>
     <lastmod>2025-01-29</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <priority>0.8</priority>
   </url>
 </urlset>

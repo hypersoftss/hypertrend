@@ -2,14 +2,16 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ConfigProvider } from "@/contexts/ConfigContext";
 import { ApiDataProvider } from "@/contexts/ApiDataContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 // Pages
+import LandingPage from "@/pages/LandingPage";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import DocumentationPage from "@/pages/DocumentationPage";
@@ -48,9 +50,10 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <GoogleAnalytics />
                 <Routes>
                   {/* Public Routes */}
-                  <Route path="/" element={<Navigate to="/login" replace />} />
+                  <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
 
                   {/* Protected Routes - All Users */}
