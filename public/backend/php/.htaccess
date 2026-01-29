@@ -33,6 +33,14 @@ RewriteRule ^(wingo|k3|5d|trx|numeric)/([0-9]+min?)$ api/$1.php?duration=$2 [L,Q
 
 # Security Headers
 <IfModule mod_headers.c>
+    # Some shared hosts inject their own CSP headers. If multiple CSP headers are present,
+    # the browser effectively enforces the most restrictive combination, which can break CSS.
+    # Unset any existing CSP variants first, then set our required policy.
+    Header always unset Content-Security-Policy
+    Header always unset Content-Security-Policy-Report-Only
+    Header always unset X-Content-Security-Policy
+    Header always unset X-WebKit-CSP
+
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "DENY"
     Header always set X-XSS-Protection "1; mode=block"
