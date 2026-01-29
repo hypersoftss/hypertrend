@@ -52,54 +52,40 @@ export const ApiDataProvider: React.FC<{ children: ReactNode }> = ({ children })
     loadFromStorage('hyper_users', initialMockUsers)
   );
 
+  // Sync apiKeys to localStorage whenever they change
+  React.useEffect(() => {
+    saveToStorage('hyper_api_keys', apiKeys);
+  }, [apiKeys]);
+
+  // Sync users to localStorage whenever they change
+  React.useEffect(() => {
+    saveToStorage('hyper_users', users);
+  }, [users]);
+
   // API Key operations
   const addApiKey = useCallback((key: ApiKey) => {
-    setApiKeys(prev => {
-      const updated = [key, ...prev];
-      saveToStorage('hyper_api_keys', updated);
-      return updated;
-    });
+    setApiKeys(prev => [key, ...prev]);
   }, []);
 
   const updateApiKey = useCallback((keyId: string, updates: Partial<ApiKey>) => {
-    setApiKeys(prev => {
-      const updated = prev.map(k => k.id === keyId ? { ...k, ...updates } : k);
-      saveToStorage('hyper_api_keys', updated);
-      return updated;
-    });
+    setApiKeys(prev => prev.map(k => k.id === keyId ? { ...k, ...updates } : k));
   }, []);
 
   const deleteApiKey = useCallback((keyId: string) => {
-    setApiKeys(prev => {
-      const updated = prev.filter(k => k.id !== keyId);
-      saveToStorage('hyper_api_keys', updated);
-      return updated;
-    });
+    setApiKeys(prev => prev.filter(k => k.id !== keyId));
   }, []);
 
   // User operations
   const addUser = useCallback((user: User) => {
-    setUsers(prev => {
-      const updated = [user, ...prev];
-      saveToStorage('hyper_users', updated);
-      return updated;
-    });
+    setUsers(prev => [user, ...prev]);
   }, []);
 
   const updateUser = useCallback((userId: string, updates: Partial<User>) => {
-    setUsers(prev => {
-      const updated = prev.map(u => u.id === userId ? { ...u, ...updates } : u);
-      saveToStorage('hyper_users', updated);
-      return updated;
-    });
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
   }, []);
 
   const deleteUser = useCallback((userId: string) => {
-    setUsers(prev => {
-      const updated = prev.filter(u => u.id !== userId);
-      saveToStorage('hyper_users', updated);
-      return updated;
-    });
+    setUsers(prev => prev.filter(u => u.id !== userId));
   }, []);
 
   // Utility functions
