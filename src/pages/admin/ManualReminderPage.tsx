@@ -5,19 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { mockApiKeys, mockUsers, formatDate, getDaysUntilExpiry } from '@/lib/mockData';
+import { useApiData } from '@/contexts/ApiDataContext';
+import { formatDate, getDaysUntilExpiry } from '@/lib/mockData';
 import { Bell, Send, Clock, Key, User } from 'lucide-react';
 
 const ManualReminderPage = () => {
+  const { apiKeys, users } = useApiData();
   const [selectedKey, setSelectedKey] = useState('');
   const [customMessage, setCustomMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
 
-  const activeKeys = mockApiKeys.filter(k => k.isActive);
+  const activeKeys = apiKeys.filter(k => k.isActive);
 
   const selectedKeyData = activeKeys.find(k => k.id === selectedKey);
-  const selectedUser = selectedKeyData ? mockUsers.find(u => u.id === selectedKeyData.userId) : null;
+  const selectedUser = selectedKeyData ? users.find(u => u.id === selectedKeyData.userId) : null;
 
   const handleSendReminder = async () => {
     if (!selectedKey) {
@@ -90,7 +92,7 @@ Manual customer engagement 🎯`;
                   </SelectTrigger>
                   <SelectContent>
                     {activeKeys.map((key) => {
-                      const user = mockUsers.find(u => u.id === key.userId);
+                      const user = users.find(u => u.id === key.userId);
                       const daysLeft = getDaysUntilExpiry(key.expiresAt);
                       return (
                         <SelectItem key={key.id} value={key.id}>
@@ -190,7 +192,7 @@ Manual customer engagement 🎯`;
               {activeKeys
                 .filter(k => getDaysUntilExpiry(k.expiresAt) <= 7 && getDaysUntilExpiry(k.expiresAt) > 0)
                 .map((key) => {
-                  const user = mockUsers.find(u => u.id === key.userId);
+                  const user = users.find(u => u.id === key.userId);
                   const daysLeft = getDaysUntilExpiry(key.expiresAt);
                   return (
                     <div

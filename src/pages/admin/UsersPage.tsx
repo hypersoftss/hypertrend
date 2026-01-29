@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useConfig } from '@/contexts/ConfigContext';
-import { mockUsers } from '@/lib/mockData';
+import { useApiData } from '@/contexts/ApiDataContext';
 import { User } from '@/types';
 import { Users as UsersIcon, Plus, Search, Edit, Trash2, MessageSquare, Mail, Shield, User as UserIcon, Key, Send, Copy, RefreshCw, Eye, EyeOff, RotateCcw } from 'lucide-react';
 
@@ -25,7 +25,7 @@ const generatePassword = (length: number = 12): string => {
 
 const UsersPage = () => {
   const { config } = useConfig();
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const { users, addUser, updateUser, deleteUser: removeUser } = useApiData();
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
@@ -173,7 +173,7 @@ const UsersPage = () => {
     }
 
     if (editingUser) {
-      setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...formData } : u));
+      updateUser(editingUser.id, formData);
       toast({ title: '✅ Success', description: 'User updated successfully' });
     } else {
       // Creating new user
@@ -214,19 +214,22 @@ const UsersPage = () => {
         });
       }
 
-      setUsers([...users, newUser]);
+      addUser(newUser);
       setIsSending(false);
     }
     setIsDialogOpen(false);
   };
 
   const handleDelete = (userId: string) => {
-    setUsers(users.filter(u => u.id !== userId));
+    removeUser(userId);
     toast({ title: '✅ Success', description: 'User deleted successfully' });
   };
 
   const toggleUserStatus = (userId: string) => {
-    setUsers(users.map(u => u.id === userId ? { ...u, isActive: !u.isActive } : u));
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      updateUser(userId, { isActive: !user.isActive });
+    }
   };
 
   return (

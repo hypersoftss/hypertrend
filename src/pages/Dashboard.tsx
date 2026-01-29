@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useApiData } from '@/contexts/ApiDataContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import StatsCard from '@/components/StatsCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Link } from 'react-router-dom';
-import { mockDashboardStats, mockApiKeys, mockApiLogs, formatDate, getDaysUntilExpiry, isExpired, formatDateTime } from '@/lib/mockData';
+import { mockDashboardStats, mockApiLogs, formatDate, getDaysUntilExpiry, isExpired, formatDateTime } from '@/lib/mockData';
 import { 
   Users, Key, Clock, Activity, TrendingUp, AlertTriangle, CheckCircle, XCircle, 
   BarChart3, ArrowRight, Heart, Zap, Timer, Shield, ArrowUpRight, ArrowDownRight,
@@ -16,14 +17,20 @@ import {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { apiKeys, users } = useApiData();
   const isAdmin = user?.role === 'admin';
 
-  const stats = mockDashboardStats;
+  const stats = {
+    ...mockDashboardStats,
+    totalUsers: users.length,
+    activeKeys: apiKeys.filter(k => k.isActive && !isExpired(k.expiresAt)).length,
+    expiredKeys: apiKeys.filter(k => isExpired(k.expiresAt)).length,
+  };
   const recentLogs = mockApiLogs.slice(0, 5);
-  const userKeys = mockApiKeys.filter(k => k.userId === user?.id);
+  const userKeys = apiKeys.filter(k => k.userId === user?.id);
   const userKeyIds = userKeys.map(k => k.id);
   const userLogs = mockApiLogs.filter(log => userKeyIds.includes(log.apiKeyId));
-  const expiringKeys = mockApiKeys.filter(k => {
+  const expiringKeys = apiKeys.filter(k => {
     const days = getDaysUntilExpiry(k.expiresAt);
     return days > 0 && days <= 7;
   });
