@@ -86,6 +86,7 @@
         align-items: center;
         z-index: 9999;
         transition: opacity 0.6s ease, visibility 0.6s ease;
+        overflow: hidden;
       }
       
       #app-loader.hidden {
@@ -93,32 +94,83 @@
         visibility: hidden;
       }
       
+      /* Animated Background */
+      .loader-bg-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.4;
+        animation: float 6s ease-in-out infinite;
+      }
+      
+      .loader-bg-orb-1 {
+        width: 300px;
+        height: 300px;
+        background: #8B5CF6;
+        top: 10%;
+        left: 10%;
+        animation-delay: 0s;
+      }
+      
+      .loader-bg-orb-2 {
+        width: 250px;
+        height: 250px;
+        background: #14B8A6;
+        bottom: 10%;
+        right: 10%;
+        animation-delay: 2s;
+      }
+      
+      .loader-bg-orb-3 {
+        width: 200px;
+        height: 200px;
+        background: #a78bfa;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        animation-delay: 4s;
+      }
+      
+      .loader-content {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      
       .loader-logo-container {
         position: relative;
-        width: 100px;
-        height: 100px;
+        width: 110px;
+        height: 110px;
       }
       
       .loader-logo-img {
         width: 100px;
         height: 100px;
-        border-radius: 24px;
+        border-radius: 28px;
         object-fit: cover;
+        position: absolute;
+        top: 5px;
+        left: 5px;
         animation: pulse-glow 2s ease-in-out infinite;
-        box-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
-        border: 3px solid rgba(139, 92, 246, 0.3);
+        box-shadow: 0 0 50px rgba(139, 92, 246, 0.6);
+        border: 3px solid rgba(139, 92, 246, 0.4);
       }
       
       .loader-logo-fallback {
         width: 100px;
         height: 100px;
         background: linear-gradient(135deg, #8B5CF6 0%, #14B8A6 100%);
-        border-radius: 24px;
+        border-radius: 28px;
         display: flex;
         justify-content: center;
         align-items: center;
+        position: absolute;
+        top: 5px;
+        left: 5px;
         animation: pulse-glow 2s ease-in-out infinite;
-        box-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
+        box-shadow: 0 0 50px rgba(139, 92, 246, 0.6);
       }
       
       .loader-logo-fallback svg {
@@ -129,64 +181,137 @@
       
       .loader-ring {
         position: absolute;
-        top: -8px;
-        left: -8px;
-        width: 116px;
-        height: 116px;
-        border: 2px solid transparent;
+        top: 0;
+        left: 0;
+        width: 110px;
+        height: 110px;
+        border: 3px solid transparent;
         border-top-color: #8B5CF6;
         border-right-color: #14B8A6;
         border-radius: 50%;
-        animation: spin 1.5s linear infinite;
+        animation: spin 1.2s linear infinite;
+      }
+      
+      .loader-ring-outer {
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        width: 130px;
+        height: 130px;
+        border: 2px solid transparent;
+        border-bottom-color: rgba(139, 92, 246, 0.3);
+        border-left-color: rgba(20, 184, 166, 0.3);
+        border-radius: 50%;
+        animation: spin-reverse 2s linear infinite;
       }
       
       .loader-text {
-        margin-top: 28px;
+        margin-top: 32px;
         font-family: system-ui, -apple-system, sans-serif;
-        font-size: 28px;
+        font-size: 32px;
         font-weight: 800;
         background: linear-gradient(135deg, #8B5CF6 0%, #a78bfa 50%, #14B8A6 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         letter-spacing: -0.5px;
+        text-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
       }
       
       .loader-subtitle {
         margin-top: 8px;
         font-family: system-ui, -apple-system, sans-serif;
-        font-size: 13px;
+        font-size: 12px;
         color: #94a3b8;
-        letter-spacing: 3px;
+        letter-spacing: 4px;
         text-transform: uppercase;
-        font-weight: 500;
+        font-weight: 600;
+      }
+      
+      .loader-tagline {
+        margin-top: 6px;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 11px;
+        color: #64748b;
+        letter-spacing: 1px;
+      }
+      
+      .loader-progress-container {
+        margin-top: 28px;
+        width: 240px;
       }
       
       .loader-progress {
-        margin-top: 32px;
-        width: 200px;
-        height: 4px;
-        background: rgba(139, 92, 246, 0.2);
-        border-radius: 4px;
+        width: 100%;
+        height: 5px;
+        background: rgba(139, 92, 246, 0.15);
+        border-radius: 10px;
         overflow: hidden;
+        position: relative;
       }
       
       .loader-progress-bar {
         height: 100%;
         width: 0%;
-        background: linear-gradient(90deg, #8B5CF6, #14B8A6);
-        border-radius: 4px;
-        animation: progress 1.2s ease-out forwards;
+        background: linear-gradient(90deg, #8B5CF6, #a78bfa, #14B8A6);
+        border-radius: 10px;
+        animation: progress 1.5s ease-out forwards;
+        box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+      }
+      
+      .loader-progress-glow {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 30%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        animation: shimmer 1.5s ease-in-out infinite;
+      }
+      
+      /* Social Links */
+      .loader-social {
+        display: flex;
+        gap: 12px;
+        margin-top: 28px;
+      }
+      
+      .loader-social-link {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        border-radius: 20px;
+        color: #a78bfa;
+        font-size: 11px;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      
+      .loader-social-link:hover {
+        background: rgba(139, 92, 246, 0.2);
+        border-color: rgba(139, 92, 246, 0.4);
+        transform: translateY(-2px);
+      }
+      
+      .loader-social-link svg {
+        width: 14px;
+        height: 14px;
       }
       
       @keyframes pulse-glow {
         0%, 100% {
           transform: scale(1);
-          box-shadow: 0 0 40px rgba(139, 92, 246, 0.5);
+          box-shadow: 0 0 50px rgba(139, 92, 246, 0.6);
         }
         50% {
-          transform: scale(1.02);
-          box-shadow: 0 0 60px rgba(139, 92, 246, 0.8), 0 0 80px rgba(20, 184, 166, 0.4);
+          transform: scale(1.03);
+          box-shadow: 0 0 70px rgba(139, 92, 246, 0.9), 0 0 100px rgba(20, 184, 166, 0.5);
         }
       }
       
@@ -195,10 +320,28 @@
         100% { transform: rotate(360deg); }
       }
       
+      @keyframes spin-reverse {
+        0% { transform: rotate(360deg); }
+        100% { transform: rotate(0deg); }
+      }
+      
       @keyframes progress {
         0% { width: 0%; }
-        50% { width: 70%; }
+        30% { width: 40%; }
+        60% { width: 75%; }
         100% { width: 100%; }
+      }
+      
+      @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(400%); }
+      }
+      
+      @keyframes float {
+        0%, 100% { transform: translate(0, 0); }
+        25% { transform: translate(30px, -30px); }
+        50% { transform: translate(0, -20px); }
+        75% { transform: translate(-30px, -10px); }
       }
     </style>
   </head>
@@ -206,25 +349,55 @@
   <body>
     <!-- Loading Animation -->
     <div id="app-loader">
-      <div class="loader-logo-container">
-        <div class="loader-ring"></div>
-        <img 
-          id="loader-logo-img"
-          class="loader-logo-img" 
-          src="https://storage.googleapis.com/gpt-engineer-file-uploads/Z8UZV3u8mdNZdmHVVRKSqxm4yex2/uploads/1769707742336-6273690538254995168_99.jpg" 
-          alt="Hyper Softs"
-          onerror="this.style.display='none'; document.getElementById('loader-logo-fallback').style.display='flex';"
-        />
-        <div id="loader-logo-fallback" class="loader-logo-fallback" style="display: none;">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
+      <!-- Animated Background Orbs -->
+      <div class="loader-bg-orb loader-bg-orb-1"></div>
+      <div class="loader-bg-orb loader-bg-orb-2"></div>
+      <div class="loader-bg-orb loader-bg-orb-3"></div>
+      
+      <div class="loader-content">
+        <div class="loader-logo-container">
+          <div class="loader-ring-outer"></div>
+          <div class="loader-ring"></div>
+          <img 
+            id="loader-logo-img"
+            class="loader-logo-img" 
+            src="https://storage.googleapis.com/gpt-engineer-file-uploads/Z8UZV3u8mdNZdmHVVRKSqxm4yex2/uploads/1769707742336-6273690538254995168_99.jpg" 
+            alt="Hyper Softs"
+            onerror="this.style.display='none'; document.getElementById('loader-logo-fallback').style.display='flex';"
+          />
+          <div id="loader-logo-fallback" class="loader-logo-fallback" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
         </div>
-      </div>
-      <div class="loader-text">Hyper Softs</div>
-      <div class="loader-subtitle">Same Trend API</div>
-      <div class="loader-progress">
-        <div class="loader-progress-bar"></div>
+        
+        <div class="loader-text">Hyper Softs</div>
+        <div class="loader-subtitle">Same Trend API</div>
+        <div class="loader-tagline">by Hyper Developer</div>
+        
+        <div class="loader-progress-container">
+          <div class="loader-progress">
+            <div class="loader-progress-bar"></div>
+            <div class="loader-progress-glow"></div>
+          </div>
+        </div>
+        
+        <!-- Social Links -->
+        <div class="loader-social">
+          <a href="https://t.me/Hyperdeveloperr" target="_blank" rel="noopener noreferrer" class="loader-social-link">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+            </svg>
+            @Hyperdeveloperr
+          </a>
+          <a href="https://t.me/hypersoftstech" target="_blank" rel="noopener noreferrer" class="loader-social-link">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17 3H7c-2.2 0-4 1.8-4 4v10c0 2.2 1.8 4 4 4h10c2.2 0 4-1.8 4-4V7c0-2.2-1.8-4-4-4zm-5 14c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5zm0-8c-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3z"/>
+            </svg>
+            Join Channel
+          </a>
+        </div>
       </div>
     </div>
     
@@ -242,7 +415,7 @@
               loader.style.display = 'none';
             }, 600);
           }
-        }, 1200);
+        }, 1800);
       });
     </script>
   </body>
