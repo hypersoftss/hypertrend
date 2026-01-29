@@ -126,6 +126,8 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [logoClickCount, setLogoClickCount] = useState(0);
+  const logoClickTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { login } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { config } = useConfig();
@@ -134,6 +136,38 @@ const Login = () => {
 
   const isDark = theme === 'dark';
   const isMaintenanceMode = config.maintenanceMode;
+
+  // Secret admin login: Click logo 5 times quickly
+  const handleLogoClick = () => {
+    const newCount = logoClickCount + 1;
+    setLogoClickCount(newCount);
+
+    // Clear previous timer
+    if (logoClickTimerRef.current) {
+      clearTimeout(logoClickTimerRef.current);
+    }
+
+    // If 5 clicks reached, show admin login
+    if (newCount >= 5) {
+      setShowAdminLogin(true);
+      setLogoClickCount(0);
+      return;
+    }
+
+    // Reset count after 2 seconds of no clicks
+    logoClickTimerRef.current = setTimeout(() => {
+      setLogoClickCount(0);
+    }, 2000);
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (logoClickTimerRef.current) {
+        clearTimeout(logoClickTimerRef.current);
+      }
+    };
+  }, []);
 
   // Update favicon dynamically
   useEffect(() => {
@@ -218,15 +252,20 @@ const Login = () => {
 
         <Card className="w-full max-w-md mx-4 relative z-10 border-border bg-card shadow-xl animate-fade-in">
           <CardHeader className="text-center pb-2 pt-8">
-            {/* Logo */}
+            {/* Logo - Click 5 times for secret admin login */}
             <div className="flex justify-center mb-4">
-              <div className="relative">
+              <div 
+                className="relative cursor-pointer select-none" 
+                onClick={handleLogoClick}
+                title=""
+              >
                 {config.logoUrl ? (
                   <div className="w-20 h-20 rounded-xl overflow-hidden shadow-lg border border-border">
                     <img 
                       src={config.logoUrl} 
                       alt={config.siteName}
                       className="w-full h-full object-cover"
+                      draggable={false}
                     />
                   </div>
                 ) : (
@@ -281,18 +320,6 @@ const Login = () => {
               <p className="text-sm text-center text-warning-foreground">
                 We'll be back soon! Thank you for your patience. 🙏
               </p>
-            </div>
-
-            {/* Admin Login Button */}
-            <div className="pt-4 border-t border-border">
-              <Button
-                variant="ghost"
-                className="w-full text-muted-foreground hover:text-foreground"
-                onClick={() => setShowAdminLogin(true)}
-              >
-                <Wrench className="w-4 h-4 mr-2" />
-                Admin Login
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -364,12 +391,12 @@ const Login = () => {
           </div>
           
           <CardTitle className="text-2xl font-bold text-foreground">
-            {isMaintenanceMode ? '🔧 Admin Login' : config.siteName}
+            {isMaintenanceMode ? '🔧 Admin Access' : config.siteName}
           </CardTitle>
           <p className="text-primary font-medium text-sm mt-1">{config.siteDescription}</p>
           <CardDescription className="mt-2 text-muted-foreground">
             {isMaintenanceMode 
-              ? 'Only administrators can login during maintenance'
+              ? 'Administrator authentication required'
               : 'Sign in to access your dashboard'
             }
           </CardDescription>
@@ -378,7 +405,7 @@ const Login = () => {
           {isMaintenanceMode && (
             <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-warning/10 border border-warning/30 rounded-full text-xs text-warning">
               <AlertTriangle className="w-3 h-3" />
-              Site is in Maintenance Mode
+              Maintenance Mode Active
             </div>
           )}
         </CardHeader>
