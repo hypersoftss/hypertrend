@@ -2,3 +2,6 @@ project_id = "xynoldhqgtrmmsccutfp"
 
 [functions.trend-api]
 verify_jwt = false
+
+[functions.telegram-bot]
+verify_jwt = false
