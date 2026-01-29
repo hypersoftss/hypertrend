@@ -351,6 +351,49 @@
         50% { transform: translate(0, -20px); }
         75% { transform: translate(-30px, -10px); }
       }
+      
+      @keyframes particle-float {
+        0%, 100% { 
+          transform: translateY(100vh) scale(0);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% { 
+          transform: translateY(-100vh) scale(1);
+          opacity: 0;
+        }
+      }
+      
+      /* Floating Particles */
+      .loader-particles {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        pointer-events: none;
+      }
+      
+      .particle {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.8), rgba(20, 184, 166, 0.8));
+        border-radius: 50%;
+        animation: particle-float 8s ease-in-out infinite;
+        box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+      }
+      
+      .particle:nth-child(2) { width: 4px; height: 4px; animation-duration: 10s; }
+      .particle:nth-child(3) { width: 8px; height: 8px; animation-duration: 7s; }
+      .particle:nth-child(4) { width: 5px; height: 5px; animation-duration: 9s; }
+      .particle:nth-child(5) { width: 7px; height: 7px; animation-duration: 11s; }
+      .particle:nth-child(6) { width: 4px; height: 4px; animation-duration: 8s; }
+      .particle:nth-child(7) { width: 6px; height: 6px; animation-duration: 12s; }
     </style>
   </head>
 
@@ -362,6 +405,17 @@
       <div class="loader-bg-orb loader-bg-orb-2"></div>
       <div class="loader-bg-orb loader-bg-orb-3"></div>
       
+      <!-- Floating Particles -->
+      <div class="loader-particles">
+        <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+        <div class="particle" style="left: 20%; animation-delay: 0.5s;"></div>
+        <div class="particle" style="left: 35%; animation-delay: 1s;"></div>
+        <div class="particle" style="left: 50%; animation-delay: 1.5s;"></div>
+        <div class="particle" style="left: 65%; animation-delay: 0.3s;"></div>
+        <div class="particle" style="left: 80%; animation-delay: 0.8s;"></div>
+        <div class="particle" style="left: 90%; animation-delay: 1.2s;"></div>
+      </div>
+      
       <div class="loader-content">
         <div class="loader-logo-container">
           <div class="loader-ring-outer"></div>
@@ -369,18 +423,18 @@
           <img 
             id="loader-logo-img"
             class="loader-logo-img" 
-            src="https://storage.googleapis.com/gpt-engineer-file-uploads/Z8UZV3u8mdNZdmHVVRKSqxm4yex2/uploads/1769707742336-6273690538254995168_99.jpg" 
-            alt="Hyper Softs"
+            src=""
+            alt="Loading..."
             onerror="this.style.display='none'; document.getElementById('loader-logo-fallback').style.display='flex';"
           />
-          <div id="loader-logo-fallback" class="loader-logo-fallback" style="display: none;">
+          <div id="loader-logo-fallback" class="loader-logo-fallback">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
         </div>
         
-        <div class="loader-text">Hyper Softs</div>
+        <div class="loader-text" id="loader-site-name">Hyper Softs</div>
         <div class="loader-subtitle">Same Trend API</div>
         <div class="loader-tagline">by Hyper Developer</div>
         
@@ -413,6 +467,38 @@
     <script type="module" src="/src/main.tsx"></script>
     
     <script>
+      // Load config from localStorage and apply to loader
+      (function() {
+        try {
+          var stored = localStorage.getItem('hyper_config');
+          if (stored) {
+            var config = JSON.parse(stored);
+            
+            // Update site name
+            if (config.siteName) {
+              var siteNameEl = document.getElementById('loader-site-name');
+              if (siteNameEl) siteNameEl.textContent = config.siteName;
+            }
+            
+            // Update logo
+            var logoImg = document.getElementById('loader-logo-img');
+            var logoFallback = document.getElementById('loader-logo-fallback');
+            
+            if (config.logoUrl && logoImg) {
+              logoImg.src = config.logoUrl;
+              logoImg.style.display = 'block';
+              if (logoFallback) logoFallback.style.display = 'none';
+            } else if (config.faviconUrl && logoImg) {
+              logoImg.src = config.faviconUrl;
+              logoImg.style.display = 'block';
+              if (logoFallback) logoFallback.style.display = 'none';
+            }
+          }
+        } catch (e) {
+          console.log('Could not load config for loader');
+        }
+      })();
+      
       // Hide loader when app is ready
       window.addEventListener('load', function() {
         setTimeout(function() {

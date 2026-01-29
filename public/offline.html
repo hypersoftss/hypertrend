@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offline - Hyper Softs</title>
+  <meta name="theme-color" content="#8B5CF6" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      color: #e2e8f0;
+      overflow: hidden;
+    }
+    
+    .bg-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.3;
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    .bg-orb-1 {
+      width: 300px;
+      height: 300px;
+      background: #8B5CF6;
+      top: 10%;
+      left: 10%;
+    }
+    
+    .bg-orb-2 {
+      width: 250px;
+      height: 250px;
+      background: #14B8A6;
+      bottom: 10%;
+      right: 10%;
+      animation-delay: 2s;
+    }
+    
+    .content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      max-width: 400px;
+    }
+    
+    .icon-container {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 30px;
+      position: relative;
+    }
+    
+    .icon-bg {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(20, 184, 166, 0.2));
+      border-radius: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .wifi-off-icon {
+      width: 60px;
+      height: 60px;
+      color: #8B5CF6;
+    }
+    
+    .title {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #8B5CF6, #a78bfa, #14B8A6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .description {
+      font-size: 16px;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    
+    .retry-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, #8B5CF6, #14B8A6);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+    }
+    
+    .retry-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 40px rgba(139, 92, 246, 0.4);
+    }
+    
+    .retry-btn:active {
+      transform: translateY(0);
+    }
+    
+    .tips {
+      margin-top: 40px;
+      padding: 20px;
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 16px;
+    }
+    
+    .tips-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #a78bfa;
+      margin-bottom: 12px;
+    }
+    
+    .tips-list {
+      list-style: none;
+      text-align: left;
+    }
+    
+    .tips-list li {
+      font-size: 13px;
+      color: #94a3b8;
+      padding: 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .tips-list li::before {
+      content: '•';
+      color: #8B5CF6;
+      font-weight: bold;
+    }
+    
+    .brand {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #64748b;
+    }
+    
+    .brand-logo {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, #8B5CF6, #14B8A6);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
+      }
+      50% {
+        transform: scale(1.02);
+        box-shadow: 0 0 50px rgba(139, 92, 246, 0.5);
+      }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(20px, -20px); }
+      50% { transform: translate(0, -15px); }
+      75% { transform: translate(-20px, -10px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  
+  <div class="content">
+    <div class="icon-container">
+      <div class="icon-bg">
+        <svg class="wifi-off-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M2 2l20 20M8.464 15.536a5 5 0 017.072 0M5.636 18.364a9 9 0 0112.728 0" />
+          <line x1="2" y1="2" x2="22" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    
+    <h1 class="title">You're Offline</h1>
+    <p class="description">
+      It looks like you've lost your internet connection. Please check your network and try again.
+    </p>
+    
+    <button class="retry-btn" onclick="window.location.reload()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </svg>
+      Retry Connection
+    </button>
+    
+    <div class="tips">
+      <div class="tips-title">Troubleshooting Tips</div>
+      <ul class="tips-list">
+        <li>Check your WiFi or mobile data connection</li>
+        <li>Try restarting your router or modem</li>
+        <li>Move closer to your WiFi router</li>
+        <li>Disable airplane mode if enabled</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="brand">
+    <div class="brand-logo">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    </div>
+    <span>Hyper Softs • by Hyper Developer</span>
+  </div>
+  
+  <script>
+    // Auto-retry when online
+    window.addEventListener('online', () => {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>

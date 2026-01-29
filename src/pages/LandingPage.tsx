@@ -10,7 +10,7 @@ import {
   Zap, ArrowRight, Shield, Activity, BarChart3, 
   Globe, Clock, Users, CheckCircle, Moon, Sun,
   Code, Server, Smartphone, Send, MessageCircle, ExternalLink,
-  Star, Quote, Sparkles, TrendingUp, Lock, Cpu, Award
+  Star, Quote, Sparkles, TrendingUp, Lock, Cpu, Award, Download
 } from 'lucide-react';
 
 // Animated Gradient Orbs Background
@@ -343,6 +343,13 @@ const LandingPage = () => {
                   <Zap className="w-5 h-5 mr-2" />
                   Start Free Trial
                   <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+              <Link to="/install" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto text-base sm:text-lg px-8 py-6 border-primary/50 bg-primary/5 hover:bg-primary/10 group">
+                  <Download className="w-5 h-5 mr-2" />
+                  Install App
+                  <Smartphone className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
                 </Button>
               </Link>
               <Link to="/docs" className="w-full sm:w-auto">
