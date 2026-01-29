@@ -221,6 +221,15 @@ Deno.serve(async (req) => {
     const upstreamResponse = await fetch(upstreamUrl);
     const responseTime = Date.now() - startTime;
 
+    // Read upstream body regardless of status
+    const upstreamBody = await upstreamResponse.text();
+    let upstreamData;
+    try {
+      upstreamData = JSON.parse(upstreamBody);
+    } catch {
+      upstreamData = { raw: upstreamBody };
+    }
+
     if (!upstreamResponse.ok) {
       // Log error
       await supabase.from('api_logs').insert({
@@ -234,17 +243,20 @@ Deno.serve(async (req) => {
         ip_address: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown',
       });
 
+      // Return upstream's actual response for debugging
       return new Response(JSON.stringify({
         success: false,
         error: 'Upstream error',
         message: 'Failed to fetch data from source',
+        upstream_status: upstreamResponse.status,
+        upstream_response: upstreamData,
       }), {
         status: 502,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const data = await upstreamResponse.json();
+    const data = upstreamData;
 
     // Update API key usage
     await supabase
