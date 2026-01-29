@@ -4,11 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockTelegramLogs, formatDate } from '@/lib/mockData';
+import { useApiData } from '@/contexts/ApiDataContext';
+import { formatDate } from '@/lib/mockData';
 import { MessageSquare, Search, Send, Bell, RefreshCw, UserCheck, Heart, Filter, CheckCircle, XCircle } from 'lucide-react';
 
 const TelegramLogsPage = () => {
-  const [logs] = useState(mockTelegramLogs);
+  const { telegramLogs: logs } = useApiData();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
 

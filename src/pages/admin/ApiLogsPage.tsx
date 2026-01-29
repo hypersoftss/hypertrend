@@ -4,11 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockApiLogs, formatDate } from '@/lib/mockData';
+import { useApiData } from '@/contexts/ApiDataContext';
+import { formatDate } from '@/lib/mockData';
 import { FileText, Search, CheckCircle, XCircle, Ban, Filter } from 'lucide-react';
 
 const ApiLogsPage = () => {
-  const [logs] = useState(mockApiLogs);
+  const { apiLogs: logs } = useApiData();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 

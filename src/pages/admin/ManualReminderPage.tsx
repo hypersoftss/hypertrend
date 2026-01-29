@@ -10,7 +10,7 @@ import { formatDate, getDaysUntilExpiry } from '@/lib/mockData';
 import { Bell, Send, Clock, Key, User } from 'lucide-react';
 
 const ManualReminderPage = () => {
-  const { apiKeys, users } = useApiData();
+  const { apiKeys, users, addActivityLog, addTelegramLog } = useApiData();
   const [selectedKey, setSelectedKey] = useState('');
   const [customMessage, setCustomMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -31,6 +31,14 @@ const ManualReminderPage = () => {
 
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Log the activity
+    addActivityLog('SEND_REMINDER', `Manual reminder sent to ${selectedUser?.username || 'user'} for ${selectedKeyData?.gameType.toUpperCase() || 'key'}`);
+    
+    // Log telegram notification
+    if (selectedUser?.telegramId) {
+      addTelegramLog('reminder', selectedUser.telegramId, `API Key renewal reminder for ${selectedKeyData?.domain || 'domain'}`);
+    }
 
     toast({
       title: '📤 Reminder Sent!',
