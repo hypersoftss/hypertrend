@@ -56,44 +56,70 @@ const BackendDownloadPage = () => {
     }
   };
 
-  // Generate PHP config content dynamically
+  // Generate PHP config content dynamically - SIMPLE COPY-PASTE READY FORMAT
   const generatePhpConfig = () => `<?php
-/**
- * =====================================================
- * 🔒 ${config.siteName.toUpperCase()} - MASTER CONFIGURATION
- * Generated: ${new Date().toLocaleString()}
- * =====================================================
- * 
- * ⚠️ NEVER expose this file publicly!
- * Edit this file for your VPS/cPanel setup.
- * 
- * =====================================================
- */
+define("DB_HOST", "localhost");
+define("DB_NAME", "your_database_name");
+define("DB_USER", "your_database_user");
+define("DB_PASS", "your_database_password");
+define("SITE_NAME", "${config.siteName}");
+define("UPSTREAM_API_BASE", "${config.apiDomain}");
+define("UPSTREAM_API_ENDPOINT", "${config.apiEndpoint}");
+define("TELEGRAM_BOT_TOKEN", "${config.telegramBotToken}");
+define("ADMIN_TELEGRAM_ID", "${config.adminTelegramId}");
+define("DEBUG_MODE", false);
 
-// ==================== DATABASE ====================
-define('DB_HOST', 'localhost');
-define('DB_USER', 'your_db_user');
-define('DB_PASS', 'your_db_password');
-define('DB_NAME', 'hyper_softs_db');
+// Database Connection - Auto Connect
+try {
+    $GLOBALS["pdo"] = new PDO(
+        "mysql:host=".DB_HOST.";dbname=".DB_NAME.";charset=utf8mb4",
+        DB_USER,
+        DB_PASS,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false
+        ]
+    );
+} catch (PDOException $e) {
+    if (DEBUG_MODE) {
+        die("Database Connection Failed: " . $e->getMessage());
+    }
+    die("Database Connection Failed. Check config.php");
+}
 
-// ==================== HIDDEN UPSTREAM API ====================
-// This is your REAL data source - KEEP IT SECRET!
-// Users will NEVER see this URL - only YOUR domain
-define('UPSTREAM_API_BASE', '${config.apiDomain}');
-define('UPSTREAM_API_ENDPOINT', '${config.apiEndpoint}');
+function getDB() { 
+    return $GLOBALS["pdo"]; 
+}
 
-// ==================== YOUR DOMAIN (What users see) ====================
-define('YOUR_DOMAIN', '${config.userApiDomain}');
+// ==================== ADDITIONAL SETTINGS ====================
+define("SITE_DESCRIPTION", "${config.siteDescription}");
+define("ADMIN_EMAIL", "${config.adminEmail}");
+define("SUPPORT_EMAIL", "${config.supportEmail}");
+define("YOUR_DOMAIN", "${config.userApiDomain}");
+define("APP_TIMEZONE", "Asia/Kolkata");
+date_default_timezone_set(APP_TIMEZONE);
 
-// ==================== TELEGRAM BOT ====================
-define('TELEGRAM_BOT_TOKEN', '${config.telegramBotToken}');
-define('ADMIN_TELEGRAM_ID', '${config.adminTelegramId}');
+// ==================== SECURITY ====================
+define("ENABLE_IP_WHITELIST", true);
+define("ENABLE_DOMAIN_WHITELIST", true);
+define("LOG_ALL_REQUESTS", true);
+define("RATE_LIMIT_PER_MINUTE", 60);
+define("RATE_LIMIT_PER_HOUR", 1000);
+define("RATE_LIMIT_PER_DAY", 10000);
 
-// ==================== SITE INFO ====================
-define('SITE_NAME', '${config.siteName}');
-define('SITE_DESCRIPTION', '${config.siteDescription}');
-define('ADMIN_EMAIL', '${config.adminEmail}');
-define('SUPPORT_EMAIL', '${config.supportEmail}');
+// Session Security
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_secure', 1);
+ini_set('session.use_strict_mode', 1);
+
+if (!DEBUG_MODE) {
+    error_reporting(0);
+    ini_set('display_errors', '0');
+} else {
+    error_reporting(E_ALL);
+    ini_set('display_errors', '1');
+}
 
 // ==================== GAME TYPE MAPPING ====================
 define('GAME_TYPES', [
@@ -176,62 +202,11 @@ define('GAME_NAMES', [
     ],
 ]);
 
-// ==================== SECURITY ====================
-define('ENABLE_IP_WHITELIST', true);
-define('ENABLE_DOMAIN_WHITELIST', true);
-define('LOG_ALL_REQUESTS', true);
-define('MASK_API_KEYS_IN_LOGS', true);
-
-// ==================== RATE LIMITING ====================
-define('RATE_LIMIT_ENABLED', true);
-define('RATE_LIMIT_PER_MINUTE', 60);
-define('RATE_LIMIT_PER_HOUR', 1000);
-define('RATE_LIMIT_PER_DAY', 10000);
-
-// ==================== CORS ====================
-define('ALLOWED_ORIGINS', [
-    '${config.userApiDomain}',
-    'https://admin.your-domain.com',
-]);
-
-// ==================== ERROR MESSAGES ====================
-define('ERROR_MESSAGES', [
-    'invalid_key' => 'Invalid or expired API key.',
-    'ip_blocked' => 'Access denied. Your IP is not authorized.',
-    'domain_blocked' => 'Access denied. Domain not authorized.',
-    'rate_limited' => 'Too many requests. Please slow down.',
-    'key_expired' => 'Your API key has expired. Please renew.',
-    'key_disabled' => 'Your API key has been disabled.',
-    'server_error' => 'Internal server error. Please try again later.',
-    'upstream_error' => 'Data source temporarily unavailable.',
-    'invalid_duration' => 'Invalid duration parameter.',
-    'missing_key' => 'API key is required.',
-]);
-
-// ==================== TIMEZONE ====================
-define('APP_TIMEZONE', 'Asia/Kolkata');
-date_default_timezone_set(APP_TIMEZONE);
-
-// ==================== DEBUG MODE ====================
-define('DEBUG_MODE', false);
-
-if (!DEBUG_MODE) {
-    error_reporting(0);
-    ini_set('display_errors', '0');
-} else {
-    error_reporting(E_ALL);
-    ini_set('display_errors', '1');
-}
-
-// ==================== HELPERS ====================
+// ==================== HELPER FUNCTIONS ====================
 function get_type_id($game, $duration) {
     $game = strtolower(trim($game));
     $duration = strtolower(trim($duration));
-    
-    if (!isset(GAME_TYPES[$game])) {
-        return null;
-    }
-    
+    if (!isset(GAME_TYPES[$game])) return null;
     return GAME_TYPES[$game][$duration] ?? null;
 }
 
@@ -239,17 +214,12 @@ function get_game_name($game, $duration) {
     $game = strtolower(trim($game));
     $duration = strtolower(trim($duration));
     $duration = str_replace(['sec', 'minute', 'minutes'], ['s', 'min', 'min'], $duration);
-    
-    if (!isset(GAME_NAMES[$game])) {
-        return ucfirst($game) . ' ' . $duration;
-    }
-    
+    if (!isset(GAME_NAMES[$game])) return ucfirst($game) . ' ' . $duration;
     return GAME_NAMES[$game][$duration] ?? ucfirst($game) . ' ' . $duration;
 }
 
 function get_available_durations($game) {
     $game = strtolower(trim($game));
-    
     $durations = [
         'wingo' => ['30s', '1min', '3min', '5min'],
         'k3' => ['1min', '3min', '5min', '10min'],
@@ -257,7 +227,6 @@ function get_available_durations($game) {
         'trx' => ['1min', '3min', '5min'],
         'numeric' => ['1min', '3min', '5min'],
     ];
-    
     return $durations[$game] ?? [];
 }
 `;
