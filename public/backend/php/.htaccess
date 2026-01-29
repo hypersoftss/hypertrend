@@ -33,21 +33,34 @@ RewriteRule ^(wingo|k3|5d|trx|numeric)/([0-9]+min?)$ api/$1.php?duration=$2 [L,Q
 
 # Security Headers
 <IfModule mod_headers.c>
-    # Some shared hosts inject their own CSP headers. If multiple CSP headers are present,
-    # the browser effectively enforces the most restrictive combination, which can break CSS.
-    # Unset any existing CSP variants first, then set our required policy.
+    # =====================================================
+    # CRITICAL: Remove ALL existing CSP headers from host/cPanel
+    # Some shared hosts inject restrictive CSP that blocks inline styles.
+    # We MUST remove them first, then set our own permissive policy.
+    # =====================================================
     Header always unset Content-Security-Policy
+    Header unset Content-Security-Policy
     Header always unset Content-Security-Policy-Report-Only
+    Header unset Content-Security-Policy-Report-Only
     Header always unset X-Content-Security-Policy
+    Header unset X-Content-Security-Policy
     Header always unset X-WebKit-CSP
-
+    Header unset X-WebKit-CSP
+    
+    # Standard Security Headers (non-CSP)
     Header always set X-Content-Type-Options "nosniff"
-    Header always set X-Frame-Options "DENY"
+    Header always set X-Frame-Options "SAMEORIGIN"
     Header always set X-XSS-Protection "1; mode=block"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
-    # Allow inline styles/scripts because admin UI intentionally uses inline <style>/<script>
-    # and data: SVG icons for strict shared-hosting CSP compatibility.
-    Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'"
+    
+    # =====================================================
+    # CSP Policy: Allow inline styles, inline scripts, and data: URIs
+    # Required because admin UI uses:
+    # - Inline <style> blocks for all CSS
+    # - Inline <script> blocks for JS
+    # - data:image/svg+xml for icons (CSP-compatible icons)
+    # =====================================================
+    Header always set Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https:; frame-ancestors 'self'"
 </IfModule>
 
 # Enable CORS for API
