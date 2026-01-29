@@ -9,6 +9,7 @@ import { ConfigProvider } from "@/contexts/ConfigContext";
 import { ApiDataProvider } from "@/contexts/ApiDataContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import DynamicBranding from "@/components/DynamicBranding";
 
 // Pages
 import LandingPage from "@/pages/LandingPage";
@@ -52,6 +53,7 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <GoogleAnalytics />
+                <DynamicBranding />
                 <Routes>
                 {/* Public Routes */}
                   <Route path="/" element={<LandingPage />} />
