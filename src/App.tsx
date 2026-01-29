@@ -18,6 +18,7 @@ import DocumentationPage from "@/pages/DocumentationPage";
 import ProfilePage from "@/pages/ProfilePage";
 import ChangePasswordPage from "@/pages/ChangePasswordPage";
 import NotFound from "@/pages/NotFound";
+import InstallPage from "@/pages/InstallPage";
 
 // Admin Pages
 import UsersPage from "@/pages/admin/UsersPage";
@@ -52,9 +53,10 @@ const App = () => (
               <BrowserRouter>
                 <GoogleAnalytics />
                 <Routes>
-                  {/* Public Routes */}
+                {/* Public Routes */}
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/install" element={<InstallPage />} />
 
                   {/* Protected Routes - All Users */}
                   <Route element={<ProtectedRoute />}>
