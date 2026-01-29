@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Moon, Sun, Lock, User, Zap, Eye, EyeOff, ArrowRight, Shield, AlertTriangle, MessageCircle } from 'lucide-react';
+import { Moon, Sun, Lock, User, Zap, Eye, EyeOff, ArrowRight, Shield, AlertTriangle, MessageCircle, Wrench } from 'lucide-react';
 
 // Network Particle Animation Component
 const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
@@ -30,8 +30,7 @@ const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
       radius: number;
     }> = [];
 
-    // Use actual color values based on theme
-    const particleColor = isDark ? '168, 85, 247' : '139, 92, 246'; // purple shades
+    const particleColor = isDark ? '168, 85, 247' : '139, 92, 246';
     const lineColor = isDark ? '168, 85, 247' : '139, 92, 246';
 
     const resizeCanvas = () => {
@@ -56,7 +55,6 @@ const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
     const drawParticles = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw connections
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
@@ -75,7 +73,6 @@ const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
         }
       }
 
-      // Draw particles
       particles.forEach((particle) => {
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
@@ -123,104 +120,12 @@ const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
   );
 };
 
-// Maintenance Mode Screen Component
-const MaintenanceScreen: React.FC<{ config: any; isDark: boolean; toggleTheme: () => void }> = ({ config, isDark, toggleTheme }) => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      <NetworkBackground isDark={isDark} />
-      
-      {/* Theme Toggle */}
-      <Button
-        variant="outline"
-        size="icon"
-        className="absolute top-4 right-4 z-50 rounded-full bg-card border-border hover:bg-accent hover:text-accent-foreground transition-all"
-        onClick={toggleTheme}
-      >
-        {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-      </Button>
-
-      <Card className="w-full max-w-md mx-4 relative z-10 border-border bg-card shadow-xl animate-fade-in">
-        <CardHeader className="text-center pb-2 pt-8">
-          {/* Logo */}
-          <div className="flex justify-center mb-4">
-            <div className="relative">
-              {config.logoUrl ? (
-                <div className="w-20 h-20 rounded-xl overflow-hidden shadow-lg border border-border">
-                  <img 
-                    src={config.logoUrl} 
-                    alt={config.siteName}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="w-20 h-20 rounded-xl bg-warning flex items-center justify-center shadow-lg">
-                  <AlertTriangle className="w-10 h-10 text-warning-foreground" />
-                </div>
-              )}
-              {/* Warning Indicator */}
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-warning rounded-full border-2 border-card flex items-center justify-center animate-pulse">
-                <AlertTriangle className="w-2.5 h-2.5 text-warning-foreground" />
-              </div>
-            </div>
-          </div>
-          
-          <CardTitle className="text-2xl font-bold text-foreground">
-            🚧 Under Maintenance
-          </CardTitle>
-          <p className="text-warning font-medium text-sm mt-1">{config.siteName}</p>
-          <CardDescription className="mt-4 text-muted-foreground">
-            {config.maintenanceMessage || 'System is under maintenance. Please try again later.'}
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="pb-8 px-6 space-y-4">
-          {/* Maintenance Animation */}
-          <div className="flex justify-center py-6">
-            <div className="relative">
-              <div className="w-16 h-16 border-4 border-warning/30 rounded-full animate-spin" style={{ borderTopColor: 'hsl(var(--warning))' }} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Zap className="w-6 h-6 text-warning" />
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Owner */}
-          <div className="text-center space-y-3">
-            <p className="text-sm text-muted-foreground">Need urgent help?</p>
-            <Button
-              className="w-full h-11 bg-[#0088cc] hover:bg-[#0088cc]/90 text-white font-medium transition-all"
-              onClick={() => window.open(`https://t.me/${config.ownerTelegramId || 'Hyperdeveloperr'}`, '_blank')}
-            >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Connect Hyper Softs Owner
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              @{config.ownerTelegramId || 'Hyperdeveloperr'}
-            </p>
-          </div>
-
-          {/* Estimated Time */}
-          <div className="mt-4 p-3 bg-warning/10 rounded-lg border border-warning/20">
-            <p className="text-sm text-center text-warning-foreground">
-              We'll be back soon! Thank you for your patience. 🙏
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Footer Text */}
-      <p className="absolute bottom-4 text-xs text-muted-foreground z-10">
-        © {new Date().getFullYear()} {config.siteName}. All rights reserved.
-      </p>
-    </div>
-  );
-};
-
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
   const { login } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { config } = useConfig();
@@ -228,6 +133,7 @@ const Login = () => {
   const { toast } = useToast();
 
   const isDark = theme === 'dark';
+  const isMaintenanceMode = config.maintenanceMode;
 
   // Update favicon dynamically
   useEffect(() => {
@@ -242,13 +148,8 @@ const Login = () => {
 
   // Update page title dynamically
   useEffect(() => {
-    document.title = config.maintenanceMode ? `Maintenance - ${config.siteName}` : `Login - ${config.siteName}`;
-  }, [config.siteName, config.maintenanceMode]);
-
-  // If maintenance mode is enabled, show maintenance screen
-  if (config.maintenanceMode) {
-    return <MaintenanceScreen config={config} isDark={isDark} toggleTheme={toggleTheme} />;
-  }
+    document.title = isMaintenanceMode ? `Maintenance - ${config.siteName}` : `Login - ${config.siteName}`;
+  }, [config.siteName, isMaintenanceMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -257,9 +158,28 @@ const Login = () => {
     try {
       const success = await login(username, password);
       if (success) {
+        // Get user data from localStorage to check role
+        const storedUser = localStorage.getItem('hyper_user');
+        const userData = storedUser ? JSON.parse(storedUser) : null;
+        
+        // If maintenance mode is on and user is NOT admin, block login
+        if (isMaintenanceMode && userData?.role !== 'admin') {
+          // Logout the non-admin user
+          localStorage.removeItem('hyper_user');
+          toast({
+            title: '🚧 Site Under Maintenance',
+            description: 'Only administrators can login during maintenance. Please try again later.',
+            variant: 'destructive',
+          });
+          setIsLoading(false);
+          return;
+        }
+
         toast({
           title: '✅ Login Successful',
-          description: `Welcome to ${config.siteName}!`,
+          description: userData?.role === 'admin' && isMaintenanceMode 
+            ? `Welcome Admin! Site is in maintenance mode.` 
+            : `Welcome to ${config.siteName}!`,
         });
         navigate('/dashboard');
       } else {
@@ -280,6 +200,112 @@ const Login = () => {
     }
   };
 
+  // Maintenance Mode Screen (for regular users)
+  if (isMaintenanceMode && !showAdminLogin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+        <NetworkBackground isDark={isDark} />
+        
+        {/* Theme Toggle */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute top-4 right-4 z-50 rounded-full bg-card border-border hover:bg-accent hover:text-accent-foreground transition-all"
+          onClick={toggleTheme}
+        >
+          {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
+
+        <Card className="w-full max-w-md mx-4 relative z-10 border-border bg-card shadow-xl animate-fade-in">
+          <CardHeader className="text-center pb-2 pt-8">
+            {/* Logo */}
+            <div className="flex justify-center mb-4">
+              <div className="relative">
+                {config.logoUrl ? (
+                  <div className="w-20 h-20 rounded-xl overflow-hidden shadow-lg border border-border">
+                    <img 
+                      src={config.logoUrl} 
+                      alt={config.siteName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 rounded-xl bg-warning flex items-center justify-center shadow-lg">
+                    <AlertTriangle className="w-10 h-10 text-warning-foreground" />
+                  </div>
+                )}
+                {/* Warning Indicator */}
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-warning rounded-full border-2 border-card flex items-center justify-center animate-pulse">
+                  <AlertTriangle className="w-2.5 h-2.5 text-warning-foreground" />
+                </div>
+              </div>
+            </div>
+            
+            <CardTitle className="text-2xl font-bold text-foreground">
+              🚧 Under Maintenance
+            </CardTitle>
+            <p className="text-warning font-medium text-sm mt-1">{config.siteName}</p>
+            <CardDescription className="mt-4 text-muted-foreground">
+              {config.maintenanceMessage || 'System is under maintenance. Please try again later.'}
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="pb-8 px-6 space-y-4">
+            {/* Maintenance Animation */}
+            <div className="flex justify-center py-6">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-warning/30 rounded-full animate-spin" style={{ borderTopColor: 'hsl(var(--warning))' }} />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Zap className="w-6 h-6 text-warning" />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Owner */}
+            <div className="text-center space-y-3">
+              <p className="text-sm text-muted-foreground">Need urgent help?</p>
+              <Button
+                className="w-full h-11 bg-[#0088cc] hover:bg-[#0088cc]/90 text-white font-medium transition-all"
+                onClick={() => window.open(`https://t.me/${config.ownerTelegramId || 'Hyperdeveloperr'}`, '_blank')}
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Connect Hyper Softs Owner
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                @{config.ownerTelegramId || 'Hyperdeveloperr'}
+              </p>
+            </div>
+
+            {/* Estimated Time */}
+            <div className="mt-4 p-3 bg-warning/10 rounded-lg border border-warning/20">
+              <p className="text-sm text-center text-warning-foreground">
+                We'll be back soon! Thank you for your patience. 🙏
+              </p>
+            </div>
+
+            {/* Admin Login Button */}
+            <div className="pt-4 border-t border-border">
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground hover:text-foreground"
+                onClick={() => setShowAdminLogin(true)}
+              >
+                <Wrench className="w-4 h-4 mr-2" />
+                Admin Login
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Footer Text */}
+        <p className="absolute bottom-4 text-xs text-muted-foreground z-10">
+          © {new Date().getFullYear()} {config.siteName}. All rights reserved.
+        </p>
+      </div>
+    );
+  }
+
+  // Regular Login Form (shown when not maintenance OR admin wants to login)
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
       {/* Network Particle Animation Background */}
@@ -298,6 +324,18 @@ const Login = () => {
       {/* Login Card */}
       <Card className="w-full max-w-md mx-4 relative z-10 border-border bg-card shadow-xl animate-fade-in">
         <CardHeader className="text-center pb-2 pt-8">
+          {/* Back to Maintenance Screen (if in maintenance mode) */}
+          {isMaintenanceMode && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute top-4 left-4 text-muted-foreground"
+              onClick={() => setShowAdminLogin(false)}
+            >
+              ← Back
+            </Button>
+          )}
+
           {/* Logo */}
           <div className="flex justify-center mb-4">
             <div className="relative">
@@ -315,19 +353,34 @@ const Login = () => {
                 </div>
               )}
               {/* Status Indicator */}
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-success rounded-full border-2 border-card flex items-center justify-center">
-                <Shield className="w-2.5 h-2.5 text-success-foreground" />
+              <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-card flex items-center justify-center ${isMaintenanceMode ? 'bg-warning' : 'bg-success'}`}>
+                {isMaintenanceMode ? (
+                  <Wrench className="w-2.5 h-2.5 text-warning-foreground" />
+                ) : (
+                  <Shield className="w-2.5 h-2.5 text-success-foreground" />
+                )}
               </div>
             </div>
           </div>
           
           <CardTitle className="text-2xl font-bold text-foreground">
-            {config.siteName}
+            {isMaintenanceMode ? '🔧 Admin Login' : config.siteName}
           </CardTitle>
           <p className="text-primary font-medium text-sm mt-1">{config.siteDescription}</p>
           <CardDescription className="mt-2 text-muted-foreground">
-            Sign in to access your dashboard
+            {isMaintenanceMode 
+              ? 'Only administrators can login during maintenance'
+              : 'Sign in to access your dashboard'
+            }
           </CardDescription>
+
+          {/* Maintenance Mode Warning Badge */}
+          {isMaintenanceMode && (
+            <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-warning/10 border border-warning/30 rounded-full text-xs text-warning">
+              <AlertTriangle className="w-3 h-3" />
+              Site is in Maintenance Mode
+            </div>
+          )}
         </CardHeader>
 
         <CardContent className="pb-8 px-6">
