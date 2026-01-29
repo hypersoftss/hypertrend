@@ -1,3 +1,6 @@
+# Hyper Softs Trend - Robots.txt
+# https://trend.hyperapi.in
+
 User-agent: Googlebot
 Allow: /
 
@@ -12,3 +15,17 @@ Allow: /
 
 User-agent: *
 Allow: /
+Allow: /login
+Allow: /docs
+
+# Disallow admin and user-specific pages
+Disallow: /admin/
+Disallow: /user/
+Disallow: /profile
+Disallow: /change-password
+
+# Sitemap location
+Sitemap: https://trend.hyperapi.in/sitemap.xml
+
+# Crawl delay
+Crawl-delay: 1
