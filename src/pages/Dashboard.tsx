@@ -15,7 +15,7 @@ import {
   History, Server
 } from 'lucide-react';
 
-const Dashboard = () => {
+const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const { apiKeys, users } = useApiData();
   const isAdmin = user?.role === 'admin';
