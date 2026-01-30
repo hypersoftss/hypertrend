@@ -42,6 +42,79 @@ const GAME_TYPE_MAP: Record<string, Record<string, string>> = {
 const UPSTREAM_API = 'https://betapi.space';
 const UPSTREAM_ENDPOINT = '/Xdrtrend';
 
+// Helper to send admin notification
+async function notifyAdmin(
+  supabase: any,
+  type: string,
+  details: {
+    keyName: string;
+    keyOwner: string;
+    ownerTelegramId?: string;
+    ip: string;
+    domain: string;
+    reason: string;
+  }
+) {
+  try {
+    // Get admin telegram settings
+    const { data: settings } = await supabase
+      .from('settings')
+      .select('key, value')
+      .in('key', ['telegram_bot_token', 'admin_telegram_id', 'site_name']);
+
+    const settingsMap = Object.fromEntries(settings?.map((s: any) => [s.key, s.value]) || []);
+    const botToken = settingsMap['telegram_bot_token'];
+    const adminChatId = settingsMap['admin_telegram_id'];
+    const siteName = settingsMap['site_name'] || 'Hyper Softs Trend';
+
+    if (!botToken || !adminChatId) {
+      console.log('Telegram not configured, skipping admin notification');
+      return;
+    }
+
+    const message = `🚨 *Unauthorized API Access Attempt*
+
+📛 *Reason:* ${details.reason}
+
+🔑 *Key Name:* \`${details.keyName}\`
+👤 *Key Owner:* ${details.keyOwner}
+📱 *Owner Telegram:* ${details.ownerTelegramId || 'Not Set'}
+
+🌐 *Request Details:*
+• IP: \`${details.ip}\`
+• Domain: \`${details.domain || 'Unknown'}\`
+
+⏰ *Time:* ${new Date().toISOString()}
+
+_${siteName} Security Alert_`;
+
+    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: adminChatId,
+        text: message,
+        parse_mode: 'Markdown',
+      }),
+    });
+
+    const result = await response.json();
+
+    // Log the notification
+    await supabase.from('telegram_logs').insert({
+      chat_id: adminChatId,
+      message_type: 'security_alert',
+      message: message.substring(0, 500),
+      status: result.ok ? 'sent' : 'failed',
+      error_message: result.description || null,
+    });
+
+    console.log('Admin notification sent:', result.ok);
+  } catch (err) {
+    console.error('Failed to send admin notification:', err);
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -53,14 +126,13 @@ Deno.serve(async (req) => {
     const pathParts = url.pathname.split('/').filter(Boolean);
     
     // Expected path: /trend-api/{game}
-    // e.g., /trend-api/wingo, /trend-api/k3, /trend-api/5d
     const game = pathParts[pathParts.length - 1]?.toLowerCase();
     
     // Get query parameters
     const apiKey = url.searchParams.get('api_key');
     const duration = url.searchParams.get('duration');
 
-    // IP check endpoint - to find outbound IP for whitelisting
+    // IP check endpoint
     if (game === 'ipcheck') {
       try {
         const ipResponse = await fetch('https://api.ipify.org?format=json');
@@ -150,6 +222,18 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Get client IP
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                     req.headers.get('cf-connecting-ip') || 
+                     req.headers.get('x-real-ip') || 
+                     'unknown';
+
+    // Get request origin/domain
+    const requestOrigin = req.headers.get('origin') || '';
+    const requestReferer = req.headers.get('referer') || '';
+    const requestDomain = requestOrigin ? new URL(requestOrigin).hostname : 
+                          requestReferer ? new URL(requestReferer).hostname : '';
+
     // Validate API key in database
     const { data: keyData, error: keyError } = await supabase
       .from('api_keys')
@@ -165,18 +249,31 @@ Deno.serve(async (req) => {
         duration: duration,
         status: 'error',
         error_message: 'Invalid API key',
-        ip_address: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown',
+        ip_address: clientIp,
+        domain: requestDomain,
       });
 
       return new Response(JSON.stringify({
         success: false,
         error: 'Invalid API key',
         message: 'The provided API key is not valid',
+        your_ip: clientIp,
+        your_domain: requestDomain || 'Unknown',
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Get key owner's profile for telegram_id
+    const { data: ownerProfile } = await supabase
+      .from('profiles')
+      .select('username, email, telegram_id')
+      .eq('user_id', keyData.user_id)
+      .maybeSingle();
+
+    const keyOwnerName = ownerProfile?.username || ownerProfile?.email || 'Unknown';
+    const ownerTelegramId = ownerProfile?.telegram_id || null;
 
     // Check if key is active
     if (keyData.status !== 'active') {
@@ -184,6 +281,9 @@ Deno.serve(async (req) => {
         success: false,
         error: 'API key inactive',
         message: 'Your API key has been deactivated',
+        your_ip: clientIp,
+        your_domain: requestDomain || 'Unknown',
+        owner_telegram_id: ownerTelegramId,
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -196,23 +296,14 @@ Deno.serve(async (req) => {
         success: false,
         error: 'API key expired',
         message: 'Your API key has expired. Please contact admin for renewal.',
+        your_ip: clientIp,
+        your_domain: requestDomain || 'Unknown',
+        owner_telegram_id: ownerTelegramId,
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    // Get client IP
-    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
-                     req.headers.get('cf-connecting-ip') || 
-                     req.headers.get('x-real-ip') || 
-                     'unknown';
-
-    // Get request origin/domain
-    const requestOrigin = req.headers.get('origin') || '';
-    const requestReferer = req.headers.get('referer') || '';
-    const requestDomain = requestOrigin ? new URL(requestOrigin).hostname : 
-                          requestReferer ? new URL(requestReferer).hostname : '';
 
     // Check IP whitelist - MANDATORY
     const { data: allowedIps } = await supabase
@@ -233,11 +324,23 @@ Deno.serve(async (req) => {
         domain: requestDomain,
       });
 
+      // Notify admin
+      await notifyAdmin(supabase, 'no_whitelist', {
+        keyName: keyData.key_name,
+        keyOwner: keyOwnerName,
+        ownerTelegramId: ownerTelegramId,
+        ip: clientIp,
+        domain: requestDomain,
+        reason: 'No IP whitelist configured for this key',
+      });
+
       return new Response(JSON.stringify({
         success: false,
         error: 'No IP whitelist configured',
-        message: `This API key has no whitelisted IPs. Your IP: ${clientIp}. Please contact admin to whitelist your IP.`,
+        message: `This API key has no whitelisted IPs. Please contact admin to whitelist your IP.`,
         your_ip: clientIp,
+        your_domain: requestDomain || 'Unknown',
+        owner_telegram_id: ownerTelegramId,
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -258,11 +361,24 @@ Deno.serve(async (req) => {
         domain: requestDomain,
       });
 
+      // Notify admin
+      await notifyAdmin(supabase, 'ip_not_whitelisted', {
+        keyName: keyData.key_name,
+        keyOwner: keyOwnerName,
+        ownerTelegramId: ownerTelegramId,
+        ip: clientIp,
+        domain: requestDomain,
+        reason: `IP not whitelisted: ${clientIp}`,
+      });
+
       return new Response(JSON.stringify({
         success: false,
         error: 'IP not authorized',
         message: `Your IP (${clientIp}) is not whitelisted for this API key. Please contact admin to whitelist your IP.`,
         your_ip: clientIp,
+        your_domain: requestDomain || 'Unknown',
+        owner_telegram_id: ownerTelegramId,
+        whitelisted_ips: allowedIps.map(ip => ip.ip_address),
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -288,11 +404,23 @@ Deno.serve(async (req) => {
         domain: requestDomain,
       });
 
+      // Notify admin
+      await notifyAdmin(supabase, 'no_domain_whitelist', {
+        keyName: keyData.key_name,
+        keyOwner: keyOwnerName,
+        ownerTelegramId: ownerTelegramId,
+        ip: clientIp,
+        domain: requestDomain,
+        reason: 'No domain whitelist configured for this key',
+      });
+
       return new Response(JSON.stringify({
         success: false,
         error: 'No domain whitelist configured',
-        message: `This API key has no whitelisted domains. Your IP: ${clientIp}. Please contact admin to whitelist your domain.`,
+        message: `This API key has no whitelisted domains. Please contact admin to whitelist your domain.`,
         your_ip: clientIp,
+        your_domain: requestDomain || 'Unknown',
+        owner_telegram_id: ownerTelegramId,
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -316,11 +444,24 @@ Deno.serve(async (req) => {
           domain: requestDomain,
         });
 
+        // Notify admin
+        await notifyAdmin(supabase, 'domain_not_whitelisted', {
+          keyName: keyData.key_name,
+          keyOwner: keyOwnerName,
+          ownerTelegramId: ownerTelegramId,
+          ip: clientIp,
+          domain: requestDomain,
+          reason: `Domain not whitelisted: ${requestDomain}`,
+        });
+
         return new Response(JSON.stringify({
           success: false,
           error: 'Domain not authorized',
-          message: `Domain (${requestDomain}) is not whitelisted for this API key. Your IP: ${clientIp}. Please contact admin to whitelist your domain.`,
+          message: `Domain (${requestDomain}) is not whitelisted for this API key. Please contact admin to whitelist your domain.`,
           your_ip: clientIp,
+          your_domain: requestDomain,
+          owner_telegram_id: ownerTelegramId,
+          whitelisted_domains: allowedDomains.map(d => d.domain),
         }), {
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -334,6 +475,8 @@ Deno.serve(async (req) => {
         success: false,
         error: 'Rate limit exceeded',
         message: 'You have exceeded your daily API call limit',
+        your_ip: clientIp,
+        your_domain: requestDomain || 'Unknown',
       }), {
         status: 429,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -366,10 +509,10 @@ Deno.serve(async (req) => {
         error_message: `Upstream error: ${upstreamResponse.status}`,
         response_time_ms: responseTime,
         api_key_id: keyData.id,
-        ip_address: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown',
+        ip_address: clientIp,
+        domain: requestDomain,
       });
 
-      // Return upstream's actual response for debugging
       return new Response(JSON.stringify({
         success: false,
         error: 'Upstream error',
@@ -402,8 +545,8 @@ Deno.serve(async (req) => {
       status: 'success',
       response_time_ms: responseTime,
       api_key_id: keyData.id,
-      ip_address: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown',
-      domain: req.headers.get('origin') || req.headers.get('referer') || 'direct',
+      ip_address: clientIp,
+      domain: requestDomain || 'direct',
     });
 
     // Return successful response
