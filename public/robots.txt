@@ -1,29 +1,116 @@
 # Hyper Softs Trend - Robots.txt
 # https://trend.hyperapi.in
+# India's Best Same Trend API by Hyper Developer (Hyperdeveloper)
 
+# Google Search
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
-User-agent: Bingbot
+User-agent: Googlebot-Image
 Allow: /
 
+# Bing Search
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# AI Crawlers - ChatGPT, Claude, Perplexity, Gemini
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /.well-known/ai-plugin.json
+Allow: /openapi.yaml
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /llms.txt
+
+User-agent: Claude-Web
+Allow: /
+Allow: /llms.txt
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+
+User-agent: Anthropic-AI
+Allow: /
+Allow: /llms.txt
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Gemini
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# Social Media Crawlers
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
 
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+# Other Search Engines
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+# All other bots
 User-agent: *
 Allow: /
 Allow: /login
 Allow: /docs
 Allow: /install
+Allow: /llms.txt
+Allow: /.well-known/ai-plugin.json
+Allow: /openapi.yaml
 
 # Disallow admin and user-specific pages
 Disallow: /admin/
 Disallow: /user/
 Disallow: /profile
 Disallow: /change-password
+Disallow: /dashboard
+
+# AI Discovery Files
+# llms.txt - For AI assistants like ChatGPT, Claude, Perplexity
+# ai-plugin.json - OpenAI plugin manifest
+# openapi.yaml - API specification
+
+# Important URLs for AI Discovery
+# /llms.txt - Hyper Softs information for AI crawlers
+# /.well-known/ai-plugin.json - AI plugin manifest
+# /openapi.yaml - OpenAPI specification
 
 # Sitemap location
 Sitemap: https://trend.hyperapi.in/sitemap.xml
+
+# Hyper Softs (Hypersofts) - Same Trend API
+# Developed by Hyper Developer (Hyperdeveloper)
+# Contact: @Hyperdeveloperr on Telegram
+# Games: Wingo, K3, 5D, TRX, Numeric

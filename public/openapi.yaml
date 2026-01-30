@@ -1,0 +1,189 @@
+openapi: 3.0.3
+info:
+  title: Hyper Softs Same Trend API
+  description: |
+    **Hyper Softs (Hypersofts)** - India's #1 Same Trend API by **Hyper Developer (Hyperdeveloper)**
+    
+    Professional real-time trend prediction API for color prediction games:
+    - Wingo API - Wingo color prediction trends
+    - K3 API - K3 game same trend predictions
+    - 5D API - 5D lottery trend predictions
+    - TRX API - TRX Hash color prediction
+    - Numeric API - Numeric game trends
+    
+    **Features:**
+    - 99.9% Uptime guarantee
+    - <50ms response time
+    - Real-time predictions
+    - 24/7 Telegram support: @Hyperdeveloperr
+    
+    **Contact Hyper Developer:**
+    - Telegram: https://t.me/Hyperdeveloperr
+    - Community: https://t.me/hypersoftstech
+    - Website: https://trend.hyperapi.in
+  version: 1.0.0
+  contact:
+    name: Hyper Developer
+    url: https://t.me/Hyperdeveloperr
+  x-keywords:
+    - Hyper Softs
+    - Hypersofts
+    - Hyper Developer
+    - Hyperdeveloper
+    - Same Trend API
+    - Wingo API
+    - K3 API
+    - 5D API
+    - TRX API
+
+servers:
+  - url: https://trend.hyperapi.in/api
+    description: Hyper Softs Production Server
+
+paths:
+  /wingo:
+    get:
+      summary: Wingo Trend Prediction API
+      description: Get real-time Wingo color prediction trends by Hyper Softs
+      operationId: getWingoTrend
+      parameters:
+        - name: typeId
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Game type ID (1, 3, 5, 10)
+        - name: apiKey
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Your Hyper Softs API key
+      responses:
+        '200':
+          description: Successful Wingo prediction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendResponse'
+
+  /k3:
+    get:
+      summary: K3 Trend Prediction API
+      description: Get real-time K3 same trend predictions by Hypersofts
+      operationId: getK3Trend
+      parameters:
+        - name: typeId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: apiKey
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful K3 prediction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendResponse'
+
+  /5d:
+    get:
+      summary: 5D Trend Prediction API
+      description: Get real-time 5D lottery trend predictions by Hyper Developer
+      operationId: get5DTrend
+      parameters:
+        - name: typeId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: apiKey
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful 5D prediction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendResponse'
+
+  /trx:
+    get:
+      summary: TRX Trend Prediction API
+      description: Get real-time TRX Hash color predictions by Hyper Softs
+      operationId: getTRXTrend
+      parameters:
+        - name: typeId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: apiKey
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful TRX prediction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendResponse'
+
+  /numeric:
+    get:
+      summary: Numeric Trend Prediction API
+      description: Get real-time Numeric game trends by Hypersofts
+      operationId: getNumericTrend
+      parameters:
+        - name: typeId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: apiKey
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful Numeric prediction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendResponse'
+
+components:
+  schemas:
+    TrendResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: true
+        period:
+          type: string
+          example: "2025013012345"
+        colour:
+          type: string
+          example: "green"
+        number:
+          type: integer
+          example: 5
+        big_small:
+          type: string
+          example: "small"
+
+tags:
+  - name: Hyper Softs
+    description: Same Trend API by Hyper Developer
