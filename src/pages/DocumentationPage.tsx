@@ -37,39 +37,50 @@ const DocumentationPage = () => {
   };
 
   const API_BASE = config.userApiDomain;
+  const API_ENDPOINT = config.userApiEndpoint || '/api/trend';
+  const FULL_API_URL = `${API_BASE}${API_ENDPOINT}`;
+
+  // TypeId mapping for each game and duration
+  const typeIdMap: Record<string, Record<string, string>> = {
+    'WinGo': { '30s': 'wg30s', '1min': 'wg1', '3min': 'wg3', '5min': 'wg5' },
+    'K3': { '1min': 'k31', '3min': 'k33', '5min': 'k35', '10min': 'k310' },
+    '5D': { '1min': '5d1', '3min': '5d3', '5min': '5d5', '10min': '5d10' },
+    'TRX': { '1min': 'trx1', '3min': 'trx3', '5min': 'trx5' },
+    'Numeric': { '1min': 'num1', '3min': 'num3', '5min': 'num5' },
+  };
 
   const endpoints = [
     { 
       game: 'WinGo', 
-      endpoint: '/wingo',
+      typeIds: typeIdMap['WinGo'],
       durations: ['30s', '1min', '3min', '5min'],
       description: 'WinGo lottery trend data',
       color: 'bg-purple-500'
     },
     { 
       game: 'K3', 
-      endpoint: '/k3',
+      typeIds: typeIdMap['K3'],
       durations: ['1min', '3min', '5min', '10min'],
       description: 'K3 dice game trend data',
       color: 'bg-blue-500'
     },
     { 
       game: '5D', 
-      endpoint: '/5d',
+      typeIds: typeIdMap['5D'],
       durations: ['1min', '3min', '5min', '10min'],
       description: '5D lottery trend data',
       color: 'bg-green-500'
     },
     { 
       game: 'TRX', 
-      endpoint: '/trx',
+      typeIds: typeIdMap['TRX'],
       durations: ['1min', '3min', '5min'],
       description: 'TRX blockchain game trend data',
       color: 'bg-orange-500'
     },
     { 
       game: 'Numeric', 
-      endpoint: '/numeric',
+      typeIds: typeIdMap['Numeric'],
       durations: ['1min', '3min', '5min'],
       description: 'Numeric lottery trend data',
       color: 'bg-pink-500'
@@ -77,21 +88,21 @@ const DocumentationPage = () => {
   ];
 
   const codeExamples = {
-    curl: `# WinGo API Call
-curl -X GET "${API_BASE}/wingo?api_key=YOUR_KEY&duration=1min"
+    curl: `# WinGo 1 Min API Call
+curl -X GET "${FULL_API_URL}?typeId=wg1&apiKey=YOUR_KEY"
 
-# K3 API Call
-curl -X GET "${API_BASE}/k3?api_key=YOUR_KEY&duration=3min"
+# K3 3 Min API Call
+curl -X GET "${FULL_API_URL}?typeId=k33&apiKey=YOUR_KEY"
 
-# Health Check (No auth required)
-curl -X GET "${API_BASE}/health"`,
+# 5D 5 Min API Call
+curl -X GET "${FULL_API_URL}?typeId=5d5&apiKey=YOUR_KEY"`,
     
     javascript: `// Fetch Trend Data
 const API_KEY = 'your_api_key_here';
-const BASE_URL = '${API_BASE}';
+const API_URL = '${FULL_API_URL}';
 
-async function getTrend(game, duration) {
-  const url = \`\${BASE_URL}/\${game}?api_key=\${API_KEY}&duration=\${duration}\`;
+async function getTrend(typeId) {
+  const url = \`\${API_URL}?typeId=\${typeId}&apiKey=\${API_KEY}\`;
   
   const response = await fetch(url);
   if (!response.ok) {
@@ -101,44 +112,55 @@ async function getTrend(game, duration) {
   return response.json();
 }
 
-// Usage Examples
-const wingo = await getTrend('wingo', '1min');
-console.log('WinGo Data:', wingo.data);
+// Usage Examples - TypeId Reference:
+// WinGo: wg30s, wg1, wg3, wg5
+// K3: k31, k33, k35, k310
+// 5D: 5d1, 5d3, 5d5, 5d10
+// TRX: trx1, trx3, trx5
+// Numeric: num1, num3, num5
 
-const k3 = await getTrend('k3', '3min');
-console.log('K3 Data:', k3.data);`,
+const wingo = await getTrend('wg1');
+console.log('WinGo 1min Data:', wingo.data);
+
+const k3 = await getTrend('k33');
+console.log('K3 3min Data:', k3.data);`,
     
     python: `import requests
 
 API_KEY = "your_api_key_here"
-BASE_URL = "${API_BASE}"
+API_URL = "${FULL_API_URL}"
 
-def get_trend(game: str, duration: str) -> dict:
+def get_trend(type_id: str) -> dict:
     """Fetch trend data from API"""
-    url = f"{BASE_URL}/{game}"
-    params = {"api_key": API_KEY, "duration": duration}
+    params = {"typeId": type_id, "apiKey": API_KEY}
     
-    response = requests.get(url, params=params)
+    response = requests.get(API_URL, params=params)
     response.raise_for_status()
     return response.json()
 
-# Usage Examples
-wingo = get_trend("wingo", "1min")
-print(f"WinGo Data: {wingo['data']}")
+# TypeId Reference:
+# WinGo: wg30s, wg1, wg3, wg5
+# K3: k31, k33, k35, k310
+# 5D: 5d1, 5d3, 5d5, 5d10
+# TRX: trx1, trx3, trx5
+# Numeric: num1, num3, num5
 
-k3 = get_trend("k3", "3min")
-print(f"K3 Data: {k3['data']}")`,
+wingo = get_trend("wg1")
+print(f"WinGo 1min Data: {wingo['data']}")
+
+k3 = get_trend("k33")
+print(f"K3 3min Data: {k3['data']}")`,
     
     php: `<?php
 $API_KEY = "your_api_key_here";
-$BASE_URL = "${API_BASE}";
+$API_URL = "${FULL_API_URL}";
 
-function getTrend($game, $duration) {
-    global $API_KEY, $BASE_URL;
+function getTrend($typeId) {
+    global $API_KEY, $API_URL;
     
-    $url = "$BASE_URL/$game?" . http_build_query([
-        'api_key' => $API_KEY,
-        'duration' => $duration
+    $url = $API_URL . "?" . http_build_query([
+        'typeId' => $typeId,
+        'apiKey' => $API_KEY
     ]);
     
     $response = file_get_contents($url);
@@ -149,11 +171,17 @@ function getTrend($game, $duration) {
     return json_decode($response, true);
 }
 
-// Usage Examples
-$wingo = getTrend("wingo", "1min");
+// TypeId Reference:
+// WinGo: wg30s, wg1, wg3, wg5
+// K3: k31, k33, k35, k310
+// 5D: 5d1, 5d3, 5d5, 5d10
+// TRX: trx1, trx3, trx5
+// Numeric: num1, num3, num5
+
+$wingo = getTrend("wg1");
 print_r($wingo['data']);
 
-$k3 = getTrend("k3", "3min");
+$k3 = getTrend("k33");
 print_r($k3['data']);
 ?>`,
   };
@@ -241,8 +269,8 @@ print_r($k3['data']);
               </nav>
               
               <div className="mt-6 p-3 rounded-lg bg-muted/50 border">
-                <p className="text-xs text-muted-foreground mb-2">Base URL</p>
-                <code className="text-[10px] sm:text-xs text-primary break-all">{API_BASE}</code>
+                <p className="text-xs text-muted-foreground mb-2">API Endpoint</p>
+                <code className="text-[10px] sm:text-xs text-primary break-all">{FULL_API_URL}</code>
               </div>
             </div>
           </aside>
@@ -263,9 +291,9 @@ print_r($k3['data']);
               
               {/* Quick Actions */}
               <div className="flex flex-wrap gap-2 pt-2">
-                <Button size="sm" className="gap-2 text-xs" onClick={() => copyCode(`${API_BASE}`, 'base-url')}>
+                <Button size="sm" className="gap-2 text-xs" onClick={() => copyCode(FULL_API_URL, 'base-url')}>
                   {copiedCode === 'base-url' ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                  Copy Base URL
+                  Copy API URL
                 </Button>
                 <Button variant="outline" size="sm" className="gap-2 text-xs">
                   <Download className="w-3 h-3" />
@@ -308,13 +336,13 @@ print_r($k3['data']);
                     </div>
                     <div className="relative">
                       <pre className="p-2 rounded bg-muted overflow-x-auto text-xs">
-                        <code>curl "{API_BASE}/wingo?api_key=YOUR_KEY&duration=1min"</code>
+                        <code>curl "{FULL_API_URL}?typeId=wg1&apiKey=YOUR_KEY"</code>
                       </pre>
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         className="absolute top-1 right-1 h-6 w-6 p-0"
-                        onClick={() => copyCode(`curl "${API_BASE}/wingo?api_key=YOUR_KEY&duration=1min"`, 'quick-test')}
+                        onClick={() => copyCode(`curl "${FULL_API_URL}?typeId=wg1&apiKey=YOUR_KEY"`, 'quick-test')}
                       >
                         {copiedCode === 'quick-test' ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                       </Button>
@@ -390,30 +418,35 @@ print_r($k3['data']);
                         <AccordionContent className="pb-3">
                           <div className="space-y-3">
                             <div className="flex items-center gap-2">
-                              <code className="text-xs bg-muted px-2 py-1 rounded">{ep.endpoint}</code>
+                              <code className="text-xs bg-muted px-2 py-1 rounded">{API_ENDPOINT}</code>
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
                                 className="h-6 w-6 p-0"
-                                onClick={() => copyCode(`${API_BASE}${ep.endpoint}`, `ep-${ep.game}`)}
+                                onClick={() => copyCode(FULL_API_URL, `ep-${ep.game}`)}
                               >
                                 {copiedCode === `ep-${ep.game}` ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                               </Button>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                              {ep.durations.map((d) => (
-                                <Badge key={d} variant="outline" className="text-xs font-mono">{d}</Badge>
-                              ))}
+                            <div className="space-y-2">
+                              <p className="text-xs text-muted-foreground">TypeIds:</p>
+                              <div className="flex flex-wrap gap-2">
+                                {ep.durations.map((d) => (
+                                  <Badge key={d} variant="outline" className="text-xs font-mono gap-1">
+                                    {d} → {ep.typeIds[d]}
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
                             <div className="relative">
                               <pre className="p-2 rounded bg-muted overflow-x-auto text-[10px] sm:text-xs">
-                                <code>{`GET ${API_BASE}${ep.endpoint}?api_key=KEY&duration=${ep.durations[0]}`}</code>
+                                <code>{`GET ${FULL_API_URL}?typeId=${ep.typeIds[ep.durations[0]]}&apiKey=KEY`}</code>
                               </pre>
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
                                 className="absolute top-1 right-1 h-5 w-5 p-0"
-                                onClick={() => copyCode(`${API_BASE}${ep.endpoint}?api_key=YOUR_KEY&duration=${ep.durations[0]}`, `full-${ep.game}`)}
+                                onClick={() => copyCode(`${FULL_API_URL}?typeId=${ep.typeIds[ep.durations[0]]}&apiKey=YOUR_KEY`, `full-${ep.game}`)}
                               >
                                 {copiedCode === `full-${ep.game}` ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                               </Button>
