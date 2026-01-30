@@ -1,29 +1,325 @@
-# Hyper Softs Trend - Robots.txt
-# https://trend.hyperapi.in
+# =====================================================
+# Hyper Softs (Hypersofts) - Advanced Robots.txt
+# Same Trend API by Hyper Developer (Hyperdeveloper)
+# India's Best Prediction API for Wingo, K3, 5D, TRX
+# Domain: https://trend.hyperapi.in
+# =====================================================
 
+# Google Search Engine
 User-agent: Googlebot
 Allow: /
+Allow: /login
+Allow: /docs
+Allow: /install
+Allow: /dashboard
+Disallow: /admin/
+Disallow: /user/
+Disallow: /profile
+Disallow: /change-password
+Crawl-delay: 1
 
+User-agent: Googlebot-Image
+Allow: /
+Allow: /og-image.png
+Allow: /pwa-192x192.png
+Allow: /pwa-512x512.png
+Allow: /favicon.ico
+
+User-agent: Googlebot-Video
+Allow: /
+
+User-agent: Googlebot-News
+Allow: /
+
+# Bing Search Engine (Microsoft)
 User-agent: Bingbot
 Allow: /
+Allow: /login
+Allow: /docs
+Allow: /install
+Disallow: /admin/
+Disallow: /user/
+Disallow: /profile
+Crawl-delay: 1
+
+User-agent: MSNBot
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+User-agent: MSNBot-Media
+Allow: /
+
+# Yahoo Search
+User-agent: Slurp
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+Crawl-delay: 1
+
+# Yandex (Russian Search Engine)
+User-agent: Yandex
+Allow: /
+Allow: /login
+Allow: /docs
+Allow: /install
+Disallow: /admin/
+Disallow: /user/
+Crawl-delay: 2
+
+User-agent: YandexBot
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+User-agent: YandexImages
+Allow: /
+
+# Baidu (Chinese Search Engine)
+User-agent: Baiduspider
+Allow: /
+Allow: /login
+Allow: /docs
+Allow: /install
+Disallow: /admin/
+Disallow: /user/
+Crawl-delay: 2
+
+User-agent: Baiduspider-image
+Allow: /
+
+# DuckDuckGo
+User-agent: DuckDuckBot
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+# Sogou (Chinese Search Engine)
+User-agent: Sogou
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+# Naver (Korean Search Engine)
+User-agent: Yeti
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+# Seznam (Czech Search Engine)
+User-agent: SeznamBot
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+# Qwant (European Search Engine)
+User-agent: Qwantify
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+# Ecosia (Green Search Engine)
+User-agent: Ecosia
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+# =====================================================
+# AI Crawlers and LLM Bots
+# =====================================================
+
+# OpenAI ChatGPT Crawler
+User-agent: GPTBot
+Allow: /
+Allow: /login
+Allow: /docs
+Allow: /install
+Disallow: /admin/
+Disallow: /user/
+Disallow: /profile
+Disallow: /change-password
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /docs
+Disallow: /admin/
+Disallow: /user/
+
+# Anthropic Claude Crawler
+User-agent: Claude-Web
+Allow: /
+Allow: /docs
+Allow: /install
+Disallow: /admin/
+Disallow: /user/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+# Perplexity AI
+User-agent: PerplexityBot
+Allow: /
+Allow: /docs
+Allow: /install
+Disallow: /admin/
+Disallow: /user/
+
+# Google Bard / Gemini
+User-agent: Google-Extended
+Allow: /
+Allow: /docs
+Disallow: /admin/
+Disallow: /user/
+
+# Meta AI
+User-agent: FacebookBot
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+User-agent: Meta-ExternalAgent
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+User-agent: Meta-ExternalFetcher
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+# Cohere AI
+User-agent: cohere-ai
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+# Common Crawl (Used by many AI models)
+User-agent: CCBot
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+# Apple Bot
+User-agent: Applebot
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+# =====================================================
+# Social Media Crawlers
+# =====================================================
 
 User-agent: Twitterbot
 Allow: /
+Allow: /og-image.png
 
 User-agent: facebookexternalhit
 Allow: /
+Allow: /og-image.png
+
+User-agent: LinkedInBot
+Allow: /
+Allow: /og-image.png
+
+User-agent: Pinterest
+Allow: /
+
+User-agent: Slackbot
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: DiscordBot
+Allow: /
+
+# =====================================================
+# SEO and Analytics Tools
+# =====================================================
+
+User-agent: AhrefsBot
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+Crawl-delay: 5
+
+User-agent: SemrushBot
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+Crawl-delay: 5
+
+User-agent: MJ12bot
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+User-agent: DotBot
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+User-agent: Screaming Frog SEO Spider
+Allow: /
+Disallow: /admin/
+Disallow: /user/
+
+# =====================================================
+# Default Rule for All Other Bots
+# =====================================================
 
 User-agent: *
 Allow: /
 Allow: /login
 Allow: /docs
 Allow: /install
+Allow: /sitemap.xml
+Allow: /robots.txt
+Allow: /manifest.webmanifest
+Allow: /og-image.png
+Allow: /favicon.ico
 
-# Disallow admin and user-specific pages
+# Protected Areas - Not for crawling
 Disallow: /admin/
 Disallow: /user/
 Disallow: /profile
 Disallow: /change-password
+Disallow: /api/
 
-# Sitemap location
+# Static Assets
+Allow: /assets/
+Allow: /*.css
+Allow: /*.js
+Allow: /*.png
+Allow: /*.jpg
+Allow: /*.svg
+Allow: /*.ico
+Allow: /*.webp
+
+# =====================================================
+# Sitemap Locations
+# =====================================================
+
 Sitemap: https://trend.hyperapi.in/sitemap.xml
+
+# =====================================================
+# Host Declaration
+# =====================================================
+
+Host: https://trend.hyperapi.in
+
+# =====================================================
+# Keywords: Hyper Softs, Hypersofts, Hyper Developer, 
+# Hyperdeveloper, Same Trend API, Wingo API, K3 API, 
+# 5D API, TRX API, India Trend Prediction, Best API
+# =====================================================

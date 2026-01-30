@@ -1,0 +1,29 @@
+/* TEAM */
+Developer: Hyper Developer (Hyperdeveloper)
+Contact: @Hyperdeveloperr (Telegram)
+From: India
+
+/* SITE */
+Name: Hyper Softs (Hypersofts)
+Description: India's #1 Same Trend API for Wingo, K3, 5D, TRX Games
+URL: https://trend.hyperapi.in
+Language: English, Hindi
+Standards: HTML5, CSS3, ES6+, React, TypeScript
+
+/* TECHNOLOGY */
+Frontend: React 18, TypeScript, Tailwind CSS, Vite
+Backend: Supabase Edge Functions, PostgreSQL
+Hosting: Vercel
+PWA: Yes (Progressive Web App)
+
+/* SOCIAL */
+Telegram Developer: @Hyperdeveloperr
+Telegram Channel: @hypersoftstech
+
+/* KEYWORDS */
+Hyper Softs, Hypersofts, Hyper Developer, Hyperdeveloper
+Same Trend API, Wingo API, K3 API, 5D API, TRX API
+India Best Prediction API, Color Prediction, Game Trends
+
+/* LAST UPDATE */
+2026-01-30
