@@ -6,36 +6,32 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
-// Game type to typeId mapping
-const GAME_TYPE_MAP: Record<string, Record<string, string>> = {
-  wingo: {
-    '30s': '1',
-    '1min': '2',
-    '3min': '3',
-    '5min': '4',
-  },
-  k3: {
-    '1min': '5',
-    '3min': '6',
-    '5min': '7',
-    '10min': '8',
-  },
-  '5d': {
-    '1min': '9',
-    '3min': '10',
-    '5min': '11',
-    '10min': '12',
-  },
-  trx: {
-    '1min': '13',
-    '3min': '14',
-    '5min': '15',
-  },
-  numeric: {
-    '1min': '16',
-    '3min': '17',
-    '5min': '18',
-  },
+// TypeId to upstream typeId mapping
+// User-facing typeId -> Upstream typeId
+const TYPE_ID_MAP: Record<string, { upstreamId: string; game: string; duration: string }> = {
+  // WinGo
+  'wg30s': { upstreamId: '1', game: 'wingo', duration: '30s' },
+  'wg1': { upstreamId: '2', game: 'wingo', duration: '1min' },
+  'wg3': { upstreamId: '3', game: 'wingo', duration: '3min' },
+  'wg5': { upstreamId: '4', game: 'wingo', duration: '5min' },
+  // K3
+  'k31': { upstreamId: '5', game: 'k3', duration: '1min' },
+  'k33': { upstreamId: '6', game: 'k3', duration: '3min' },
+  'k35': { upstreamId: '7', game: 'k3', duration: '5min' },
+  'k310': { upstreamId: '8', game: 'k3', duration: '10min' },
+  // 5D
+  '5d1': { upstreamId: '9', game: '5d', duration: '1min' },
+  '5d3': { upstreamId: '10', game: '5d', duration: '3min' },
+  '5d5': { upstreamId: '11', game: '5d', duration: '5min' },
+  '5d10': { upstreamId: '12', game: '5d', duration: '10min' },
+  // TRX
+  'trx1': { upstreamId: '13', game: 'trx', duration: '1min' },
+  'trx3': { upstreamId: '14', game: 'trx', duration: '3min' },
+  'trx5': { upstreamId: '15', game: 'trx', duration: '5min' },
+  // Numeric
+  'num1': { upstreamId: '16', game: 'numeric', duration: '1min' },
+  'num3': { upstreamId: '17', game: 'numeric', duration: '3min' },
+  'num5': { upstreamId: '18', game: 'numeric', duration: '5min' },
 };
 
 // Upstream API configuration
@@ -56,7 +52,6 @@ async function notifyAdmin(
   }
 ) {
   try {
-    // Get admin telegram settings
     const { data: settings } = await supabase
       .from('settings')
       .select('key, value')
@@ -100,7 +95,6 @@ _${siteName} Security Alert_`;
 
     const result = await response.json();
 
-    // Log the notification
     await supabase.from('telegram_logs').insert({
       chat_id: adminChatId,
       message_type: 'security_alert',
@@ -123,58 +117,69 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const pathParts = url.pathname.split('/').filter(Boolean);
     
-    // Expected path: /trend-api/{game}
-    const game = pathParts[pathParts.length - 1]?.toLowerCase();
-    
-    // Get query parameters
-    const apiKey = url.searchParams.get('api_key');
-    const duration = url.searchParams.get('duration');
-
-    // IP check endpoint
-    if (game === 'ipcheck') {
-      try {
-        const ipResponse = await fetch('https://api.ipify.org?format=json');
-        const ipData = await ipResponse.json();
-        return new Response(JSON.stringify({
-          status: 'ok',
-          message: 'Supabase Edge Function IP',
-          outbound_ip: ipData.ip,
-          timestamp: new Date().toISOString(),
-          note: 'Whitelist this IP on betapi.space'
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      } catch (e) {
-        return new Response(JSON.stringify({
-          status: 'error',
-          message: 'Could not fetch IP',
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    }
+    // Get query parameters - Support both new and old patterns
+    const typeId = url.searchParams.get('typeId');
+    const apiKey = url.searchParams.get('apiKey') || url.searchParams.get('api_key');
 
     // Health check endpoint
-    if (game === 'health' || game === 'trend-api') {
+    if (url.pathname.endsWith('/health') || url.pathname.endsWith('/ipcheck')) {
+      if (url.pathname.endsWith('/ipcheck')) {
+        try {
+          const ipResponse = await fetch('https://api.ipify.org?format=json');
+          const ipData = await ipResponse.json();
+          return new Response(JSON.stringify({
+            status: 'ok',
+            message: 'Supabase Edge Function IP',
+            outbound_ip: ipData.ip,
+            timestamp: new Date().toISOString(),
+            note: 'Whitelist this IP on betapi.space'
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (e) {
+          return new Response(JSON.stringify({
+            status: 'error',
+            message: 'Could not fetch IP',
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+
       return new Response(JSON.stringify({
         status: 'ok',
         message: 'Trend API is running',
         timestamp: new Date().toISOString(),
-        endpoints: ['wingo', 'k3', '5d', 'trx', 'numeric'],
+        supported_typeIds: Object.keys(TYPE_ID_MAP),
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Validate game type
-    if (!game || !GAME_TYPE_MAP[game]) {
+    // Validate typeId
+    if (!typeId) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'Invalid game type',
-        message: `Supported games: ${Object.keys(GAME_TYPE_MAP).join(', ')}`,
+        error: 'typeId required',
+        message: 'Please provide typeId parameter',
+        supported_typeIds: Object.keys(TYPE_ID_MAP),
+        example: '?typeId=wg1&apiKey=YOUR_KEY',
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const typeConfig = TYPE_ID_MAP[typeId.toLowerCase()];
+    if (!typeConfig) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid typeId',
+        message: `TypeId '${typeId}' is not valid`,
+        supported_typeIds: Object.keys(TYPE_ID_MAP),
+        example: '?typeId=wg1&apiKey=YOUR_KEY',
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -185,34 +190,11 @@ Deno.serve(async (req) => {
     if (!apiKey) {
       return new Response(JSON.stringify({
         success: false,
-        error: 'API key required',
-        message: 'Please provide api_key parameter',
+        error: 'apiKey required',
+        message: 'Please provide apiKey parameter',
+        example: `?typeId=${typeId}&apiKey=YOUR_KEY`,
       }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Validate duration
-    if (!duration) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Duration required',
-        message: `Supported durations for ${game}: ${Object.keys(GAME_TYPE_MAP[game]).join(', ')}`,
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const typeId = GAME_TYPE_MAP[game][duration];
-    if (!typeId) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Invalid duration',
-        message: `Supported durations for ${game}: ${Object.keys(GAME_TYPE_MAP[game]).join(', ')}`,
-      }), {
-        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -230,7 +212,6 @@ Deno.serve(async (req) => {
     
     const adminSettingsMap = Object.fromEntries(adminSettings?.map((s: any) => [s.key, s.value]) || []);
     const adminTelegramUsername = adminSettingsMap['admin_telegram_username'] || '@Hyperdeveloperr';
-    const siteName = adminSettingsMap['site_name'] || 'Hyper Softs Trend';
 
     // Get client IP
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
@@ -244,6 +225,8 @@ Deno.serve(async (req) => {
     const requestDomain = requestOrigin ? new URL(requestOrigin).hostname : 
                           requestReferer ? new URL(requestReferer).hostname : '';
 
+    console.log(`API Request: typeId=${typeId}, apiKey=${apiKey?.substring(0,8)}..., IP=${clientIp}, Domain=${requestDomain}`);
+
     // Validate API key in database
     const { data: keyData, error: keyError } = await supabase
       .from('api_keys')
@@ -252,11 +235,10 @@ Deno.serve(async (req) => {
       .single();
 
     if (keyError || !keyData) {
-      // Log failed attempt
       await supabase.from('api_logs').insert({
-        endpoint: `/${game}`,
-        game_type: game,
-        duration: duration,
+        endpoint: `/trend-api`,
+        game_type: typeConfig.game,
+        duration: typeConfig.duration,
         status: 'error',
         error_message: 'Invalid API key',
         ip_address: clientIp,
@@ -275,7 +257,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get key owner's profile for telegram_id
+    // Get key owner's profile
     const { data: ownerProfile } = await supabase
       .from('profiles')
       .select('username, email, telegram_id')
@@ -292,8 +274,7 @@ Deno.serve(async (req) => {
         error: 'API key inactive',
         message: 'Your API key has been deactivated',
         your_ip: clientIp,
-        your_domain: requestDomain || 'Unknown',
-        owner_telegram_id: ownerTelegramId,
+        contact_admin_telegram: adminTelegramUsername,
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -305,10 +286,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         error: 'API key expired',
-        message: 'Your API key has expired. Please contact admin for renewal.',
+        message: `Your API key has expired. Please contact admin on Telegram: ${adminTelegramUsername}`,
         your_ip: clientIp,
-        your_domain: requestDomain || 'Unknown',
-        owner_telegram_id: ownerTelegramId,
+        contact_admin_telegram: adminTelegramUsername,
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -321,12 +301,11 @@ Deno.serve(async (req) => {
       .select('ip_address')
       .eq('api_key_id', keyData.id);
 
-    // If no IPs are whitelisted, block the request
     if (!allowedIps || allowedIps.length === 0) {
       await supabase.from('api_logs').insert({
-        endpoint: `/${game}`,
-        game_type: game,
-        duration: duration,
+        endpoint: `/trend-api`,
+        game_type: typeConfig.game,
+        duration: typeConfig.duration,
         status: 'blocked',
         error_message: `No IP whitelist configured`,
         api_key_id: keyData.id,
@@ -334,7 +313,6 @@ Deno.serve(async (req) => {
         domain: requestDomain,
       });
 
-      // Notify admin
       await notifyAdmin(supabase, 'no_whitelist', {
         keyName: keyData.key_name,
         keyOwner: keyOwnerName,
@@ -360,9 +338,9 @@ Deno.serve(async (req) => {
     const isIpAllowed = allowedIps.some(ip => ip.ip_address === clientIp);
     if (!isIpAllowed) {
       await supabase.from('api_logs').insert({
-        endpoint: `/${game}`,
-        game_type: game,
-        duration: duration,
+        endpoint: `/trend-api`,
+        game_type: typeConfig.game,
+        duration: typeConfig.duration,
         status: 'blocked',
         error_message: `IP not whitelisted: ${clientIp}`,
         api_key_id: keyData.id,
@@ -370,7 +348,6 @@ Deno.serve(async (req) => {
         domain: requestDomain,
       });
 
-      // Notify admin
       await notifyAdmin(supabase, 'ip_not_whitelisted', {
         keyName: keyData.key_name,
         keyOwner: keyOwnerName,
@@ -398,12 +375,11 @@ Deno.serve(async (req) => {
       .select('domain')
       .eq('api_key_id', keyData.id);
 
-    // If no domains are whitelisted, block the request
     if (!allowedDomains || allowedDomains.length === 0) {
       await supabase.from('api_logs').insert({
-        endpoint: `/${game}`,
-        game_type: game,
-        duration: duration,
+        endpoint: `/trend-api`,
+        game_type: typeConfig.game,
+        duration: typeConfig.duration,
         status: 'blocked',
         error_message: `No domain whitelist configured`,
         api_key_id: keyData.id,
@@ -411,7 +387,6 @@ Deno.serve(async (req) => {
         domain: requestDomain,
       });
 
-      // Notify admin
       await notifyAdmin(supabase, 'no_domain_whitelist', {
         keyName: keyData.key_name,
         keyOwner: keyOwnerName,
@@ -440,9 +415,9 @@ Deno.serve(async (req) => {
       );
       if (!isDomainAllowed) {
         await supabase.from('api_logs').insert({
-          endpoint: `/${game}`,
-          game_type: game,
-          duration: duration,
+          endpoint: `/trend-api`,
+          game_type: typeConfig.game,
+          duration: typeConfig.duration,
           status: 'blocked',
           error_message: `Domain not whitelisted: ${requestDomain}`,
           api_key_id: keyData.id,
@@ -450,7 +425,6 @@ Deno.serve(async (req) => {
           domain: requestDomain,
         });
 
-        // Notify admin
         await notifyAdmin(supabase, 'domain_not_whitelisted', {
           keyName: keyData.key_name,
           keyOwner: keyOwnerName,
@@ -488,12 +462,13 @@ Deno.serve(async (req) => {
 
     // Fetch data from upstream API
     const startTime = Date.now();
-    const upstreamUrl = `${UPSTREAM_API}${UPSTREAM_ENDPOINT}?typeId=${typeId}`;
+    const upstreamUrl = `${UPSTREAM_API}${UPSTREAM_ENDPOINT}?typeId=${typeConfig.upstreamId}`;
+    
+    console.log(`Fetching from upstream: ${upstreamUrl}`);
     
     const upstreamResponse = await fetch(upstreamUrl);
     const responseTime = Date.now() - startTime;
 
-    // Read upstream body regardless of status
     const upstreamBody = await upstreamResponse.text();
     let upstreamData;
     try {
@@ -503,11 +478,10 @@ Deno.serve(async (req) => {
     }
 
     if (!upstreamResponse.ok) {
-      // Log error
       await supabase.from('api_logs').insert({
-        endpoint: `/${game}`,
-        game_type: game,
-        duration: duration,
+        endpoint: `/trend-api`,
+        game_type: typeConfig.game,
+        duration: typeConfig.duration,
         status: 'error',
         error_message: `Upstream error: ${upstreamResponse.status}`,
         response_time_ms: responseTime,
@@ -528,8 +502,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    const data = upstreamData;
-
     // Update API key usage
     await supabase
       .from('api_keys')
@@ -542,9 +514,9 @@ Deno.serve(async (req) => {
 
     // Log successful call
     await supabase.from('api_logs').insert({
-      endpoint: `/${game}`,
-      game_type: game,
-      duration: duration,
+      endpoint: `/trend-api`,
+      game_type: typeConfig.game,
+      duration: typeConfig.duration,
       status: 'success',
       response_time_ms: responseTime,
       api_key_id: keyData.id,
@@ -555,10 +527,11 @@ Deno.serve(async (req) => {
     // Return successful response
     return new Response(JSON.stringify({
       success: true,
-      game: game,
-      duration: duration,
+      typeId: typeId,
+      game: typeConfig.game,
+      duration: typeConfig.duration,
       timestamp: new Date().toISOString(),
-      data: data,
+      data: upstreamData,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
