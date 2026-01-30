@@ -239,6 +239,14 @@ const ApiKeysPage: React.FC = () => {
       toast({ title: 'Error', description: 'Domain/Key name is required', variant: 'destructive' });
       return;
     }
+    if (!formData.whitelistIps.trim()) {
+      toast({ title: 'Error', description: 'At least one IP address is required for whitelisting', variant: 'destructive' });
+      return;
+    }
+    if (!formData.whitelistDomains.trim()) {
+      toast({ title: 'Error', description: 'At least one domain is required for whitelisting', variant: 'destructive' });
+      return;
+    }
 
     try {
       const expiresAt = new Date();
@@ -503,28 +511,30 @@ const ApiKeysPage: React.FC = () => {
                     <div className="space-y-2">
                       <Label className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-primary" />
-                        Whitelist IPs (comma separated)
+                        Whitelist IPs * (comma separated)
                       </Label>
                       <Input
                         value={formData.whitelistIps}
                         onChange={(e) => setFormData({ ...formData, whitelistIps: e.target.value })}
                         placeholder="192.168.1.1, 10.0.0.1"
+                        required
                       />
-                      <p className="text-xs text-muted-foreground">Leave empty to allow all IPs</p>
+                      <p className="text-xs text-amber-500">⚠️ Required - Only whitelisted IPs can use this key</p>
                     </div>
 
                     {/* Whitelist Domains */}
                     <div className="space-y-2">
                       <Label className="flex items-center gap-2">
                         <Globe className="w-4 h-4 text-primary" />
-                        Whitelist Domains (comma separated)
+                        Whitelist Domains * (comma separated)
                       </Label>
                       <Input
                         value={formData.whitelistDomains}
                         onChange={(e) => setFormData({ ...formData, whitelistDomains: e.target.value })}
                         placeholder="example.com, app.example.com"
+                        required
                       />
-                      <p className="text-xs text-muted-foreground">Leave empty to allow all domains</p>
+                      <p className="text-xs text-amber-500">⚠️ Required - Only whitelisted domains can use this key</p>
                     </div>
                   </div>
 

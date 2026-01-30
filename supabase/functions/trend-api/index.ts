@@ -214,50 +214,97 @@ Deno.serve(async (req) => {
     const requestDomain = requestOrigin ? new URL(requestOrigin).hostname : 
                           requestReferer ? new URL(requestReferer).hostname : '';
 
-    // Check IP whitelist
+    // Check IP whitelist - MANDATORY
     const { data: allowedIps } = await supabase
       .from('allowed_ips')
       .select('ip_address')
       .eq('api_key_id', keyData.id);
 
-    if (allowedIps && allowedIps.length > 0) {
-      const isIpAllowed = allowedIps.some(ip => ip.ip_address === clientIp);
-      if (!isIpAllowed) {
-        // Log blocked attempt
-        await supabase.from('api_logs').insert({
-          endpoint: `/${game}`,
-          game_type: game,
-          duration: duration,
-          status: 'blocked',
-          error_message: `IP not whitelisted: ${clientIp}`,
-          api_key_id: keyData.id,
-          ip_address: clientIp,
-          domain: requestDomain,
-        });
+    // If no IPs are whitelisted, block the request
+    if (!allowedIps || allowedIps.length === 0) {
+      await supabase.from('api_logs').insert({
+        endpoint: `/${game}`,
+        game_type: game,
+        duration: duration,
+        status: 'blocked',
+        error_message: `No IP whitelist configured`,
+        api_key_id: keyData.id,
+        ip_address: clientIp,
+        domain: requestDomain,
+      });
 
-        return new Response(JSON.stringify({
-          success: false,
-          error: 'IP not authorized',
-          message: `Your IP (${clientIp}) is not whitelisted for this API key`,
-        }), {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'No IP whitelist configured',
+        message: `This API key has no whitelisted IPs. Your IP: ${clientIp}. Please contact admin to whitelist your IP.`,
+        your_ip: clientIp,
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Check Domain whitelist
+    // Check if IP is in whitelist
+    const isIpAllowed = allowedIps.some(ip => ip.ip_address === clientIp);
+    if (!isIpAllowed) {
+      await supabase.from('api_logs').insert({
+        endpoint: `/${game}`,
+        game_type: game,
+        duration: duration,
+        status: 'blocked',
+        error_message: `IP not whitelisted: ${clientIp}`,
+        api_key_id: keyData.id,
+        ip_address: clientIp,
+        domain: requestDomain,
+      });
+
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'IP not authorized',
+        message: `Your IP (${clientIp}) is not whitelisted for this API key. Please contact admin to whitelist your IP.`,
+        your_ip: clientIp,
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check Domain whitelist - MANDATORY
     const { data: allowedDomains } = await supabase
       .from('allowed_domains')
       .select('domain')
       .eq('api_key_id', keyData.id);
 
-    if (allowedDomains && allowedDomains.length > 0 && requestDomain) {
+    // If no domains are whitelisted, block the request
+    if (!allowedDomains || allowedDomains.length === 0) {
+      await supabase.from('api_logs').insert({
+        endpoint: `/${game}`,
+        game_type: game,
+        duration: duration,
+        status: 'blocked',
+        error_message: `No domain whitelist configured`,
+        api_key_id: keyData.id,
+        ip_address: clientIp,
+        domain: requestDomain,
+      });
+
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'No domain whitelist configured',
+        message: `This API key has no whitelisted domains. Your IP: ${clientIp}. Please contact admin to whitelist your domain.`,
+        your_ip: clientIp,
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check if domain is in whitelist
+    if (requestDomain) {
       const isDomainAllowed = allowedDomains.some(d => 
         requestDomain === d.domain || requestDomain.endsWith('.' + d.domain)
       );
       if (!isDomainAllowed) {
-        // Log blocked attempt
         await supabase.from('api_logs').insert({
           endpoint: `/${game}`,
           game_type: game,
@@ -272,7 +319,8 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({
           success: false,
           error: 'Domain not authorized',
-          message: `Domain (${requestDomain}) is not whitelisted for this API key`,
+          message: `Domain (${requestDomain}) is not whitelisted for this API key. Your IP: ${clientIp}. Please contact admin to whitelist your domain.`,
+          your_ip: clientIp,
         }), {
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
