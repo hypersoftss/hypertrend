@@ -1,23 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useApiData } from '@/contexts/ApiDataContext';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import { formatDate } from '@/lib/mockData';
-import { FileText, Search, CheckCircle, XCircle, Ban, Filter } from 'lucide-react';
+import { FileText, Search, CheckCircle, XCircle, Ban, Filter, RefreshCw, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface ApiLogEntry {
+  id: string;
+  endpoint: string;
+  ip_address: string | null;
+  domain: string | null;
+  status: string;
+  response_time_ms: number | null;
+  created_at: string | null;
+  error_message: string | null;
+  game_type: string | null;
+}
 
 const ApiLogsPage = () => {
-  const { apiLogs: logs } = useApiData();
+  const [logs, setLogs] = useState<ApiLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const { toast } = useToast();
+
+  const fetchLogs = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('api_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500);
+
+      if (error) throw error;
+      setLogs(data || []);
+    } catch (error: any) {
+      console.error('Error fetching logs:', error);
+      toast({
+        title: 'Error loading logs',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+  }, []);
 
   const filteredLogs = logs.filter((log) => {
     const matchesSearch =
       log.endpoint.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.ip.includes(searchQuery) ||
-      log.domain.toLowerCase().includes(searchQuery.toLowerCase());
+      (log.ip_address?.includes(searchQuery) || false) ||
+      (log.domain?.toLowerCase().includes(searchQuery.toLowerCase()) || false);
     const matchesStatus = statusFilter === 'all' || log.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -44,7 +87,7 @@ const ApiLogsPage = () => {
       case 'blocked':
         return <Badge className="bg-warning text-warning-foreground">Blocked</Badge>;
       default:
-        return null;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -52,12 +95,22 @@ const ApiLogsPage = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <FileText className="w-8 h-8 text-primary" />
-            API Logs
-          </h1>
-          <p className="text-muted-foreground mt-1">Monitor all API requests and responses</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+              <FileText className="w-8 h-8 text-primary" />
+              API Logs
+            </h1>
+            <p className="text-muted-foreground mt-1">Monitor all API requests and responses</p>
+          </div>
+          <Button onClick={fetchLogs} disabled={loading} variant="outline">
+            {loading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-2" />
+            )}
+            Refresh
+          </Button>
         </div>
 
         {/* Filters */}
@@ -137,41 +190,51 @@ const ApiLogsPage = () => {
             <CardDescription>Recent API activity sorted by time</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {filteredLogs.map((log) => (
-                <div
-                  key={log.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    {getStatusIcon(log.status)}
-                    <div>
-                      <p className="font-mono text-sm font-medium text-foreground">{log.endpoint}</p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                        <span>IP: {log.ip}</span>
-                        <span>Domain: {log.domain}</span>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      {getStatusIcon(log.status)}
+                      <div>
+                        <p className="font-mono text-sm font-medium text-foreground">{log.endpoint}</p>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                          <span>IP: {log.ip_address || 'N/A'}</span>
+                          <span>Domain: {log.domain || 'N/A'}</span>
+                          {log.game_type && <Badge variant="outline" className="text-xs">{log.game_type}</Badge>}
+                        </div>
+                        {log.error_message && (
+                          <p className="text-xs text-destructive mt-1">{log.error_message}</p>
+                        )}
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(log.status)}
-                      <Badge variant="outline">{log.responseTime}ms</Badge>
+                    <div className="text-right">
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(log.status)}
+                        <Badge variant="outline">{log.response_time_ms || 0}ms</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {log.created_at ? formatDate(log.created_at) : 'N/A'}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatDate(log.createdAt)}
-                    </p>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {filteredLogs.length === 0 && (
-                <div className="text-center py-12">
-                  <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No logs found</p>
-                </div>
-              )}
-            </div>
+                {filteredLogs.length === 0 && (
+                  <div className="text-center py-12">
+                    <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No logs found</p>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
