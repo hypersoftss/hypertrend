@@ -29,7 +29,7 @@
       "destination": "https://xynoldhqgtrmmsccutfp.supabase.co/functions/v1/trend-api"
     },
     {
-      "source": "/((?!api|wingo|k3|5d|trx|numeric|health).*)",
+      "source": "/((?!api|wingo|k3|5d|trx|numeric|health|sitemap\\.xml|robots\\.txt).*)",
       "destination": "/index.html"
     }
   ]
