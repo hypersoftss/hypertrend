@@ -120,6 +120,8 @@ const ApiKeysPage: React.FC = () => {
     domain: '',
     validityDays: 30,
     allowAllDurations: true,
+    whitelistIps: '',
+    whitelistDomains: '',
   });
   const { toast } = useToast();
 
@@ -251,9 +253,33 @@ const ApiKeysPage: React.FC = () => {
         expires_at: expiresAt.toISOString(),
       };
 
-      const { error } = await supabase.from('api_keys').insert(newKey);
+      const { data: insertedKey, error } = await supabase.from('api_keys').insert(newKey).select().single();
 
       if (error) throw error;
+
+      // Insert whitelisted IPs
+      if (formData.whitelistIps.trim()) {
+        const ips = formData.whitelistIps.split(',').map(ip => ip.trim()).filter(Boolean);
+        if (ips.length > 0) {
+          const ipRecords = ips.map(ip => ({
+            api_key_id: insertedKey.id,
+            ip_address: ip,
+          }));
+          await supabase.from('allowed_ips').insert(ipRecords);
+        }
+      }
+
+      // Insert whitelisted domains
+      if (formData.whitelistDomains.trim()) {
+        const domains = formData.whitelistDomains.split(',').map(d => d.trim()).filter(Boolean);
+        if (domains.length > 0) {
+          const domainRecords = domains.map(domain => ({
+            api_key_id: insertedKey.id,
+            domain: domain,
+          }));
+          await supabase.from('allowed_domains').insert(domainRecords);
+        }
+      }
 
       // Log activity
       await supabase.from('activity_logs').insert({
@@ -273,6 +299,8 @@ const ApiKeysPage: React.FC = () => {
         domain: '',
         validityDays: 30,
         allowAllDurations: true,
+        whitelistIps: '',
+        whitelistDomains: '',
       });
       
       fetchData();
@@ -467,6 +495,36 @@ const ApiKeysPage: React.FC = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    <Separator />
+
+                    {/* Whitelist IP */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-primary" />
+                        Whitelist IPs (comma separated)
+                      </Label>
+                      <Input
+                        value={formData.whitelistIps}
+                        onChange={(e) => setFormData({ ...formData, whitelistIps: e.target.value })}
+                        placeholder="192.168.1.1, 10.0.0.1"
+                      />
+                      <p className="text-xs text-muted-foreground">Leave empty to allow all IPs</p>
+                    </div>
+
+                    {/* Whitelist Domains */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-primary" />
+                        Whitelist Domains (comma separated)
+                      </Label>
+                      <Input
+                        value={formData.whitelistDomains}
+                        onChange={(e) => setFormData({ ...formData, whitelistDomains: e.target.value })}
+                        placeholder="example.com, app.example.com"
+                      />
+                      <p className="text-xs text-muted-foreground">Leave empty to allow all domains</p>
                     </div>
                   </div>
 
