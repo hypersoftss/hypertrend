@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,17 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useConfig } from '@/contexts/ConfigContext';
-import { useApiData } from '@/contexts/ApiDataContext';
-import { User } from '@/types';
-import { Users as UsersIcon, Plus, Search, Edit, Trash2, MessageSquare, Mail, Shield, User as UserIcon, Key, Send, Copy, RefreshCw, Eye, EyeOff, RotateCcw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Users as UsersIcon, Plus, Search, Edit, Trash2, MessageSquare, Mail, Shield, User as UserIcon, Key, Send, Copy, RefreshCw, Eye, EyeOff, RotateCcw, Loader2 } from 'lucide-react';
+
+interface UserData {
+  id: string;
+  user_id: string;
+  username: string;
+  email: string;
+  role: 'admin' | 'user';
+  created_at: string;
+}
 
 // Generate random password
 const generatePassword = (length: number = 12): string => {
@@ -25,12 +33,13 @@ const generatePassword = (length: number = 12): string => {
 
 const UsersPage = () => {
   const { config } = useConfig();
-  const { users, addUser, updateUser, deleteUser: removeUser } = useApiData();
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [resetUser, setResetUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<UserData | null>(null);
+  const [resetUser, setResetUser] = useState<UserData | null>(null);
   const [generatedPassword, setGeneratedPassword] = useState('');
   const [resetPassword, setResetPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -45,20 +54,69 @@ const UsersPage = () => {
   });
   const { toast } = useToast();
 
+  // Fetch users from Supabase
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch profiles with their roles
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (profilesError) throw profilesError;
+
+      // Fetch roles
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('*');
+
+      if (rolesError) throw rolesError;
+
+      // Combine data
+      const combinedUsers: UserData[] = (profiles || []).map(profile => {
+        const userRole = roles?.find(r => r.user_id === profile.user_id);
+        return {
+          id: profile.id,
+          user_id: profile.user_id,
+          username: profile.username || profile.email?.split('@')[0] || 'Unknown',
+          email: profile.email || '',
+          role: (userRole?.role as 'admin' | 'user') || 'user',
+          created_at: profile.created_at || new Date().toISOString(),
+        };
+      });
+
+      setUsers(combinedUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch users',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
   const filteredUsers = users.filter(
     (user) =>
       user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.telegramId?.includes(searchQuery)
+      user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleOpenDialog = (user?: User) => {
+  const handleOpenDialog = (user?: UserData) => {
     if (user) {
       setEditingUser(user);
       setFormData({
         username: user.username,
         email: user.email,
-        telegramId: user.telegramId || '',
+        telegramId: '',
         role: user.role,
       });
       setGeneratedPassword('');
@@ -132,27 +190,11 @@ const UsersPage = () => {
 
     setIsResetting(true);
 
-    if (resetUser.telegramId) {
-      const sent = await sendCredentialsViaTelegram(resetUser.username, resetPassword, resetUser.telegramId, true);
-      
-      if (sent) {
-        toast({ 
-          title: '✅ Password Reset & Sent!', 
-          description: `New password sent to ${resetUser.username}'s Telegram` 
-        });
-      } else {
-        toast({ 
-          title: '⚠️ Password Reset', 
-          description: 'Password reset but failed to send via Telegram. Share manually.',
-          variant: 'destructive'
-        });
-      }
-    } else {
-      toast({ 
-        title: '✅ Password Reset', 
-        description: `New password: ${resetPassword} - Share it manually with the user!` 
-      });
-    }
+    // For now, just show the password - actual password reset would need another edge function
+    toast({ 
+      title: '✅ Password Generated', 
+      description: `New password: ${resetPassword} - Share it manually with the user!` 
+    });
 
     setIsResetting(false);
     setIsResetDialogOpen(false);
@@ -160,7 +202,7 @@ const UsersPage = () => {
     setResetPassword('');
   };
 
-  const openResetDialog = (user: User) => {
+  const openResetDialog = (user: UserData) => {
     setResetUser(user);
     setResetPassword(generatePassword());
     setIsResetDialogOpen(true);
@@ -173,10 +215,33 @@ const UsersPage = () => {
     }
 
     if (editingUser) {
-      updateUser(editingUser.id, formData);
-      toast({ title: '✅ Success', description: 'User updated successfully' });
+      // Update existing user profile
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ username: formData.username, email: formData.email })
+          .eq('id', editingUser.id);
+
+        if (error) throw error;
+
+        // Update role if changed
+        if (formData.role !== editingUser.role) {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .update({ role: formData.role })
+            .eq('user_id', editingUser.user_id);
+
+          if (roleError) throw roleError;
+        }
+
+        toast({ title: '✅ Success', description: 'User updated successfully' });
+        fetchUsers();
+      } catch (error) {
+        console.error('Error updating user:', error);
+        toast({ title: 'Error', description: 'Failed to update user', variant: 'destructive' });
+      }
     } else {
-      // Creating new user
+      // Creating new user via edge function
       if (!generatedPassword) {
         toast({ title: 'Error', description: 'Password is required for new users', variant: 'destructive' });
         return;
@@ -184,52 +249,66 @@ const UsersPage = () => {
 
       setIsSending(true);
 
-      const newUser: User = {
-        id: Date.now().toString(),
-        ...formData,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-      };
-
-      // Send credentials via Telegram if enabled
-      if (sendViaTelegram && formData.telegramId) {
-        const sent = await sendCredentialsViaTelegram(formData.username, generatedPassword, formData.telegramId);
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
         
-        if (sent) {
-          toast({ 
-            title: '✅ User Created & Credentials Sent!', 
-            description: `Login credentials sent to Telegram ID: ${formData.telegramId}` 
-          });
+        const response = await supabase.functions.invoke('create-user', {
+          body: {
+            email: formData.email,
+            password: generatedPassword,
+            username: formData.username,
+            role: formData.role,
+          },
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message || 'Failed to create user');
+        }
+
+        // Send credentials via Telegram if enabled
+        if (sendViaTelegram && formData.telegramId) {
+          const sent = await sendCredentialsViaTelegram(formData.username, generatedPassword, formData.telegramId);
+          
+          if (sent) {
+            toast({ 
+              title: '✅ User Created & Credentials Sent!', 
+              description: `Login credentials sent to Telegram ID: ${formData.telegramId}` 
+            });
+          } else {
+            toast({ 
+              title: '⚠️ User Created', 
+              description: 'User created but failed to send Telegram message. Share password manually.',
+              variant: 'destructive'
+            });
+          }
         } else {
           toast({ 
-            title: '⚠️ User Created', 
-            description: 'User created but failed to send Telegram message. Share password manually.',
-            variant: 'destructive'
+            title: '✅ User Created', 
+            description: 'Remember to share the password with the user!' 
           });
         }
-      } else {
-        toast({ 
-          title: '✅ User Created', 
-          description: 'Remember to share the password with the user!' 
-        });
-      }
 
-      addUser(newUser);
-      setIsSending(false);
+        fetchUsers();
+      } catch (error: any) {
+        console.error('Error creating user:', error);
+        toast({ 
+          title: 'Error', 
+          description: error.message || 'Failed to create user', 
+          variant: 'destructive' 
+        });
+      } finally {
+        setIsSending(false);
+      }
     }
     setIsDialogOpen(false);
   };
 
-  const handleDelete = (userId: string) => {
-    removeUser(userId);
-    toast({ title: '✅ Success', description: 'User deleted successfully' });
-  };
-
-  const toggleUserStatus = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      updateUser(userId, { isActive: !user.isActive });
-    }
+  const handleDelete = async (userId: string) => {
+    // Note: Deleting users from auth requires admin API - for now just show a message
+    toast({ 
+      title: 'Info', 
+      description: 'User deletion requires manual removal from the database',
+    });
   };
 
   return (
@@ -439,69 +518,67 @@ const UsersPage = () => {
             <CardDescription>Click on a user to view details or edit</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {filteredUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center">
-                      <span className="text-primary-foreground font-bold text-lg">
-                        {user.username.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-foreground">{user.username}</span>
-                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                          {user.role}
-                        </Badge>
-                        <Badge variant={user.isActive ? 'outline' : 'destructive'}>
-                          {user.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                        <span className="flex items-center gap-1">
-                          <Mail className="w-3 h-3" />
-                          {user.email}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No users found
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center">
+                        <span className="text-primary-foreground font-bold text-lg">
+                          {user.username.charAt(0).toUpperCase()}
                         </span>
-                        {user.telegramId && (
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">{user.username}</span>
+                          <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                            {user.role}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                           <span className="flex items-center gap-1">
-                            <MessageSquare className="w-3 h-3" />
-                            {user.telegramId}
+                            <Mail className="w-3 h-3" />
+                            {user.email}
                           </span>
-                        )}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => openResetDialog(user)}
+                        title="Reset Password"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(user)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(user.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => toggleUserStatus(user.id)}>
-                      {user.isActive ? 'Disable' : 'Enable'}
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => openResetDialog(user)}
-                      title="Reset Password"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(user)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(user.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -530,12 +607,6 @@ const UsersPage = () => {
                     <p className="text-xs text-muted-foreground">{resetUser?.email}</p>
                   </div>
                 </div>
-                {resetUser?.telegramId && (
-                  <div className="flex items-center gap-2 text-sm text-success">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Will send new password to Telegram ID: {resetUser.telegramId}</span>
-                  </div>
-                )}
               </div>
 
               <div className="space-y-2">
@@ -588,21 +659,12 @@ const UsersPage = () => {
                 {isResetting ? (
                   <>
                     <span className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent mr-2" />
-                    Sending...
+                    Processing...
                   </>
                 ) : (
                   <>
-                    {resetUser?.telegramId ? (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Reset & Send
-                      </>
-                    ) : (
-                      <>
-                        <RotateCcw className="w-4 h-4 mr-2" />
-                        Reset Password
-                      </>
-                    )}
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Reset Password
                   </>
                 )}
               </Button>
