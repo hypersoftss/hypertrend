@@ -29,6 +29,8 @@ interface ApiKeyData {
   created_at: string | null;
   username?: string;
   email?: string;
+  ipCount?: number;
+  domainCount?: number;
 }
 
 interface UserProfile {
@@ -147,14 +149,34 @@ const ApiKeysPage: React.FC = () => {
 
       if (profilesError) throw profilesError;
 
+      // Fetch whitelist counts for all keys
+      const keyIds = keysData?.map(k => k.id) || [];
+      const [ipsData, domainsData] = await Promise.all([
+        supabase.from('allowed_ips').select('api_key_id'),
+        supabase.from('allowed_domains').select('api_key_id'),
+      ]);
+
+      // Count IPs and domains per key
+      const ipCounts = new Map<string, number>();
+      const domainCounts = new Map<string, number>();
+      
+      ipsData.data?.forEach(ip => {
+        ipCounts.set(ip.api_key_id, (ipCounts.get(ip.api_key_id) || 0) + 1);
+      });
+      domainsData.data?.forEach(d => {
+        domainCounts.set(d.api_key_id, (domainCounts.get(d.api_key_id) || 0) + 1);
+      });
+
       // Map profiles to a lookup
       const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
 
-      // Enhance keys with user info
+      // Enhance keys with user info and whitelist counts
       const enhancedKeys: ApiKeyData[] = (keysData || []).map(key => ({
         ...key,
         username: profilesMap.get(key.user_id)?.username || 'Unknown',
         email: profilesMap.get(key.user_id)?.email || '',
+        ipCount: ipCounts.get(key.id) || 0,
+        domainCount: domainCounts.get(key.id) || 0,
       }));
 
       setKeys(enhancedKeys);
@@ -432,6 +454,7 @@ const ApiKeysPage: React.FC = () => {
 
       setIsEditDialogOpen(false);
       setEditKeyId(null);
+      fetchData(); // Refresh to update counts
     } catch (error) {
       console.error('Error updating whitelist:', error);
       toast({ title: 'Error', description: 'Failed to update whitelist', variant: 'destructive' });
@@ -734,7 +757,7 @@ const ApiKeysPage: React.FC = () => {
                         </Button>
                       </div>
                       
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                         <span className="flex items-center gap-1">
                           <User className="w-3 h-3" />
                           {key.username}
@@ -746,6 +769,14 @@ const ApiKeysPage: React.FC = () => {
                         <span className="flex items-center gap-1">
                           <Shield className="w-3 h-3" />
                           {getDaysUntilExpiry(key.expires_at)} days left
+                        </span>
+                        <span className="flex items-center gap-1 text-emerald-500">
+                          <Shield className="w-3 h-3" />
+                          {key.ipCount || 0} IPs
+                        </span>
+                        <span className="flex items-center gap-1 text-blue-500">
+                          <Globe className="w-3 h-3" />
+                          {key.domainCount || 0} Domains
                         </span>
                       </div>
                     </div>
