@@ -1,0 +1,11 @@
+# Hyper Softs (Hypersofts) Security Contact
+# Same Trend API by Hyper Developer
+
+Contact: https://t.me/Hyperdeveloperr
+Expires: 2027-12-31T23:59:00.000Z
+Preferred-Languages: en, hi
+Canonical: https://trend.hyperapi.in/.well-known/security.txt
+
+# About Hyper Softs
+# India's #1 Same Trend API for Wingo, K3, 5D, TRX games
+# Developed by Hyper Developer (Hyperdeveloper)

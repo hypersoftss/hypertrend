@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+  Hyper Softs (Hypersofts) - Browser Configuration
+  Same Trend API by Hyper Developer (Hyperdeveloper)
+  India's #1 Prediction API for Wingo, K3, 5D, TRX Games
+-->
+<browserconfig>
+  <msapplication>
+    <tile>
+      <square70x70logo src="/pwa-192x192.png"/>
+      <square150x150logo src="/pwa-192x192.png"/>
+      <square310x310logo src="/pwa-512x512.png"/>
+      <wide310x150logo src="/pwa-512x512.png"/>
+      <TileColor>#8B5CF6</TileColor>
+    </tile>
+    <notification>
+      <polling-uri src="https://trend.hyperapi.in/"/>
+      <frequency>30</frequency>
+    </notification>
+  </msapplication>
+</browserconfig>

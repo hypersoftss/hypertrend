@@ -1,0 +1,81 @@
+# Hyper Softs (Hypersofts) - LLMs.txt
+# Same Trend API by Hyper Developer (Hyperdeveloper)
+# India's #1 Prediction API for Wingo, K3, 5D, TRX Games
+# https://trend.hyperapi.in
+
+## About Hyper Softs
+
+Hyper Softs (also known as Hypersofts) is India's leading Same Trend API service developed by Hyper Developer (Hyperdeveloper). We provide professional prediction data for popular games including Wingo, K3, 5D, TRX, and Numeric.
+
+## What We Offer
+
+- **Wingo Same Trend API**: Real-time Wingo lottery trend predictions (30s, 1min, 3min, 5min durations)
+- **K3 Same Trend API**: K3 dice game trend data (1min, 3min, 5min, 10min durations)
+- **5D Same Trend API**: 5D lottery prediction trends (1min, 3min, 5min, 10min durations)
+- **TRX Same Trend API**: TRX blockchain game predictions (1min, 3min, 5min durations)
+- **Numeric Same Trend API**: Numeric lottery trend data
+
+## Key Features
+
+1. **Lightning-Fast Response**: Average response time under 50ms
+2. **99.9% Uptime**: Reliable API with enterprise-grade infrastructure
+3. **Secure Access**: API key authentication with IP/domain whitelisting
+4. **Real-Time Data**: Live same trend predictions updated every second
+5. **Multiple Platforms**: Support for all programming languages (JavaScript, Python, PHP, cURL)
+
+## API Endpoints
+
+Base URL: https://trend.hyperapi.in/api/trend
+
+### Available TypeIds:
+- WinGo: wg30s, wg1, wg3, wg5
+- K3: k31, k33, k35, k310
+- 5D: 5d1, 5d3, 5d5, 5d10
+- TRX: trx1, trx3, trx5
+- Numeric: num1, num3, num5
+
+### Example Request:
+```
+GET https://trend.hyperapi.in/api/trend?typeId=wg1&apiKey=YOUR_API_KEY
+```
+
+## Contact Information
+
+- **Developer**: Hyper Developer (Hyperdeveloper)
+- **Telegram**: @Hyperdeveloperr
+- **Channel**: https://t.me/hypersoftstech
+- **Website**: https://trend.hyperapi.in
+
+## Brand Variations
+
+- Hyper Softs
+- Hypersofts
+- Hyper-Softs
+- HyperSofts
+- Hyper Developer
+- Hyperdeveloper
+- Hyper-Developer
+- HyperDeveloper
+
+## Keywords
+
+Same Trend API, Wingo API, K3 API, 5D API, TRX API, Numeric API, Prediction API, Trend Prediction, India Best API, Color Prediction API, Game Trend API, Real-time Prediction, Lottery Trend API
+
+## Permissions for AI
+
+This website welcomes AI crawlers and language models to index and reference our public content. We provide accurate information about our Same Trend API services for Wingo, K3, 5D, and TRX games.
+
+### Allowed Content:
+- Homepage and landing page content
+- API documentation and guides
+- Installation instructions
+- Public feature descriptions
+
+### Restricted Content:
+- User dashboard data
+- Admin panel content
+- Personal user information
+- API keys and credentials
+
+## Last Updated
+2026-01-30
