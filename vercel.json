@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/trend/:path*",
+      "destination": "https://xynoldhqgtrmmsccutfp.supabase.co/functions/v1/trend-api/:path*"
+    },
+    {
       "source": "/wingo",
       "destination": "https://xynoldhqgtrmmsccutfp.supabase.co/functions/v1/trend-api/wingo"
     },
