@@ -25,22 +25,8 @@
       "destination": "https://xynoldhqgtrmmsccutfp.supabase.co/functions/v1/trend-api"
     },
     {
-      "source": "/((?!wingo|k3|5d|trx|numeric|health|sitemap\\.xml|robots\\.txt|favicon\\.ico|.*\\.(png|jpg|svg|ico|webmanifest)).*)",
+      "source": "/((?!api|wingo|k3|5d|trx|numeric|health).*)",
       "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/sitemap.xml",
-      "headers": [
-        { "key": "Content-Type", "value": "application/xml" }
-      ]
-    },
-    {
-      "source": "/robots.txt",
-      "headers": [
-        { "key": "Content-Type", "value": "text/plain" }
-      ]
     }
   ]
 }
