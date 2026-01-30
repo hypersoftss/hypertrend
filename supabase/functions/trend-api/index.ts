@@ -222,14 +222,14 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get admin telegram ID from settings (for error responses)
+    // Get admin telegram username from settings (for error responses)
     const { data: adminSettings } = await supabase
       .from('settings')
       .select('key, value')
-      .in('key', ['admin_telegram_id', 'site_name']);
+      .in('key', ['admin_telegram_username', 'site_name']);
     
     const adminSettingsMap = Object.fromEntries(adminSettings?.map((s: any) => [s.key, s.value]) || []);
-    const adminTelegramId = adminSettingsMap['admin_telegram_id'] || 'Not configured';
+    const adminTelegramUsername = adminSettingsMap['admin_telegram_username'] || '@Hyperdeveloperr';
     const siteName = adminSettingsMap['site_name'] || 'Hyper Softs Trend';
 
     // Get client IP
@@ -347,11 +347,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         error: 'IP not whitelisted',
-        message: `⚠️ Your IP is not whitelisted! Please contact admin on Telegram to get whitelisted.`,
+        message: `⚠️ Your IP is not whitelisted! Please contact admin on Telegram: ${adminTelegramUsername}`,
         your_ip: clientIp,
-        your_domain: requestDomain || 'Unknown',
-        contact_admin_telegram: adminTelegramId,
-        action_required: `Send your IP (${clientIp}) to admin on Telegram: ${adminTelegramId}`,
+        contact_admin_telegram: adminTelegramUsername,
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -385,11 +383,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         error: 'IP not authorized',
-        message: `⚠️ Your IP is not whitelisted! Please contact admin on Telegram to get whitelisted.`,
+        message: `⚠️ Your IP is not whitelisted! Please contact admin on Telegram: ${adminTelegramUsername}`,
         your_ip: clientIp,
-        your_domain: requestDomain || 'Unknown',
-        contact_admin_telegram: adminTelegramId,
-        action_required: `Send your IP (${clientIp}) to admin on Telegram: ${adminTelegramId}`,
+        contact_admin_telegram: adminTelegramUsername,
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -428,11 +424,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         error: 'Domain not whitelisted',
-        message: `⚠️ Your domain is not whitelisted! Please contact admin on Telegram to get whitelisted.`,
+        message: `⚠️ Your domain is not whitelisted! Please contact admin on Telegram: ${adminTelegramUsername}`,
         your_ip: clientIp,
-        your_domain: requestDomain || 'Unknown',
-        contact_admin_telegram: adminTelegramId,
-        action_required: `Send your domain (${requestDomain || 'Unknown'}) to admin on Telegram: ${adminTelegramId}`,
+        contact_admin_telegram: adminTelegramUsername,
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -469,11 +463,9 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({
           success: false,
           error: 'Domain not authorized',
-          message: `⚠️ Your domain is not whitelisted! Please contact admin on Telegram to get whitelisted.`,
+          message: `⚠️ Your domain is not whitelisted! Please contact admin on Telegram: ${adminTelegramUsername}`,
           your_ip: clientIp,
-          your_domain: requestDomain,
-          contact_admin_telegram: adminTelegramId,
-          action_required: `Send your domain (${requestDomain}) to admin on Telegram: ${adminTelegramId}`,
+          contact_admin_telegram: adminTelegramUsername,
         }), {
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -488,7 +480,6 @@ Deno.serve(async (req) => {
         error: 'Rate limit exceeded',
         message: 'You have exceeded your daily API call limit',
         your_ip: clientIp,
-        your_domain: requestDomain || 'Unknown',
       }), {
         status: 429,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
