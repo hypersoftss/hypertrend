@@ -1,52 +1,81 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useApiData } from '@/contexts/ApiDataContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import StatsCard from '@/components/StatsCard';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Link } from 'react-router-dom';
-import { mockDashboardStats, mockApiLogs, formatDate, getDaysUntilExpiry, isExpired, formatDateTime } from '@/lib/mockData';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, Key, Clock, Activity, TrendingUp, AlertTriangle, CheckCircle, XCircle, 
   BarChart3, ArrowRight, Heart, Zap, Timer, Shield, ArrowUpRight, ArrowDownRight,
-  History, Server
+  History, Server, Loader2
 } from 'lucide-react';
+
+interface DashboardStats {
+  totalUsers: number;
+  activeKeys: number;
+  expiredKeys: number;
+  todayApiCalls: number;
+  totalApiCalls: number;
+}
+
+interface ApiLogItem {
+  id: string;
+  endpoint: string;
+  ip_address: string | null;
+  status: string;
+  response_time_ms: number | null;
+  created_at: string | null;
+  game_type: string | null;
+}
+
+interface ApiKeyItem {
+  id: string;
+  key_name: string;
+  status: string;
+  expires_at: string | null;
+  calls_total: number | null;
+  calls_today: number | null;
+  created_at: string | null;
+}
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { apiKeys, users } = useApiData();
   const isAdmin = user?.role === 'admin';
 
-  const stats = {
-    ...mockDashboardStats,
-    totalUsers: users.length,
-    activeKeys: apiKeys.filter(k => k.isActive && !isExpired(k.expiresAt)).length,
-    expiredKeys: apiKeys.filter(k => isExpired(k.expiresAt)).length,
-  };
-  const recentLogs = mockApiLogs.slice(0, 5);
-  const userKeys = apiKeys.filter(k => k.userId === user?.id);
-  const userKeyIds = userKeys.map(k => k.id);
-  const userLogs = mockApiLogs.filter(log => userKeyIds.includes(log.apiKeyId));
-  const expiringKeys = apiKeys.filter(k => {
-    const days = getDaysUntilExpiry(k.expiresAt);
-    return days > 0 && days <= 7;
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalUsers: 0,
+    activeKeys: 0,
+    expiredKeys: 0,
+    todayApiCalls: 0,
+    totalApiCalls: 0
+  });
+  const [recentLogs, setRecentLogs] = useState<ApiLogItem[]>([]);
+  const [userKeys, setUserKeys] = useState<ApiKeyItem[]>([]);
+  const [expiringKeys, setExpiringKeys] = useState<ApiKeyItem[]>([]);
+  const [systemHealth, setSystemHealth] = useState({
+    apiServer: 'healthy',
+    database: 'healthy',
+    telegramBot: 'healthy'
   });
 
-  // User stats calculations
-  const successfulCalls = userLogs.filter(l => l.status === 'success').length;
-  const errorCalls = userLogs.filter(l => l.status === 'error').length;
-  const blockedCalls = userLogs.filter(l => l.status === 'blocked').length;
-  const totalCalls = userLogs.length;
-  const successRate = totalCalls > 0 ? ((successfulCalls / totalCalls) * 100).toFixed(1) : '0';
-  const avgResponseTime = totalCalls > 0 
-    ? Math.round(userLogs.reduce((sum, l) => sum + l.responseTime, 0) / totalCalls)
-    : 0;
+  // Helper functions
+  const isExpired = (expiresAt: string | null) => {
+    if (!expiresAt) return false;
+    return new Date(expiresAt) < new Date();
+  };
 
-  // Game type colors
-  const getGameTypeColor = (gameType: string) => {
+  const getDaysUntilExpiry = (expiresAt: string | null) => {
+    if (!expiresAt) return 0;
+    const diff = new Date(expiresAt).getTime() - new Date().getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const getGameTypeColor = (gameType: string | null) => {
     const colors: Record<string, string> = {
       wingo: 'bg-purple-500',
       k3: 'bg-blue-500',
@@ -54,8 +83,116 @@ const Dashboard: React.FC = () => {
       trx: 'bg-orange-500',
       numeric: 'bg-pink-500'
     };
-    return colors[gameType.toLowerCase()] || 'bg-primary';
+    return colors[gameType?.toLowerCase() || ''] || 'bg-primary';
   };
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (isAdmin) {
+          // Admin: Fetch all stats
+          const [usersRes, keysRes, logsRes] = await Promise.all([
+            supabase.from('profiles').select('id', { count: 'exact', head: true }),
+            supabase.from('api_keys').select('*'),
+            supabase.from('api_logs').select('*').order('created_at', { ascending: false }).limit(100)
+          ]);
+
+          const allKeys = keysRes.data || [];
+          const allLogs = logsRes.data || [];
+          const todayLogs = allLogs.filter(l => l.created_at && new Date(l.created_at) >= today);
+
+          setStats({
+            totalUsers: usersRes.count || 0,
+            activeKeys: allKeys.filter(k => k.status === 'active' && !isExpired(k.expires_at)).length,
+            expiredKeys: allKeys.filter(k => isExpired(k.expires_at)).length,
+            todayApiCalls: todayLogs.length,
+            totalApiCalls: allLogs.length
+          });
+
+          setRecentLogs(allLogs.slice(0, 5));
+          setExpiringKeys(allKeys.filter(k => {
+            const days = getDaysUntilExpiry(k.expires_at);
+            return days > 0 && days <= 7;
+          }));
+
+          // Check system health via recent activity
+          const recentSuccess = allLogs.filter(l => l.status === 'success').length;
+          const healthStatus = recentSuccess > 0 ? 'healthy' : 'warning';
+          setSystemHealth({
+            apiServer: healthStatus,
+            database: 'healthy',
+            telegramBot: 'healthy'
+          });
+
+        } else {
+          // User: Fetch only their data
+          const [keysRes, logsRes] = await Promise.all([
+            supabase.from('api_keys').select('*').eq('user_id', user.id),
+            supabase.from('api_logs').select('*').order('created_at', { ascending: false }).limit(100)
+          ]);
+
+          const myKeys = keysRes.data || [];
+          const keyIds = myKeys.map(k => k.id);
+          
+          // Filter logs for user's keys
+          let { data: userLogsData } = await supabase
+            .from('api_logs')
+            .select('*')
+            .in('api_key_id', keyIds.length > 0 ? keyIds : ['no-keys'])
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+          const userLogs = userLogsData || [];
+          setUserKeys(myKeys);
+          setRecentLogs(userLogs.slice(0, 5));
+
+          const totalCalls = userLogs.length;
+          const successfulCalls = userLogs.filter(l => l.status === 'success').length;
+          
+          setStats({
+            totalUsers: 0,
+            activeKeys: myKeys.filter(k => k.status === 'active' && !isExpired(k.expires_at)).length,
+            expiredKeys: myKeys.filter(k => isExpired(k.expires_at)).length,
+            todayApiCalls: totalCalls,
+            totalApiCalls: myKeys.reduce((sum, k) => sum + (k.calls_total || 0), 0)
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [user, isAdmin]);
+
+  // Calculate user stats from logs
+  const userLogs = recentLogs;
+  const successfulCalls = userLogs.filter(l => l.status === 'success').length;
+  const errorCalls = userLogs.filter(l => l.status === 'error').length;
+  const blockedCalls = userLogs.filter(l => l.status === 'blocked').length;
+  const totalCalls = userLogs.length;
+  const successRate = totalCalls > 0 ? ((successfulCalls / totalCalls) * 100).toFixed(1) : '0';
+  const avgResponseTime = totalCalls > 0 
+    ? Math.round(userLogs.reduce((sum, l) => sum + (l.response_time_ms || 0), 0) / totalCalls)
+    : 0;
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -131,7 +268,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-xl sm:text-2xl font-bold">
-                        {userKeys.filter(k => k.isActive && !isExpired(k.expiresAt)).length}
+                        {userKeys.filter(k => k.status === 'active' && !isExpired(k.expires_at)).length}
                       </p>
                       <p className="text-[10px] sm:text-xs opacity-90">Active Keys</p>
                     </div>
@@ -148,7 +285,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-xl sm:text-2xl font-bold text-foreground">
-                        {userKeys.reduce((sum, k) => sum + k.totalCalls, 0).toLocaleString()}
+                        {userKeys.reduce((sum, k) => sum + (k.calls_total || 0), 0).toLocaleString()}
                       </p>
                       <p className="text-[10px] sm:text-xs text-muted-foreground">Total Calls</p>
                     </div>
@@ -195,7 +332,7 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-xl sm:text-2xl font-bold text-foreground">
-                        {userKeys.filter(k => getDaysUntilExpiry(k.expiresAt) <= 7 && getDaysUntilExpiry(k.expiresAt) > 0).length}
+                        {userKeys.filter(k => getDaysUntilExpiry(k.expires_at) <= 7 && getDaysUntilExpiry(k.expires_at) > 0).length}
                       </p>
                       <p className="text-[10px] sm:text-xs text-muted-foreground">Expiring Soon</p>
                     </div>
@@ -217,11 +354,13 @@ const Dashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-success/10 border border-success/20">
-                  <div className="w-2.5 h-2.5 rounded-full bg-success animate-pulse" />
+                <div className={`flex items-center gap-3 p-3 rounded-lg ${systemHealth.apiServer === 'healthy' ? 'bg-success/10 border border-success/20' : 'bg-warning/10 border border-warning/20'}`}>
+                  <div className={`w-2.5 h-2.5 rounded-full ${systemHealth.apiServer === 'healthy' ? 'bg-success' : 'bg-warning'} animate-pulse`} />
                   <div>
                     <p className="font-medium text-sm text-foreground">API Server</p>
-                    <p className="text-xs text-success">Healthy</p>
+                    <p className={`text-xs ${systemHealth.apiServer === 'healthy' ? 'text-success' : 'text-warning'}`}>
+                      {systemHealth.apiServer === 'healthy' ? 'Healthy' : 'Warning'}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-success/10 border border-success/20">
@@ -299,7 +438,7 @@ const Dashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {(isAdmin ? recentLogs : userLogs.slice(0, 5)).map((log) => (
+                {recentLogs.map((log) => (
                   <div
                     key={log.id}
                     className="flex items-center justify-between p-2.5 rounded-lg bg-muted/30 border hover:bg-muted/50 transition-colors"
@@ -314,7 +453,7 @@ const Dashboard: React.FC = () => {
                       )}
                       <div>
                         <p className="font-mono text-xs text-foreground">{log.endpoint}</p>
-                        <p className="text-[10px] text-muted-foreground">{log.ip}</p>
+                        <p className="text-[10px] text-muted-foreground">{log.ip_address || 'N/A'}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -327,11 +466,11 @@ const Dashboard: React.FC = () => {
                       >
                         {log.status}
                       </Badge>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{log.responseTime}ms</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{log.response_time_ms || 0}ms</p>
                     </div>
                   </div>
                 ))}
-                {(isAdmin ? recentLogs : userLogs).length === 0 && (
+                {recentLogs.length === 0 && (
                   <div className="text-center py-6 text-muted-foreground">
                     <History className="w-10 h-10 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">No activity yet</p>
@@ -367,12 +506,16 @@ const Dashboard: React.FC = () => {
                       >
                         <div>
                           <div className="flex items-center gap-2">
-                            <Badge className={`${getGameTypeColor(key.gameType)} text-white uppercase text-[10px]`}>{key.gameType}</Badge>
-                            <span className="text-xs text-muted-foreground truncate max-w-[100px]">{key.domain}</span>
+                            <Badge className="bg-primary text-white uppercase text-[10px]">
+                              {key.key_name?.split(' - ')[0] || 'API'}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground truncate max-w-[100px]">
+                              {key.key_name?.split(' - ')[1] || key.key_name}
+                            </span>
                           </div>
                         </div>
                         <Badge variant="outline" className="border-warning text-warning text-xs">
-                          {getDaysUntilExpiry(key.expiresAt)}d left
+                          {getDaysUntilExpiry(key.expires_at)}d left
                         </Badge>
                       </div>
                     ))}
@@ -404,8 +547,11 @@ const Dashboard: React.FC = () => {
                 {userKeys.length > 0 ? (
                   <div className="space-y-2">
                     {userKeys.map((key) => {
-                      const daysLeft = getDaysUntilExpiry(key.expiresAt);
-                      const expired = isExpired(key.expiresAt);
+                      const daysLeft = getDaysUntilExpiry(key.expires_at);
+                      const expired = isExpired(key.expires_at);
+                      const validityDays = key.expires_at && key.created_at 
+                        ? Math.ceil((new Date(key.expires_at).getTime() - new Date(key.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                        : 30;
                       return (
                         <div
                           key={key.id}
@@ -413,8 +559,9 @@ const Dashboard: React.FC = () => {
                         >
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <Badge className={`${getGameTypeColor(key.gameType)} text-white uppercase text-[10px]`}>{key.gameType}</Badge>
-                              <Badge variant="outline" className="text-[10px]">{key.duration}</Badge>
+                              <Badge className={`${getGameTypeColor(key.key_name?.split(' ')[0] || null)} text-white uppercase text-[10px]`}>
+                                {key.key_name?.split(' - ')[0] || 'API'}
+                              </Badge>
                             </div>
                             <Badge 
                               className={`text-[10px] ${
@@ -427,11 +574,11 @@ const Dashboard: React.FC = () => {
                             </Badge>
                           </div>
                           <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span className="truncate max-w-[120px]">{key.domain}</span>
-                            <span>{key.totalCalls.toLocaleString()} calls</span>
+                            <span className="truncate max-w-[120px]">{key.key_name?.split(' - ')[1] || key.key_name}</span>
+                            <span>{(key.calls_total || 0).toLocaleString()} calls</span>
                           </div>
                           <Progress 
-                            value={Math.max(0, Math.min(100, (daysLeft / key.validityDays) * 100))}
+                            value={Math.max(0, Math.min(100, (daysLeft / validityDays) * 100))}
                             className={`h-1 mt-2 ${
                               daysLeft <= 3 ? '[&>div]:bg-destructive' :
                               daysLeft <= 7 ? '[&>div]:bg-warning' : '[&>div]:bg-success'
