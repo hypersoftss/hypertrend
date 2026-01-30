@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Key, Plus, Search, Copy, Trash2, RefreshCw, Clock, Globe, Shield, CheckCircle, AlertCircle, Zap, User, Calendar, Eye, EyeOff } from 'lucide-react';
+import { Key, Plus, Search, Copy, Trash2, RefreshCw, Clock, Globe, Shield, CheckCircle, AlertCircle, Zap, User, Calendar, Eye, EyeOff, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type GameType = 'wingo' | 'k3' | '5d' | 'trx' | 'numeric';
@@ -111,6 +111,10 @@ const ApiKeysPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editKeyId, setEditKeyId] = useState<string | null>(null);
+  const [editWhitelistIps, setEditWhitelistIps] = useState('');
+  const [editWhitelistDomains, setEditWhitelistDomains] = useState('');
   const [selectedDurations, setSelectedDurations] = useState<string[]>(['1min']);
   const [showKeyMap, setShowKeyMap] = useState<Record<string, boolean>>({});
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'expired' | 'expiring'>('all');
@@ -355,6 +359,82 @@ const ApiKeysPage: React.FC = () => {
     } catch (error) {
       console.error('Error updating key:', error);
       toast({ title: 'Error', description: 'Failed to update API key', variant: 'destructive' });
+    }
+  };
+
+  const openEditWhitelist = async (keyId: string) => {
+    setEditKeyId(keyId);
+    try {
+      // Fetch current whitelists
+      const [ipsRes, domainsRes] = await Promise.all([
+        supabase.from('allowed_ips').select('ip_address').eq('api_key_id', keyId),
+        supabase.from('allowed_domains').select('domain').eq('api_key_id', keyId),
+      ]);
+      
+      setEditWhitelistIps(ipsRes.data?.map(ip => ip.ip_address).join(', ') || '');
+      setEditWhitelistDomains(domainsRes.data?.map(d => d.domain).join(', ') || '');
+      setIsEditDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching whitelist:', error);
+      toast({ title: 'Error', description: 'Failed to load whitelist data', variant: 'destructive' });
+    }
+  };
+
+  const handleSaveWhitelist = async () => {
+    if (!editKeyId) return;
+    
+    if (!editWhitelistIps.trim()) {
+      toast({ title: 'Error', description: 'At least one IP is required', variant: 'destructive' });
+      return;
+    }
+    if (!editWhitelistDomains.trim()) {
+      toast({ title: 'Error', description: 'At least one domain is required', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      // Delete existing whitelists
+      await Promise.all([
+        supabase.from('allowed_ips').delete().eq('api_key_id', editKeyId),
+        supabase.from('allowed_domains').delete().eq('api_key_id', editKeyId),
+      ]);
+
+      // Insert new IPs
+      const ips = editWhitelistIps.split(',').map(ip => ip.trim()).filter(Boolean);
+      if (ips.length > 0) {
+        const ipRecords = ips.map(ip => ({
+          api_key_id: editKeyId,
+          ip_address: ip,
+        }));
+        await supabase.from('allowed_ips').insert(ipRecords);
+      }
+
+      // Insert new domains
+      const domains = editWhitelistDomains.split(',').map(d => d.trim()).filter(Boolean);
+      if (domains.length > 0) {
+        const domainRecords = domains.map(domain => ({
+          api_key_id: editKeyId,
+          domain: domain,
+        }));
+        await supabase.from('allowed_domains').insert(domainRecords);
+      }
+
+      // Log activity
+      await supabase.from('activity_logs').insert({
+        action: 'UPDATE_WHITELIST',
+        details: { keyId: editKeyId, ips, domains },
+      });
+
+      toast({
+        title: '✅ Whitelist Updated!',
+        description: `${ips.length} IPs and ${domains.length} domains saved`,
+      });
+
+      setIsEditDialogOpen(false);
+      setEditKeyId(null);
+    } catch (error) {
+      console.error('Error updating whitelist:', error);
+      toast({ title: 'Error', description: 'Failed to update whitelist', variant: 'destructive' });
     }
   };
 
@@ -675,6 +755,14 @@ const ApiKeysPage: React.FC = () => {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => openEditWhitelist(key.id)}
+                        title="Edit Whitelist"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => toggleKeyStatus(key.id, key.status)}
                       >
                         {key.status === 'active' ? 'Disable' : 'Enable'}
@@ -693,6 +781,57 @@ const ApiKeysPage: React.FC = () => {
             ))
           )}
         </div>
+
+        {/* Edit Whitelist Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-lg glass-card">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-primary" />
+                Edit Whitelist
+              </DialogTitle>
+              <DialogDescription>Update IP and domain whitelists for this API key</DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              {/* Whitelist IPs */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-primary" />
+                  Whitelist IPs * (comma separated)
+                </Label>
+                <Input
+                  value={editWhitelistIps}
+                  onChange={(e) => setEditWhitelistIps(e.target.value)}
+                  placeholder="192.168.1.1, 10.0.0.1"
+                />
+                <p className="text-xs text-amber-500">⚠️ Required - Only these IPs can use this key</p>
+              </div>
+
+              {/* Whitelist Domains */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-primary" />
+                  Whitelist Domains * (comma separated)
+                </Label>
+                <Input
+                  value={editWhitelistDomains}
+                  onChange={(e) => setEditWhitelistDomains(e.target.value)}
+                  placeholder="example.com, app.example.com"
+                />
+                <p className="text-xs text-amber-500">⚠️ Required - Only these domains can use this key</p>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+              <Button className="gradient-primary text-primary-foreground" onClick={handleSaveWhitelist}>
+                <Shield className="w-4 h-4 mr-2" />
+                Save Whitelist
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
