@@ -46,24 +46,18 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}"],
-        navigateFallback: "/index.html",
+        navigateFallback: "/offline.html",
         navigateFallbackDenylist: [
           /^\/api/,
           /^\/robots\.txt$/,
           /^\/sitemap\.xml$/,
           /^\/manifest\.webmanifest$/,
-          /^\/llms\.txt$/,
-          /^\/humans\.txt$/,
-          /^\/security\.txt$/,
-          /^\/browserconfig\.xml$/,
-          /^\/\.well-known/,
           /^\/health$/,
           /^\/wingo$/,
           /^\/k3$/,
           /^\/5d$/,
           /^\/trx$/,
-          /^\/numeric$/,
-          /^\/offline\.html$/
+          /^\/numeric$/
         ],
         runtimeCaching: [
           {

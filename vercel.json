@@ -2,51 +2,11 @@
   "headers": [
     {
       "source": "/sitemap.xml",
-      "headers": [
-        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
-      ]
+      "headers": [{ "key": "Content-Type", "value": "application/xml; charset=utf-8" }]
     },
     {
       "source": "/robots.txt",
-      "headers": [
-        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
-      ]
-    },
-    {
-      "source": "/llms.txt",
-      "headers": [
-        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
-      ]
-    },
-    {
-      "source": "/humans.txt",
-      "headers": [
-        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
-      ]
-    },
-    {
-      "source": "/security.txt",
-      "headers": [
-        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
-      ]
-    },
-    {
-      "source": "/browserconfig.xml",
-      "headers": [
-        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
-      ]
-    },
-    {
-      "source": "/.well-known/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
-      ]
+      "headers": [{ "key": "Content-Type", "value": "text/plain; charset=utf-8" }]
     }
   ],
   "rewrites": [
@@ -79,7 +39,7 @@
       "destination": "https://xynoldhqgtrmmsccutfp.supabase.co/functions/v1/trend-api"
     },
     {
-      "source": "/:path((?!sitemap\\.xml|robots\\.txt|llms\\.txt|humans\\.txt|security\\.txt|browserconfig\\.xml|manifest\\.webmanifest|favicon\\.ico|og-image\\.png|pwa-.*\\.png).*)",
+      "source": "/((?!api|wingo|k3|5d|trx|numeric|health|sitemap\\.xml|robots\\.txt).*)",
       "destination": "/index.html"
     }
   ]
