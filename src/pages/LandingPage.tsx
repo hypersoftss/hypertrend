@@ -136,47 +136,47 @@ const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 const features = [
   {
     icon: Activity,
-    title: 'Real-time Trends',
-    description: 'Get instant access to live game trends with millisecond accuracy',
+    title: 'Real-time Same Trends',
+    description: 'Hyper Softs provides instant access to live same trend predictions with millisecond accuracy for Wingo, K3, 5D, TRX games',
     gradient: 'from-red-500 to-orange-500'
   },
   {
     icon: Shield,
-    title: 'Secure & Reliable',
-    description: '99.9% uptime with enterprise-grade security and encryption',
+    title: 'Secure & Reliable API',
+    description: 'Hypersofts ensures 99.9% uptime with enterprise-grade security. Trusted by 1000+ developers worldwide',
     gradient: 'from-blue-500 to-cyan-500'
   },
   {
     icon: BarChart3,
-    title: 'Advanced Analytics',
-    description: 'Detailed statistics and performance metrics at your fingertips',
+    title: 'Advanced Trend Analytics',
+    description: 'Hyper Developer built detailed statistics and performance metrics for color prediction games',
     gradient: 'from-purple-500 to-pink-500'
   },
   {
     icon: Globe,
-    title: 'Global Access',
-    description: 'Low-latency API endpoints available worldwide 24/7',
+    title: 'Global API Access',
+    description: 'Hypersofts Trend API endpoints available worldwide 24/7 with low-latency responses',
     gradient: 'from-emerald-500 to-teal-500'
   },
   {
     icon: Clock,
-    title: 'Lightning Fast',
-    description: 'Average response time under 50ms for all API calls',
+    title: 'Lightning Fast Response',
+    description: 'Hyper Softs API average response time under 50ms for Wingo, K3, 5D, TRX predictions',
     gradient: 'from-amber-500 to-yellow-500'
   },
   {
     icon: Cpu,
-    title: 'AI-Powered',
-    description: 'Smart predictions powered by advanced machine learning',
+    title: 'AI-Powered Predictions',
+    description: 'Hyper Developer\'s smart same trend predictions powered by advanced machine learning algorithms',
     gradient: 'from-indigo-500 to-violet-500'
   }
 ];
 
 const games = [
-  { name: 'Wingo', color: 'from-red-500 to-orange-500', icon: '🎯' },
-  { name: 'K3', color: 'from-blue-500 to-cyan-500', icon: '🎲' },
-  { name: '5D', color: 'from-purple-500 to-pink-500', icon: '⭐' },
-  { name: 'TRX', color: 'from-emerald-500 to-teal-500', icon: '💎' }
+  { name: 'Wingo API', color: 'from-red-500 to-orange-500', icon: '🎯' },
+  { name: 'K3 API', color: 'from-blue-500 to-cyan-500', icon: '🎲' },
+  { name: '5D API', color: 'from-purple-500 to-pink-500', icon: '⭐' },
+  { name: 'TRX API', color: 'from-emerald-500 to-teal-500', icon: '💎' }
 ];
 
 const reviews = [
@@ -185,7 +185,7 @@ const reviews = [
     role: 'Full Stack Developer',
     avatar: 'RS',
     rating: 5,
-    text: 'Best API service I have ever used. The accuracy is incredible and support is very responsive. Highly recommended for serious developers!',
+    text: 'Hyper Softs Same Trend API is the best I have ever used. Hypersofts accuracy is incredible and Hyper Developer support is very responsive!',
     date: '2 days ago'
   },
   {
@@ -193,7 +193,7 @@ const reviews = [
     role: 'App Developer',
     avatar: 'AK',
     rating: 5,
-    text: 'Hyper Softs trend API has completely transformed my application. 99.9% uptime and lightning-fast responses. Worth every penny!',
+    text: 'Hypersofts Trend API has completely transformed my Wingo and K3 predictions. 99.9% uptime by Hyper Developer. Best Same Trend API!',
     date: '5 days ago'
   },
   {
@@ -201,7 +201,7 @@ const reviews = [
     role: 'Tech Lead',
     avatar: 'PS',
     rating: 5,
-    text: 'We integrated this API into our platform and the results exceeded our expectations. The documentation is excellent and implementation was smooth.',
+    text: 'We integrated Hyper Softs API for 5D and TRX games. Hyper Developer documentation is excellent. Best color prediction API in India!',
     date: '1 week ago'
   },
   {
@@ -209,7 +209,7 @@ const reviews = [
     role: 'Backend Developer',
     avatar: 'VV',
     rating: 5,
-    text: 'Amazing accuracy and reliability! The Telegram support from @Hyperdeveloperr is quick and helpful. Best in the market!',
+    text: 'Amazing Wingo API accuracy! Hypersofts Telegram support from @Hyperdeveloperr is quick. Hyper Softs is best in the market!',
     date: '1 week ago'
   },
   {
@@ -217,7 +217,7 @@ const reviews = [
     role: 'Freelancer',
     avatar: 'DP',
     rating: 5,
-    text: 'I have tried many APIs but Hyper Softs is on another level. The trend predictions are accurate and the API is very stable.',
+    text: 'I tried many APIs but Hyper Developer\'s Hypersofts is on another level. K3, 5D, TRX trend predictions are super accurate!',
     date: '2 weeks ago'
   },
   {
@@ -225,7 +225,7 @@ const reviews = [
     role: 'Startup Founder',
     avatar: 'SY',
     rating: 5,
-    text: 'Our users love the real-time data. Hyper Developer team provides excellent support. This API is a game-changer for our business!',
+    text: 'Our users love Hyper Softs real-time Wingo data. Hyper Developer team provides 24/7 support. Best Same Trend API service!',
     date: '2 weeks ago'
   }
 ];
@@ -296,27 +296,28 @@ const LandingPage = () => {
           <ScrollAnimation animation="fade-up" delay={0}>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-primary text-sm font-medium mb-6 backdrop-blur-sm">
               <Sparkles className="w-4 h-4" />
-              <span>Trusted by 1000+ Developers Worldwide</span>
+              <span>Hypersofts - Trusted by 1000+ Developers</span>
               <Award className="w-4 h-4" />
             </div>
           </ScrollAnimation>
           
           <ScrollAnimation animation="fade-up" delay={100}>
             <h1 className="text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-extrabold text-foreground mb-6 leading-tight">
-              India's #1{' '}
               <span className="bg-gradient-to-r from-primary via-purple-500 to-accent bg-clip-text text-transparent">
-                Same Trend API
+                Hyper Softs
               </span>
+              {' '}- India's #1
               <br className="hidden sm:block" />
               <span className="sm:hidden"> </span>
-              Management System
+              Same Trend API by{' '}
+              <span className="text-primary">Hyper Developer</span>
             </h1>
           </ScrollAnimation>
           
           <ScrollAnimation animation="fade-up" delay={200}>
             <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
-              Get reliable, real-time game trend predictions with our enterprise-grade API. 
-              Built by <span className="text-primary font-semibold">Hyper Developer</span> for seamless integration and maximum accuracy.
+              <strong className="text-foreground">Hypersofts</strong> provides reliable, real-time Wingo, K3, 5D, TRX trend predictions. 
+              Best color prediction API built by <span className="text-primary font-semibold">Hyper Developer</span> for seamless integration and maximum accuracy.
             </p>
           </ScrollAnimation>
 
@@ -393,13 +394,13 @@ const LandingPage = () => {
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">
                 <Sparkles className="w-3 h-3" />
-                FEATURES
+                HYPERSOFTS FEATURES
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                Why Choose <span className="text-primary">Hyper Softs</span>?
+                Why Choose <span className="text-primary">Hyper Softs</span> Same Trend API?
               </h2>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-                Built for developers who demand reliability, speed, and accuracy in their trend predictions.
+                Hyper Developer built this API for developers who demand reliability, speed, and accuracy in Wingo, K3, 5D, TRX predictions.
               </p>
             </div>
           </ScrollAnimation>
@@ -430,13 +431,13 @@ const LandingPage = () => {
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">
                 <Star className="w-3 h-3 fill-current" />
-                TESTIMONIALS
+                HYPERSOFTS REVIEWS
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                Loved by <span className="text-primary">Developers</span>
+                Loved by <span className="text-primary">Developers</span> Worldwide
               </h2>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-                See what our users are saying about Hyper Softs API
+                See what developers are saying about Hyper Softs Same Trend API by Hyper Developer
               </p>
             </div>
           </ScrollAnimation>
@@ -499,22 +500,22 @@ const LandingPage = () => {
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium mb-4">
                 <Code className="w-3 h-3" />
-                HOW IT WORKS
+                HYPERSOFTS INTEGRATION
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                Simple <span className="text-primary">Integration</span>
+                Simple <span className="text-primary">Hyper Softs API</span> Integration
               </h2>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-                Get started in minutes with our easy-to-use API
+                Get started with Hypersofts Wingo, K3, 5D, TRX API in minutes - by Hyper Developer
               </p>
             </div>
           </ScrollAnimation>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {[
-              { icon: Users, step: '01', title: 'Create Account', desc: 'Sign up and get your API key instantly', color: 'from-blue-500 to-cyan-500' },
-              { icon: Server, step: '02', title: 'Integrate API', desc: 'Use our comprehensive documentation', color: 'from-purple-500 to-pink-500' },
-              { icon: Smartphone, step: '03', title: 'Go Live', desc: 'Start receiving real-time trends', color: 'from-emerald-500 to-teal-500' }
+              { icon: Users, step: '01', title: 'Create Hypersofts Account', desc: 'Sign up and get your Hyper Softs API key instantly', color: 'from-blue-500 to-cyan-500' },
+              { icon: Server, step: '02', title: 'Integrate Hyper Developer API', desc: 'Use Hypersofts comprehensive documentation for Wingo, K3, 5D, TRX', color: 'from-purple-500 to-pink-500' },
+              { icon: Smartphone, step: '03', title: 'Go Live with Hyper Softs', desc: 'Start receiving real-time same trend predictions', color: 'from-emerald-500 to-teal-500' }
             ].map((item, i) => (
               <ScrollAnimation key={i} animation="scale" delay={i * 150}>
                 <div className="relative text-center p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/50 hover:border-primary/30 transition-all hover:-translate-y-1">
@@ -551,10 +552,10 @@ const LandingPage = () => {
                   <Send className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
-                  Contact Developer
+                  Contact Hyper Developer
                 </h2>
                 <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-                  Need help or have questions? Connect directly with the developer on Telegram for instant support.
+                  Need help with Hypersofts API? Connect directly with Hyper Developer on Telegram for instant Hyper Softs support.
                 </p>
                 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
@@ -585,7 +586,7 @@ const LandingPage = () => {
                 </div>
                 
                 <p className="text-xs text-muted-foreground mt-6">
-                  Join our Telegram channel for updates, announcements, and 24/7 support
+                  Join Hyper Softs Telegram channel for Hypersofts updates, announcements, and 24/7 Hyper Developer support
                 </p>
               </CardContent>
             </Card>
@@ -616,7 +617,7 @@ const LandingPage = () => {
               </a>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-right">
-              © {new Date().getFullYear()} {config.siteName}. Built with ❤️ by Hyper Developer
+              © {new Date().getFullYear()} Hyper Softs (Hypersofts). Best Same Trend API by Hyper Developer
             </p>
           </div>
         </div>
