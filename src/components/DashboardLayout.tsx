@@ -1,3 +1,8 @@
+// Hyper Softs (Hypersofts) - Dashboard Layout Component
+// Same Trend API Management System by Hyper Developer (Hyperdeveloper)
+// Best API for Wingo, K3, 5D, TRX games - trend.hyperapi.in
+// India's #1 Same Trend Prediction API
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -61,7 +66,7 @@ interface NavGroup {
   items: NavItem[];
 }
 
-// Admin grouped nav items
+// Hyper Softs Admin Navigation Groups - Same Trend API Management
 const adminNavGroups: NavGroup[] = [
   {
     title: 'System Monitor',
@@ -85,10 +90,10 @@ const adminNavGroups: NavGroup[] = [
   },
 ];
 
-// User navigation - no groups, simple flat list
+// Hyper Softs User Navigation - Simple flat list for Same Trend API users
 const userNavGroups: NavGroup[] = [];
 
-// Standalone nav items for admin
+// Hyper Softs Admin Standalone Items - Hypersofts Management by Hyper Developer
 const adminStandaloneItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { title: 'Users', href: '/admin/users', icon: Users, adminOnly: true },
@@ -99,7 +104,7 @@ const adminStandaloneItems: NavItem[] = [
   { title: 'Documentation', href: '/docs', icon: BookOpen },
 ];
 
-// Standalone nav items for user - simple flat structure
+// Hyper Softs User Standalone Items - Same Trend API Access
 const userStandaloneItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { title: 'My Keys', href: '/user/keys', icon: Key },
@@ -108,6 +113,7 @@ const userStandaloneItems: NavItem[] = [
   { title: 'Documentation', href: '/docs', icon: BookOpen },
 ];
 
+// Hyper Softs Dashboard Layout - Same Trend API by Hyper Developer (Hyperdeveloper)
 const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -290,8 +296,8 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
               </div>
             )}
             <div className="min-w-0">
-              <h1 className="font-bold text-foreground truncate">{config.siteName}</h1>
-              <p className="text-[10px] text-muted-foreground truncate">{config.siteDescription}</p>
+              <h1 className="font-bold text-foreground truncate">Hyper Softs</h1>
+              <p className="text-[10px] text-muted-foreground truncate">Same Trend API by Hyper Developer</p>
             </div>
           </Link>
         </div>
@@ -341,7 +347,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
                           <Zap className="w-5 h-5 text-primary-foreground" />
                         </div>
                       )}
-                      <span className="font-bold text-foreground">{config.siteName}</span>
+                      <span className="font-bold text-foreground">Hyper Softs</span>
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
                       <X className="w-5 h-5" />

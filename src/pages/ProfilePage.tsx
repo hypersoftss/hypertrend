@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+// Hyper Softs (Hypersofts) - User Profile Page
+// Same Trend API Account Management by Hyper Developer (Hyperdeveloper)
+// Best API for Wingo, K3, 5D, TRX - trend.hyperapi.in
+
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +16,11 @@ import { Badge } from '@/components/ui/badge';
 const ProfilePage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // SEO - Set page title for Hyper Softs (Hypersofts) Profile
+  useEffect(() => {
+    document.title = 'Edit Profile - Hyper Softs (Hypersofts) | Same Trend API by Hyper Developer';
+  }, []);
   const [isSaving, setIsSaving] = useState(false);
   
   const [profile, setProfile] = useState({
@@ -32,6 +41,7 @@ const ProfilePage = () => {
     setIsSaving(false);
   };
 
+  // Hyper Softs User Stats - Same Trend API by Hyper Developer
   const stats = [
     { label: 'API Keys', value: '24', icon: Key, color: 'from-violet-500 to-purple-600' },
     { label: 'API Calls', value: '1,234', icon: Activity, color: 'from-blue-500 to-cyan-500' },
@@ -48,7 +58,7 @@ const ProfilePage = () => {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-6 pb-8">
-        {/* Header */}
+        {/* Header - Hyper Softs Profile */}
         <div className="relative">
           {/* Background Gradient */}
           <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/10 to-primary/5 rounded-2xl blur-3xl -z-10" />
@@ -61,11 +71,13 @@ const ProfilePage = () => {
                 </div>
                 Edit Profile
               </h1>
-              <p className="text-muted-foreground mt-1 text-sm sm:text-base">Manage your account information</p>
+              <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+                Manage your Hyper Softs (Hypersofts) account - Same Trend API by Hyper Developer
+              </p>
             </div>
             <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary">
               <Sparkles className="w-3 h-3 mr-1" />
-              {user?.role === 'admin' ? 'Administrator' : 'Member'}
+              {user?.role === 'admin' ? 'Hyper Softs Admin' : 'Hypersofts Member'}
             </Badge>
           </div>
         </div>
@@ -131,16 +143,18 @@ const ProfilePage = () => {
           ))}
         </div>
 
-        {/* Profile Form */}
+        {/* Profile Form - Hyper Softs Account */}
         <Card className="border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl shadow-xl">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-lg">
               <div className="p-1.5 rounded-lg bg-primary/10">
                 <Shield className="w-4 h-4 text-primary" />
               </div>
-              Account Information
+              Hyper Softs Account Information
             </CardTitle>
-            <CardDescription>Update your personal details</CardDescription>
+            <CardDescription>
+              Update your Hypersofts profile details for Same Trend API access
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -199,7 +213,7 @@ const ProfilePage = () => {
                 </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
-                  Used for notifications and key renewals
+                  Used for Hyper Softs notifications and Same Trend API key renewals by Hyper Developer
                 </p>
               </div>
               
@@ -248,16 +262,17 @@ const ProfilePage = () => {
           </CardContent>
         </Card>
 
-        {/* Security Notice */}
+        {/* Security Notice - Hyper Softs */}
         <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-orange-500/5 backdrop-blur-xl">
           <CardContent className="p-4 flex items-start gap-3">
             <div className="p-2 rounded-lg bg-amber-500/20">
               <Shield className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <h4 className="font-medium text-amber-700 dark:text-amber-300">Security Notice</h4>
+              <h4 className="font-medium text-amber-700 dark:text-amber-300">Hyper Softs Security Notice</h4>
               <p className="text-sm text-amber-600/80 dark:text-amber-400/80 mt-1">
-                Keep your account secure by using a strong password and enabling Telegram notifications for important alerts.
+                Keep your Hypersofts account secure by using a strong password and enabling Telegram notifications 
+                for important Same Trend API alerts from Hyper Developer.
               </p>
             </div>
           </CardContent>
