@@ -222,6 +222,16 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Get admin telegram ID from settings (for error responses)
+    const { data: adminSettings } = await supabase
+      .from('settings')
+      .select('key, value')
+      .in('key', ['admin_telegram_id', 'site_name']);
+    
+    const adminSettingsMap = Object.fromEntries(adminSettings?.map((s: any) => [s.key, s.value]) || []);
+    const adminTelegramId = adminSettingsMap['admin_telegram_id'] || 'Not configured';
+    const siteName = adminSettingsMap['site_name'] || 'Hyper Softs Trend';
+
     // Get client IP
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
                      req.headers.get('cf-connecting-ip') || 
@@ -336,11 +346,12 @@ Deno.serve(async (req) => {
 
       return new Response(JSON.stringify({
         success: false,
-        error: 'No IP whitelist configured',
-        message: `This API key has no whitelisted IPs. Please contact admin to whitelist your IP.`,
+        error: 'IP not whitelisted',
+        message: `⚠️ Your IP is not whitelisted! Please contact admin on Telegram to get whitelisted.`,
         your_ip: clientIp,
         your_domain: requestDomain || 'Unknown',
-        owner_telegram_id: ownerTelegramId,
+        contact_admin_telegram: adminTelegramId,
+        action_required: `Send your IP (${clientIp}) to admin on Telegram: ${adminTelegramId}`,
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -374,11 +385,11 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         success: false,
         error: 'IP not authorized',
-        message: `Your IP (${clientIp}) is not whitelisted for this API key. Please contact admin to whitelist your IP.`,
+        message: `⚠️ Your IP is not whitelisted! Please contact admin on Telegram to get whitelisted.`,
         your_ip: clientIp,
         your_domain: requestDomain || 'Unknown',
-        owner_telegram_id: ownerTelegramId,
-        whitelisted_ips: allowedIps.map(ip => ip.ip_address),
+        contact_admin_telegram: adminTelegramId,
+        action_required: `Send your IP (${clientIp}) to admin on Telegram: ${adminTelegramId}`,
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -416,11 +427,12 @@ Deno.serve(async (req) => {
 
       return new Response(JSON.stringify({
         success: false,
-        error: 'No domain whitelist configured',
-        message: `This API key has no whitelisted domains. Please contact admin to whitelist your domain.`,
+        error: 'Domain not whitelisted',
+        message: `⚠️ Your domain is not whitelisted! Please contact admin on Telegram to get whitelisted.`,
         your_ip: clientIp,
         your_domain: requestDomain || 'Unknown',
-        owner_telegram_id: ownerTelegramId,
+        contact_admin_telegram: adminTelegramId,
+        action_required: `Send your domain (${requestDomain || 'Unknown'}) to admin on Telegram: ${adminTelegramId}`,
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -457,11 +469,11 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({
           success: false,
           error: 'Domain not authorized',
-          message: `Domain (${requestDomain}) is not whitelisted for this API key. Please contact admin to whitelist your domain.`,
+          message: `⚠️ Your domain is not whitelisted! Please contact admin on Telegram to get whitelisted.`,
           your_ip: clientIp,
           your_domain: requestDomain,
-          owner_telegram_id: ownerTelegramId,
-          whitelisted_domains: allowedDomains.map(d => d.domain),
+          contact_admin_telegram: adminTelegramId,
+          action_required: `Send your domain (${requestDomain}) to admin on Telegram: ${adminTelegramId}`,
         }), {
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
