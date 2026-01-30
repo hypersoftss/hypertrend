@@ -196,6 +196,7 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          telegram_id: string | null
           updated_at: string | null
           user_id: string
           username: string | null
@@ -204,6 +205,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          telegram_id?: string | null
           updated_at?: string | null
           user_id: string
           username?: string | null
@@ -212,6 +214,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          telegram_id?: string | null
           updated_at?: string | null
           user_id?: string
           username?: string | null
