@@ -2,9 +2,10 @@
 # https://trend.hyperapi.in
 # India's Best Same Trend API by Hyper Developer (Hyperdeveloper)
 
-# Google Search (Googlebot ignores Crawl-delay)
+# Google Search
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Googlebot-Image
 Allow: /
@@ -12,6 +13,7 @@ Allow: /
 # Bing Search
 User-agent: Bingbot
 Allow: /
+Crawl-delay: 1
 
 # AI Crawlers - ChatGPT, Claude, Perplexity, Gemini
 User-agent: GPTBot
