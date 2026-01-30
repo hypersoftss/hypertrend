@@ -86,6 +86,12 @@ const Dashboard: React.FC = () => {
     return colors[gameType?.toLowerCase() || ''] || 'bg-primary';
   };
 
+  // Helper to check if ID is a valid UUID (Supabase format)
+  const isValidUUID = (id: string) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(id);
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!user) return;
@@ -95,8 +101,11 @@ const Dashboard: React.FC = () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        // Check if this is a demo user (non-UUID id)
+        const isDemoUser = !isValidUUID(user.id);
+
         if (isAdmin) {
-          // Admin: Fetch all stats
+          // Admin: Fetch all stats from Supabase
           const [usersRes, keysRes, logsRes] = await Promise.all([
             supabase.from('profiles').select('id', { count: 'exact', head: true }),
             supabase.from('api_keys').select('*'),
@@ -130,30 +139,31 @@ const Dashboard: React.FC = () => {
             telegramBot: 'healthy'
           });
 
-        } else {
-          // User: Fetch only their data
-          const [keysRes, logsRes] = await Promise.all([
-            supabase.from('api_keys').select('*').eq('user_id', user.id),
-            supabase.from('api_logs').select('*').order('created_at', { ascending: false }).limit(100)
+        } else if (!isDemoUser) {
+          // Real Supabase user: Fetch their data
+          const [keysRes] = await Promise.all([
+            supabase.from('api_keys').select('*').eq('user_id', user.id)
           ]);
 
           const myKeys = keysRes.data || [];
           const keyIds = myKeys.map(k => k.id);
           
           // Filter logs for user's keys
-          let { data: userLogsData } = await supabase
-            .from('api_logs')
-            .select('*')
-            .in('api_key_id', keyIds.length > 0 ? keyIds : ['no-keys'])
-            .order('created_at', { ascending: false })
-            .limit(50);
+          let userLogsData: ApiLogItem[] = [];
+          if (keyIds.length > 0) {
+            const { data } = await supabase
+              .from('api_logs')
+              .select('*')
+              .in('api_key_id', keyIds)
+              .order('created_at', { ascending: false })
+              .limit(50);
+            userLogsData = data || [];
+          }
 
-          const userLogs = userLogsData || [];
           setUserKeys(myKeys);
-          setRecentLogs(userLogs.slice(0, 5));
+          setRecentLogs(userLogsData.slice(0, 5));
 
-          const totalCalls = userLogs.length;
-          const successfulCalls = userLogs.filter(l => l.status === 'success').length;
+          const totalCalls = userLogsData.length;
           
           setStats({
             totalUsers: 0,
@@ -162,6 +172,17 @@ const Dashboard: React.FC = () => {
             todayApiCalls: totalCalls,
             totalApiCalls: myKeys.reduce((sum, k) => sum + (k.calls_total || 0), 0)
           });
+        } else {
+          // Demo user: Show placeholder data
+          setStats({
+            totalUsers: 0,
+            activeKeys: 0,
+            expiredKeys: 0,
+            todayApiCalls: 0,
+            totalApiCalls: 0
+          });
+          setUserKeys([]);
+          setRecentLogs([]);
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
