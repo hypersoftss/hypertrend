@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface DeleteUserRequest {
@@ -14,7 +14,7 @@ interface DeleteUserRequest {
 serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
@@ -78,6 +78,10 @@ serve(async (req: Request) => {
       );
     }
 
+    const clientIp = (req.headers.get("x-forwarded-for") || "")
+      .split(",")[0]
+      .trim() || null;
+
     // Create admin client for user deletion
     const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
@@ -85,6 +89,36 @@ serve(async (req: Request) => {
         persistSession: false,
       },
     });
+
+    // Gather some context before deletion (profiles are what the UI lists)
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("email, username")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const deletedUserEmail = profile?.email ?? null;
+    const deletedUsername = profile?.username ?? null;
+
+    // Cascade delete app data (these are NOT automatically removed because our tables
+    // don't have FK cascades to the auth user table).
+    const { data: userKeys } = await adminClient
+      .from("api_keys")
+      .select("id")
+      .eq("user_id", userId);
+
+    const apiKeyIds = (userKeys || []).map((k) => k.id);
+
+    if (apiKeyIds.length) {
+      await adminClient.from("allowed_ips").delete().in("api_key_id", apiKeyIds);
+      await adminClient.from("allowed_domains").delete().in("api_key_id", apiKeyIds);
+      await adminClient.from("api_logs").delete().in("api_key_id", apiKeyIds);
+    }
+
+    await adminClient.from("api_keys").delete().eq("user_id", userId);
+    await adminClient.from("activity_logs").delete().eq("user_id", userId);
+    await adminClient.from("user_roles").delete().eq("user_id", userId);
+    await adminClient.from("profiles").delete().eq("user_id", userId);
 
     // Delete the user using admin API
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
@@ -96,6 +130,18 @@ serve(async (req: Request) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Track the deletion in activity logs (admin action)
+    await adminClient.from("activity_logs").insert({
+      user_id: callingUser.id,
+      action: "DELETE_USER",
+      ip_address: clientIp,
+      details: {
+        deleted_user_id: userId,
+        deleted_user_email: deletedUserEmail,
+        deleted_username: deletedUsername,
+      },
+    });
 
     console.log(`User ${userId} deleted successfully by admin ${callingUser.id}`);
 
