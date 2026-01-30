@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+// Hyper Softs (Hypersofts) - Change Password Page
+// Same Trend API Security by Hyper Developer (Hyperdeveloper)
+// Best API for Wingo, K3, 5D, TRX - trend.hyperapi.in
+
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +14,11 @@ import { Progress } from '@/components/ui/progress';
 
 const ChangePasswordPage = () => {
   const { toast } = useToast();
+
+  // SEO - Set page title for Hyper Softs (Hypersofts)
+  useEffect(() => {
+    document.title = 'Change Password - Hyper Softs (Hypersofts) | Same Trend API by Hyper Developer';
+  }, []);
   const [isSaving, setIsSaving] = useState(false);
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -85,7 +94,7 @@ const ChangePasswordPage = () => {
   return (
     <DashboardLayout>
       <div className="max-w-2xl mx-auto space-y-6 pb-8">
-        {/* Header */}
+        {/* Header - Hyper Softs Security */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/10 to-primary/5 rounded-2xl blur-3xl -z-10" />
           
@@ -97,21 +106,25 @@ const ChangePasswordPage = () => {
                 </div>
                 Change Password
               </h1>
-              <p className="text-muted-foreground mt-1 text-sm sm:text-base">Update your account password securely</p>
+              <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+                Secure your Hyper Softs (Hypersofts) account - Same Trend API by Hyper Developer
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Password Form */}
+        {/* Password Form - Hyper Softs Account Security */}
         <Card className="border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl shadow-xl overflow-hidden">
           <CardHeader className="pb-4 border-b border-border/50">
             <CardTitle className="flex items-center gap-2 text-lg">
               <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-500/20">
                 <KeyRound className="w-4 h-4 text-violet-500" />
               </div>
-              Update Password
+              Update Hyper Softs Password
             </CardTitle>
-            <CardDescription>Enter your current password and choose a new secure one</CardDescription>
+            <CardDescription>
+              Secure your Hypersofts account - Enter current password and choose a new one for Same Trend API access
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
             {/* Current Password */}
@@ -224,11 +237,11 @@ const ChangePasswordPage = () => {
               )}
             </div>
 
-            {/* Password Requirements */}
+            {/* Password Requirements - Hyper Softs Security */}
             <div className="p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50">
               <h4 className="font-medium mb-3 text-sm flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-primary" />
-                Password Requirements
+                Hyper Softs Password Requirements
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {requirements.map((req, idx) => (
@@ -276,14 +289,14 @@ const ChangePasswordPage = () => {
           </CardContent>
         </Card>
 
-        {/* Security Tips */}
+        {/* Security Tips - Hyper Developer Tips */}
         <Card className="border-border/50 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-blue-500/10">
                 <Info className="w-4 h-4 text-blue-500" />
               </div>
-              Security Tips
+              Hyper Softs Security Tips by Hyper Developer
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -298,16 +311,17 @@ const ChangePasswordPage = () => {
           </CardContent>
         </Card>
 
-        {/* Warning Notice */}
+        {/* Warning Notice - Hyper Softs */}
         <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-orange-500/5 backdrop-blur-xl">
           <CardContent className="p-4 flex items-start gap-3">
             <div className="p-2 rounded-lg bg-amber-500/20">
               <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <h4 className="font-medium text-amber-700 dark:text-amber-300">Important</h4>
+              <h4 className="font-medium text-amber-700 dark:text-amber-300">Important - Hyper Softs Security</h4>
               <p className="text-sm text-amber-600/80 dark:text-amber-400/80 mt-1">
-                After changing your password, you'll be logged out from all other devices. Make sure you remember your new password.
+                After changing your Hypersofts password, you'll be logged out from all devices. 
+                Make sure you remember your new password for Same Trend API access.
               </p>
             </div>
           </CardContent>
