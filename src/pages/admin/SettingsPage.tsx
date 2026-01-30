@@ -27,6 +27,7 @@ const SettingsPage = () => {
     // Telegram - synced from config
     telegramBotToken: config.telegramBotToken,
     adminTelegramId: config.adminTelegramId,
+    adminTelegramUsername: config.adminTelegramUsername || '@Hyperdeveloperr',
     webhookUrl: '',
     botConnected: false,
     lastBotCheck: null as Date | null,
@@ -82,6 +83,7 @@ const SettingsPage = () => {
       userApiEndpoint: settings.userApiEndpoint,
       telegramBotToken: settings.telegramBotToken,
       adminTelegramId: settings.adminTelegramId,
+      adminTelegramUsername: settings.adminTelegramUsername,
       // Maintenance mode
       maintenanceMode: settings.maintenanceMode,
       maintenanceMessage: settings.maintenanceMessage,
@@ -478,7 +480,7 @@ const SettingsPage = () => {
                     <div className="space-y-2">
                       <Label htmlFor="adminTelegramId" className="flex items-center gap-2">
                         <MessageSquare className="w-4 h-4 text-primary" />
-                        Admin Telegram ID
+                        Admin Telegram ID (For bot messages)
                       </Label>
                       <Input
                         id="adminTelegramId"
@@ -489,6 +491,23 @@ const SettingsPage = () => {
                       />
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         Get from <a href="https://t.me/userinfobot" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">@userinfobot</a>
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="adminTelegramUsername" className="flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-blue-500" />
+                        Admin Telegram Username (For error responses)
+                      </Label>
+                      <Input
+                        id="adminTelegramUsername"
+                        value={settings.adminTelegramUsername}
+                        onChange={(e) => setSettings({ ...settings, adminTelegramUsername: e.target.value })}
+                        placeholder="@YourUsername"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Shown to users when their IP/Domain is not whitelisted
                       </p>
                     </div>
                   </div>
