@@ -49,40 +49,42 @@ const DocumentationPage = () => {
     'Numeric': { '1min': 'num1', '3min': 'num3', '5min': 'num5' },
   };
 
+  // Hyper Softs (Hypersofts) - Same Trend API Endpoints by Hyper Developer (Hyperdeveloper)
+  // Best prediction API for India - Wingo API, K3 API, 5D API, TRX API, Numeric API
   const endpoints = [
     { 
       game: 'WinGo', 
       typeIds: typeIdMap['WinGo'],
       durations: ['30s', '1min', '3min', '5min'],
-      description: 'WinGo lottery trend data',
+      description: 'Hyper Softs WinGo Same Trend API - Best Wingo prediction by Hyper Developer',
       color: 'bg-purple-500'
     },
     { 
       game: 'K3', 
       typeIds: typeIdMap['K3'],
       durations: ['1min', '3min', '5min', '10min'],
-      description: 'K3 dice game trend data',
+      description: 'Hypersofts K3 Dice Same Trend API - Professional K3 trends by Hyperdeveloper',
       color: 'bg-blue-500'
     },
     { 
       game: '5D', 
       typeIds: typeIdMap['5D'],
       durations: ['1min', '3min', '5min', '10min'],
-      description: '5D lottery trend data',
+      description: 'Hyper Softs 5D Lottery Same Trend API - Accurate 5D data by Hyper Developer',
       color: 'bg-green-500'
     },
     { 
       game: 'TRX', 
       typeIds: typeIdMap['TRX'],
       durations: ['1min', '3min', '5min'],
-      description: 'TRX blockchain game trend data',
+      description: 'Hypersofts TRX Blockchain Same Trend API - TRX predictions by Hyperdeveloper',
       color: 'bg-orange-500'
     },
     { 
       game: 'Numeric', 
       typeIds: typeIdMap['Numeric'],
       durations: ['1min', '3min', '5min'],
-      description: 'Numeric lottery trend data',
+      description: 'Hyper Softs Numeric Same Trend API - Best numeric lottery trends',
       color: 'bg-pink-500'
     },
   ];
@@ -277,47 +279,52 @@ print_r($k3['data']);
 
           {/* Main Content */}
           <main className="flex-1 max-w-4xl space-y-8 pb-8">
-            {/* Hero */}
+            {/* Hero - SEO Optimized for Hyper Softs, Hypersofts, Hyper Developer */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge className="gradient-primary text-white">API v2.0</Badge>
-                <Badge variant="outline" className="text-xs">Edge Functions</Badge>
+                <Badge variant="outline" className="text-xs">Hyper Softs Edge Functions</Badge>
+                <Badge variant="outline" className="text-xs">Hyperdeveloper API</Badge>
               </div>
-              <h1 className="text-2xl sm:text-4xl font-bold text-foreground">{config.siteName} API</h1>
+              <h1 className="text-2xl sm:text-4xl font-bold text-foreground">
+                Hyper Softs Same Trend API Documentation
+              </h1>
               <p className="text-sm sm:text-base text-muted-foreground">
-                Complete API documentation for integrating trend data into your applications. 
-                Simple REST endpoints with JSON responses.
+                Complete Hypersofts API documentation by Hyper Developer for integrating same trend prediction data. 
+                Best REST API for Wingo, K3, 5D, TRX games in India. Professional Hyperdeveloper endpoints with JSON responses.
               </p>
               
               {/* Quick Actions */}
               <div className="flex flex-wrap gap-2 pt-2">
                 <Button size="sm" className="gap-2 text-xs" onClick={() => copyCode(FULL_API_URL, 'base-url')}>
                   {copiedCode === 'base-url' ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                  Copy API URL
+                  Copy Hyper Softs API URL
                 </Button>
                 <Button variant="outline" size="sm" className="gap-2 text-xs">
                   <Download className="w-3 h-3" />
-                  Download Docs
+                  Download Hypersofts Docs
                 </Button>
               </div>
             </div>
 
-            {/* Getting Started */}
+            {/* Getting Started - Hyper Softs API Integration Guide */}
             <section id="getting-started">
               <Card className="glass">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Rocket className="w-5 h-5 text-primary" />
-                    Getting Started
+                    Getting Started with Hyper Softs API
                   </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">Quick setup guide to start using the API</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm">
+                    Quick setup guide to start using Hypersofts Same Trend API by Hyper Developer
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
-                      { step: 1, title: 'Get API Key', desc: 'Request an API key from admin with game permissions' },
-                      { step: 2, title: 'Whitelist IP', desc: 'Add your server IP to the whitelist for access' },
-                      { step: 3, title: 'Make Requests', desc: 'Call endpoints with your key and duration' },
+                      { step: 1, title: 'Get Hyper Softs Key', desc: 'Request API key from Hyperdeveloper admin with game permissions' },
+                      { step: 2, title: 'Whitelist IP', desc: 'Add your server IP to Hypersofts whitelist for secure access' },
+                      { step: 3, title: 'Call Trend API', desc: 'Make requests to Hyper Softs endpoints for Wingo, K3, 5D, TRX trends' },
                     ].map((item) => (
                       <div key={item.step} className="p-3 rounded-lg bg-muted/30 border">
                         <div className="w-7 h-7 rounded-full gradient-primary flex items-center justify-center mb-2">
@@ -332,17 +339,17 @@ print_r($k3['data']);
                   <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
                     <div className="flex items-center gap-2 mb-2">
                       <Terminal className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium">Quick Test</span>
+                      <span className="text-sm font-medium">Quick Test - Hyper Softs Wingo API</span>
                     </div>
                     <div className="relative">
                       <pre className="p-2 rounded bg-muted overflow-x-auto text-xs">
-                        <code>curl "{FULL_API_URL}?typeId=wg1&apiKey=YOUR_KEY"</code>
+                        <code>curl "{FULL_API_URL}?typeId=wg1&apiKey=YOUR_HYPERSOFTS_KEY"</code>
                       </pre>
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         className="absolute top-1 right-1 h-6 w-6 p-0"
-                        onClick={() => copyCode(`curl "${FULL_API_URL}?typeId=wg1&apiKey=YOUR_KEY"`, 'quick-test')}
+                        onClick={() => copyCode(`curl "${FULL_API_URL}?typeId=wg1&apiKey=YOUR_HYPERSOFTS_KEY"`, 'quick-test')}
                       >
                         {copiedCode === 'quick-test' ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                       </Button>
@@ -676,21 +683,22 @@ print_r($k3['data']);
               </Card>
             </section>
 
-            {/* Support */}
+            {/* Support - Hyper Developer Contact */}
             <Card className="gradient-primary text-white">
               <CardContent className="py-6 sm:py-8 text-center space-y-3">
-                <h3 className="text-xl sm:text-2xl font-bold">Need Help?</h3>
+                <h3 className="text-xl sm:text-2xl font-bold">Need Help with Hyper Softs API?</h3>
                 <p className="text-sm opacity-90 max-w-md mx-auto">
-                  Contact our support team for integration help or API issues.
+                  Contact Hyper Developer (Hyperdeveloper) support team for Hypersofts integration help or Same Trend API issues.
+                  Best support for Wingo API, K3 API, 5D API, TRX API in India.
                 </p>
                 <div className="flex flex-wrap justify-center gap-2 pt-2">
                   <Button variant="secondary" size="sm" className="gap-2 text-xs">
                     <FileText className="w-3 h-3" />
-                    Email Support
+                    Email Hyper Softs Support
                   </Button>
                   <Button variant="outline" size="sm" className="gap-2 text-xs bg-white/10 border-white/30 hover:bg-white/20">
                     <ExternalLink className="w-3 h-3" />
-                    Dashboard
+                    Hypersofts Dashboard
                   </Button>
                 </div>
               </CardContent>

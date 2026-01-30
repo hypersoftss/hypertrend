@@ -49,10 +49,11 @@ const InstallPage = () => {
     setDeferredPrompt(null);
   };
 
+  // Hyper Softs (Hypersofts) PWA Features - Best Same Trend App by Hyper Developer
   const features = [
-    { icon: Zap, title: "Lightning Fast", description: "Native app experience with instant loading" },
-    { icon: Shield, title: "Secure", description: "Your data stays safe and encrypted" },
-    { icon: Wifi, title: "Works Offline", description: "Access key features without internet" },
+    { icon: Zap, title: "Lightning Fast", description: "Hyper Softs native app experience with instant Wingo, K3, 5D, TRX trend loading" },
+    { icon: Shield, title: "Secure by Hyper Developer", description: "Hypersofts keeps your API data encrypted and safe" },
+    { icon: Wifi, title: "Works Offline", description: "Access Hyper Softs same trend features without internet connection" },
   ];
 
   return (
@@ -73,11 +74,12 @@ const InstallPage = () => {
           
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="bg-gradient-to-r from-primary via-primary/70 to-accent bg-clip-text text-transparent">
-              Install Hyper Softs
+              Install Hyper Softs (Hypersofts) App
             </span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Get the best experience by installing our app on your device. Works like a native app with offline support!
+            Get the best Hyper Developer (Hyperdeveloper) Same Trend API experience by installing Hypersofts app. 
+            Best PWA for Wingo trend, K3 trend, 5D trend, TRX trend predictions in India. Works like a native app with offline support!
           </p>
         </div>
 
@@ -94,8 +96,8 @@ const InstallPage = () => {
                 }}
               />
             </div>
-            <CardTitle className="text-2xl">Hyper Softs</CardTitle>
-            <CardDescription>Same Trend API by Hyper Developer</CardDescription>
+            <CardTitle className="text-2xl">Hyper Softs (Hypersofts)</CardTitle>
+            <CardDescription>India's Best Same Trend API by Hyper Developer (Hyperdeveloper) - Wingo, K3, 5D, TRX</CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-6">
@@ -211,9 +213,9 @@ const InstallPage = () => {
           ))}
         </div>
 
-        {/* Contact Section */}
+        {/* Contact Section - Hyper Developer (Hyperdeveloper) Support */}
         <div className="text-center">
-          <p className="text-muted-foreground mb-4">Need help? Contact Developer</p>
+          <p className="text-muted-foreground mb-4">Need help with Hyper Softs? Contact Hyper Developer (Hyperdeveloper)</p>
           <div className="flex justify-center gap-4">
             <a 
               href="https://t.me/Hyperdeveloperr" 
