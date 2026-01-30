@@ -183,7 +183,10 @@ const Login = () => {
   }, [config.faviconUrl]);
 
   useEffect(() => {
-    document.title = isMaintenanceMode ? `Maintenance - ${config.siteName}` : `Login - ${config.siteName}`;
+    // Hyper Softs (Hypersofts) - Same Trend API Login by Hyper Developer
+    document.title = isMaintenanceMode 
+      ? `Maintenance - Hyper Softs (Hypersofts) | Same Trend API by Hyper Developer` 
+      : `Login - Hyper Softs (Hypersofts) | India's Best Same Trend API by Hyper Developer`;
   }, [config.siteName, isMaintenanceMode]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -284,20 +287,20 @@ const Login = () => {
                 onClick={() => window.open(`https://t.me/${config.ownerTelegramId || 'Hyperdeveloperr'}`, '_blank')}
               >
                 <MessageCircle className="w-4 h-4 mr-2" />
-                Connect Hyper Softs Owner
+                Contact Hyper Developer (Hyperdeveloper)
               </Button>
             </div>
 
             <div className="mt-4 p-3 bg-warning/10 rounded-lg border border-warning/20">
               <p className="text-sm text-center text-warning-foreground">
-                We'll be back soon! Thank you for your patience. 🙏
+                Hyper Softs (Hypersofts) will be back soon! Thank you for your patience. 🙏
               </p>
             </div>
           </CardContent>
         </Card>
 
         <p className="absolute bottom-4 text-xs text-muted-foreground z-10">
-          © {new Date().getFullYear()} {config.siteName}. All rights reserved.
+          © {new Date().getFullYear()} Hyper Softs (Hypersofts). India's Best Same Trend API by Hyper Developer.
         </p>
       </div>
     );
@@ -356,13 +359,15 @@ const Login = () => {
           </div>
           
           <CardTitle className="text-2xl font-bold text-foreground">
-            {isMaintenanceMode ? '🔧 Admin Access' : config.siteName}
+            {isMaintenanceMode ? '🔧 Hyper Softs Admin Access' : 'Hyper Softs (Hypersofts)'}
           </CardTitle>
-          <p className="text-primary font-medium text-sm mt-1">{config.siteDescription}</p>
+          <p className="text-primary font-medium text-sm mt-1">
+            {isMaintenanceMode ? 'Administrator Authentication' : 'India\'s #1 Same Trend API by Hyper Developer'}
+          </p>
           <CardDescription className="mt-2 text-muted-foreground">
             {isMaintenanceMode 
-              ? 'Administrator authentication required'
-              : 'Sign in to access your dashboard'
+              ? 'Hypersofts administrator authentication required'
+              : 'Sign in to access Hyper Softs dashboard - Best Wingo, K3, 5D, TRX API'
             }
           </CardDescription>
 
@@ -457,7 +462,7 @@ const Login = () => {
       </Card>
 
       <p className="absolute bottom-4 text-xs text-muted-foreground z-10">
-        © {new Date().getFullYear()} {config.siteName}. All rights reserved.
+        © {new Date().getFullYear()} Hyper Softs (Hypersofts). India's Best Same Trend API by Hyper Developer (Hyperdeveloper).
       </p>
     </div>
   );
