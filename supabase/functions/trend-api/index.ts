@@ -334,8 +334,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check if IP is in whitelist
-    const isIpAllowed = allowedIps.some(ip => ip.ip_address === clientIp);
+    // Check if IP is in whitelist (support wildcards "*" and exact match)
+    const isIpAllowed = allowedIps.some(ip => 
+      ip.ip_address === '*' || ip.ip_address === clientIp
+    );
     if (!isIpAllowed) {
       await supabase.from('api_logs').insert({
         endpoint: `/trend-api`,
@@ -408,10 +410,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check if domain is in whitelist
+    // Check if domain is in whitelist (support wildcards "*" and exact/subdomain match)
     if (requestDomain) {
       const isDomainAllowed = allowedDomains.some(d => 
-        requestDomain === d.domain || requestDomain.endsWith('.' + d.domain)
+        d.domain === '*' || requestDomain === d.domain || requestDomain.endsWith('.' + d.domain)
       );
       if (!isDomainAllowed) {
         await supabase.from('api_logs').insert({
