@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Moon, Sun, Lock, User, Zap, Eye, EyeOff, ArrowRight, Shield, AlertTriangle, MessageCircle, Wrench } from 'lucide-react';
+import { Moon, Sun, Lock, Mail, Zap, Eye, EyeOff, ArrowRight, Shield, AlertTriangle, MessageCircle, Wrench, User } from 'lucide-react';
 
 // Network Particle Animation Component
 const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
@@ -121,14 +122,16 @@ const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
 };
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [logoClickCount, setLogoClickCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const logoClickTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const { login } = useAuth();
+  const { login, signup, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { config } = useConfig();
   const navigate = useNavigate();
@@ -137,30 +140,33 @@ const Login = () => {
   const isDark = theme === 'dark';
   const isMaintenanceMode = config.maintenanceMode;
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
   // Secret admin login: Click logo 5 times quickly
   const handleLogoClick = () => {
     const newCount = logoClickCount + 1;
     setLogoClickCount(newCount);
 
-    // Clear previous timer
     if (logoClickTimerRef.current) {
       clearTimeout(logoClickTimerRef.current);
     }
 
-    // If 5 clicks reached, show admin login
     if (newCount >= 5) {
       setShowAdminLogin(true);
       setLogoClickCount(0);
       return;
     }
 
-    // Reset count after 2 seconds of no clicks
     logoClickTimerRef.current = setTimeout(() => {
       setLogoClickCount(0);
     }, 2000);
   };
 
-  // Cleanup timer on unmount
   useEffect(() => {
     return () => {
       if (logoClickTimerRef.current) {
@@ -169,7 +175,6 @@ const Login = () => {
     };
   }, []);
 
-  // Update favicon dynamically
   useEffect(() => {
     if (config.faviconUrl) {
       const link = document.querySelector("link[rel*='icon']") as HTMLLinkElement || document.createElement('link');
@@ -180,46 +185,26 @@ const Login = () => {
     }
   }, [config.faviconUrl]);
 
-  // Update page title dynamically
   useEffect(() => {
     document.title = isMaintenanceMode ? `Maintenance - ${config.siteName}` : `Login - ${config.siteName}`;
   }, [config.siteName, isMaintenanceMode]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const success = await login(username, password);
-      if (success) {
-        // Get user data from localStorage to check role
-        const storedUser = localStorage.getItem('hyper_user');
-        const userData = storedUser ? JSON.parse(storedUser) : null;
-        
-        // If maintenance mode is on and user is NOT admin, block login
-        if (isMaintenanceMode && userData?.role !== 'admin') {
-          // Logout the non-admin user
-          localStorage.removeItem('hyper_user');
-          toast({
-            title: '🚧 Site Under Maintenance',
-            description: 'Only administrators can login during maintenance. Please try again later.',
-            variant: 'destructive',
-          });
-          setIsLoading(false);
-          return;
-        }
-
+      const result = await login(email, password);
+      if (result.success) {
         toast({
           title: '✅ Login Successful',
-          description: userData?.role === 'admin' && isMaintenanceMode 
-            ? `Welcome Admin! Site is in maintenance mode.` 
-            : `Welcome to ${config.siteName}!`,
+          description: `Welcome to ${config.siteName}!`,
         });
         navigate('/dashboard');
       } else {
         toast({
           title: '❌ Login Failed',
-          description: 'Invalid username or password',
+          description: result.error || 'Invalid credentials',
           variant: 'destructive',
         });
       }
@@ -234,13 +219,42 @@ const Login = () => {
     }
   };
 
-  // Maintenance Mode Screen (for regular users)
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const result = await signup(email, password, username);
+      if (result.success) {
+        toast({
+          title: '✅ Account Created',
+          description: 'You can now sign in with your credentials.',
+        });
+        setActiveTab('login');
+      } else {
+        toast({
+          title: '❌ Signup Failed',
+          description: result.error || 'Could not create account',
+          variant: 'destructive',
+        });
+      }
+    } catch {
+      toast({
+        title: '❌ Error',
+        description: 'Something went wrong. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Maintenance Mode Screen
   if (isMaintenanceMode && !showAdminLogin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
         <NetworkBackground isDark={isDark} />
         
-        {/* Theme Toggle */}
         <Button
           variant="outline"
           size="icon"
@@ -252,12 +266,10 @@ const Login = () => {
 
         <Card className="w-full max-w-md mx-4 relative z-10 border-border bg-card shadow-xl animate-fade-in">
           <CardHeader className="text-center pb-2 pt-8">
-            {/* Logo - Click 5 times for secret admin login */}
             <div className="flex justify-center mb-4">
               <div 
                 className="relative cursor-pointer select-none" 
                 onClick={handleLogoClick}
-                title=""
               >
                 {config.logoUrl ? (
                   <div className="w-20 h-20 rounded-xl overflow-hidden shadow-lg border border-border">
@@ -273,7 +285,6 @@ const Login = () => {
                     <AlertTriangle className="w-10 h-10 text-warning-foreground" />
                   </div>
                 )}
-                {/* Warning Indicator */}
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-warning rounded-full border-2 border-card flex items-center justify-center animate-pulse">
                   <AlertTriangle className="w-2.5 h-2.5 text-warning-foreground" />
                 </div>
@@ -290,7 +301,6 @@ const Login = () => {
           </CardHeader>
 
           <CardContent className="pb-8 px-6 space-y-4">
-            {/* Maintenance Animation */}
             <div className="flex justify-center py-6">
               <div className="relative">
                 <div className="w-16 h-16 border-4 border-warning/30 rounded-full animate-spin" style={{ borderTopColor: 'hsl(var(--warning))' }} />
@@ -300,7 +310,6 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Contact Owner */}
             <div className="text-center space-y-3">
               <p className="text-sm text-muted-foreground">Need urgent help?</p>
               <Button
@@ -310,12 +319,8 @@ const Login = () => {
                 <MessageCircle className="w-4 h-4 mr-2" />
                 Connect Hyper Softs Owner
               </Button>
-              <p className="text-xs text-muted-foreground">
-                @{config.ownerTelegramId || 'Hyperdeveloperr'}
-              </p>
             </div>
 
-            {/* Estimated Time */}
             <div className="mt-4 p-3 bg-warning/10 rounded-lg border border-warning/20">
               <p className="text-sm text-center text-warning-foreground">
                 We'll be back soon! Thank you for your patience. 🙏
@@ -324,7 +329,6 @@ const Login = () => {
           </CardContent>
         </Card>
 
-        {/* Footer Text */}
         <p className="absolute bottom-4 text-xs text-muted-foreground z-10">
           © {new Date().getFullYear()} {config.siteName}. All rights reserved.
         </p>
@@ -332,13 +336,11 @@ const Login = () => {
     );
   }
 
-  // Regular Login Form (shown when not maintenance OR admin wants to login)
+  // Regular Login/Signup Form
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      {/* Network Particle Animation Background */}
       <NetworkBackground isDark={isDark} />
 
-      {/* Theme Toggle */}
       <Button
         variant="outline"
         size="icon"
@@ -348,10 +350,8 @@ const Login = () => {
         {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
       </Button>
 
-      {/* Login Card */}
       <Card className="w-full max-w-md mx-4 relative z-10 border-border bg-card shadow-xl animate-fade-in">
         <CardHeader className="text-center pb-2 pt-8">
-          {/* Back to Maintenance Screen (if in maintenance mode) */}
           {isMaintenanceMode && (
             <Button
               variant="ghost"
@@ -363,7 +363,6 @@ const Login = () => {
             </Button>
           )}
 
-          {/* Logo */}
           <div className="flex justify-center mb-4">
             <div className="relative">
               {config.logoUrl ? (
@@ -379,7 +378,6 @@ const Login = () => {
                   <Zap className="w-10 h-10 text-primary-foreground" />
                 </div>
               )}
-              {/* Status Indicator */}
               <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-card flex items-center justify-center ${isMaintenanceMode ? 'bg-warning' : 'bg-success'}`}>
                 {isMaintenanceMode ? (
                   <Wrench className="w-2.5 h-2.5 text-warning-foreground" />
@@ -401,7 +399,6 @@ const Login = () => {
             }
           </CardDescription>
 
-          {/* Maintenance Mode Warning Badge */}
           {isMaintenanceMode && (
             <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 bg-warning/10 border border-warning/30 rounded-full text-xs text-warning">
               <AlertTriangle className="w-3 h-3" />
@@ -411,83 +408,183 @@ const Login = () => {
         </CardHeader>
 
         <CardContent className="pb-8 px-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Username Field */}
-            <div className="space-y-2">
-              <Label htmlFor="username" className="text-sm font-medium text-foreground">
-                Username
-              </Label>
-              <div className="relative">
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="pl-10 h-11 bg-background border-input focus:border-primary"
-                  required
-                />
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              </div>
-            </div>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'login' | 'signup')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="login">Sign In</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
 
-            {/* Password Field */}
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-foreground">
-                Password
-              </Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 h-11 bg-background border-input focus:border-primary"
-                  required
-                />
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <TabsContent value="login">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                    Email
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 h-11 bg-background border-input focus:border-primary"
+                      required
+                    />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 pr-10 h-11 bg-background border-input focus:border-primary"
+                      required
+                    />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-muted"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
+                    </Button>
+                  </div>
+                </div>
+
                 <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-muted"
-                  onClick={() => setShowPassword(!showPassword)}
+                  type="submit"
+                  className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all group mt-2"
+                  disabled={isLoading}
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Signing in...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Sign In
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  )}
                 </Button>
-              </div>
-            </div>
+              </form>
+            </TabsContent>
 
-            {/* Submit Button */}
+            <TabsContent value="signup">
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-username" className="text-sm font-medium text-foreground">
+                    Username
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="signup-username"
+                      type="text"
+                      placeholder="Choose a username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="pl-10 h-11 bg-background border-input focus:border-primary"
+                      required
+                    />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email" className="text-sm font-medium text-foreground">
+                    Email
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 h-11 bg-background border-input focus:border-primary"
+                      required
+                    />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password" className="text-sm font-medium text-foreground">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="signup-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Create a password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 pr-10 h-11 bg-background border-input focus:border-primary"
+                      required
+                      minLength={6}
+                    />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-muted"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4 text-muted-foreground" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all group mt-2"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Creating account...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Create Account
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+
+          {/* Contact Support */}
+          <div className="mt-6 text-center">
+            <p className="text-xs text-muted-foreground mb-2">Need help?</p>
             <Button
-              type="submit"
-              className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all group mt-2"
-              disabled={isLoading}
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => window.open(`https://t.me/${config.ownerTelegramId || 'Hyperdeveloperr'}`, '_blank')}
             >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent" />
-                  Signing in...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  Sign In
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                </span>
-              )}
+              <MessageCircle className="w-3 h-3 mr-1" />
+              Contact Support
             </Button>
-          </form>
-
-          {/* Secure Badge */}
-          <div className="flex items-center justify-center gap-2 mt-5 text-xs text-muted-foreground">
-            <Shield className="w-3 h-3" />
-            <span>Secured with 256-bit encryption</span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Footer Text */}
       <p className="absolute bottom-4 text-xs text-muted-foreground z-10">
         © {new Date().getFullYear()} {config.siteName}. All rights reserved.
       </p>
