@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,30 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 import { 
-  Activity, 
-  Radio, 
-  Pause, 
-  Play, 
-  RefreshCw, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle,
-  Clock,
-  Globe,
-  User,
-  Zap,
-  TrendingUp,
-  Wifi,
-  WifiOff,
-  Server
+  Activity, Radio, Pause, Play, RefreshCw, CheckCircle, XCircle, AlertTriangle,
+  Clock, Globe, User, Zap, TrendingUp, Wifi, WifiOff, Server
 } from 'lucide-react';
 
 interface LiveRequest {
   id: string;
   timestamp: Date;
   apiKey: string;
-  username: string;
   gameType: string;
   duration: string;
   endpoint: string;
@@ -47,63 +33,117 @@ const gameColors: Record<string, { bg: string; text: string; border: string }> =
   numeric: { bg: 'bg-pink-500/10', text: 'text-pink-500', border: 'border-pink-500/30' },
 };
 
-const durations = ['30s', '1min', '3min', '5min', '10min'];
 const games = ['wingo', 'k3', '5d', 'trx', 'numeric'];
-const usernames = ['john_doe', 'alice_smith', 'bob_wilson', 'charlie_brown', 'david_lee', 'emma_jones'];
-const domains = ['p2plottery.club', '107.172.75.145', 'example.com', 'myapp.com', 'localhost'];
 
-const LiveMonitorPage = () => {
+const LiveMonitorPage: React.FC = () => {
   const [isLive, setIsLive] = useState(true);
   const [requests, setRequests] = useState<LiveRequest[]>([]);
   const [stats, setStats] = useState({
-    totalToday: 15234,
-    successRate: 98.5,
-    avgResponseTime: 87,
-    activeUsers: 12
+    totalToday: 0,
+    successRate: 100,
+    avgResponseTime: 0,
+    activeUsers: 0
   });
 
-  const generateRequest = (): LiveRequest => {
-    const game = games[Math.floor(Math.random() * games.length)];
-    const duration = durations[Math.floor(Math.random() * durations.length)];
-    return {
-      id: `req-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-      timestamp: new Date(),
-      apiKey: `HYPER_${Math.random().toString(36).substring(2, 12).toUpperCase()}`,
-      username: usernames[Math.floor(Math.random() * usernames.length)],
-      gameType: game,
-      duration: duration,
-      endpoint: `/api/${game}.php?duration=${duration}`,
-      ip: `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
-      domain: domains[Math.floor(Math.random() * domains.length)],
-      status: Math.random() > 0.1 ? 'success' : Math.random() > 0.5 ? 'error' : 'blocked',
-      responseTime: Math.floor(Math.random() * 200) + 30
-    };
+  const fetchInitialData = async () => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Fetch today's logs
+      const { data: logs, error } = await supabase
+        .from('api_logs')
+        .select('*')
+        .gte('created_at', today.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+
+      const mappedRequests: LiveRequest[] = (logs || []).map(log => ({
+        id: log.id,
+        timestamp: new Date(log.created_at!),
+        apiKey: log.api_key_id?.substring(0, 12) || 'N/A',
+        gameType: log.game_type || 'wingo',
+        duration: log.duration || '1min',
+        endpoint: log.endpoint,
+        ip: log.ip_address || 'Unknown',
+        domain: log.domain || 'Unknown',
+        status: log.status as 'success' | 'error' | 'blocked',
+        responseTime: log.response_time_ms || 0,
+      }));
+
+      setRequests(mappedRequests);
+      calculateStats(logs || []);
+
+      // Fetch active keys count
+      const { count } = await supabase
+        .from('api_keys')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
+
+      setStats(prev => ({ ...prev, activeUsers: count || 0 }));
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  const calculateStats = (logs: any[]) => {
+    const totalToday = logs.length;
+    const successLogs = logs.filter(l => l.status === 'success').length;
+    const successRate = totalToday > 0 ? (successLogs / totalToday) * 100 : 100;
+    const avgResponseTime = totalToday > 0
+      ? Math.round(logs.reduce((sum, l) => sum + (l.response_time_ms || 0), 0) / totalToday)
+      : 0;
+
+    setStats(prev => ({
+      ...prev,
+      totalToday,
+      successRate: Math.round(successRate * 10) / 10,
+      avgResponseTime,
+    }));
   };
 
   useEffect(() => {
-    const initialRequests = Array.from({ length: 30 }, () => {
-      const req = generateRequest();
-      req.timestamp = new Date(Date.now() - Math.floor(Math.random() * 300000));
-      return req;
-    }).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    fetchInitialData();
+  }, []);
 
-    setRequests(initialRequests);
+  // Real-time subscription
+  useEffect(() => {
+    if (!isLive) return;
 
-    let interval: NodeJS.Timeout;
-    if (isLive) {
-      interval = setInterval(() => {
-        const newRequest = generateRequest();
-        setRequests(prev => [newRequest, ...prev.slice(0, 49)]);
-        setStats(prev => ({
-          ...prev,
-          totalToday: prev.totalToday + 1,
-          avgResponseTime: Math.floor((prev.avgResponseTime * 0.9 + newRequest.responseTime * 0.1))
-        }));
-      }, 1500 + Math.random() * 2000);
-    }
+    const channel = supabase
+      .channel('api_logs_realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'api_logs' },
+        (payload) => {
+          const log = payload.new as any;
+          const newRequest: LiveRequest = {
+            id: log.id,
+            timestamp: new Date(log.created_at),
+            apiKey: log.api_key_id?.substring(0, 12) || 'N/A',
+            gameType: log.game_type || 'wingo',
+            duration: log.duration || '1min',
+            endpoint: log.endpoint,
+            ip: log.ip_address || 'Unknown',
+            domain: log.domain || 'Unknown',
+            status: log.status as 'success' | 'error' | 'blocked',
+            responseTime: log.response_time_ms || 0,
+          };
+
+          setRequests(prev => [newRequest, ...prev.slice(0, 49)]);
+          setStats(prev => ({
+            ...prev,
+            totalToday: prev.totalToday + 1,
+            avgResponseTime: Math.floor((prev.avgResponseTime * 0.9 + newRequest.responseTime * 0.1))
+          }));
+        }
+      )
+      .subscribe();
 
     return () => {
-      if (interval) clearInterval(interval);
+      supabase.removeChannel(channel);
     };
   }, [isLive]);
 
@@ -124,12 +164,12 @@ const LiveMonitorPage = () => {
     return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
   };
 
-  const getGameColor = (game: string) => gameColors[game] || gameColors.wingo;
+  const getGameColor = (game: string) => gameColors[game?.toLowerCase()] || gameColors.wingo;
 
   return (
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6 pb-20 lg:pb-0">
-        {/* Header - Mobile Optimized */}
+        {/* Header */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
             <div className={cn(
@@ -151,25 +191,25 @@ const LiveMonitorPage = () => {
                 Live API Monitor
               </h1>
               <p className="text-muted-foreground text-xs sm:text-sm truncate">
-                {isLive ? 'Real-time streaming of API requests' : 'Stream paused'}
+                {isLive ? 'Real-time streaming from Supabase' : 'Stream paused'}
               </p>
             </div>
           </div>
           
-          {/* Controls - Mobile Row */}
+          {/* Controls */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 border text-sm">
               <span className="text-muted-foreground hidden sm:inline">Auto-refresh</span>
               <Switch checked={isLive} onCheckedChange={setIsLive} />
             </div>
-            <Button variant="outline" size="sm" onClick={() => setRequests([])}>
+            <Button variant="outline" size="sm" onClick={() => { setRequests([]); fetchInitialData(); }}>
               <RefreshCw className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Clear</span>
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
           </div>
         </div>
 
-        {/* Stats Grid - 2x2 on mobile, 4 on desktop */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <Card className="border-primary/20 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
@@ -223,7 +263,7 @@ const LiveMonitorPage = () => {
             <CardContent className="p-3 sm:pt-5 sm:p-6 relative">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">Active Users</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">Active Keys</p>
                   <p className="text-xl sm:text-2xl lg:text-3xl font-bold mt-0.5 sm:mt-1">{stats.activeUsers}</p>
                 </div>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center">
@@ -234,7 +274,7 @@ const LiveMonitorPage = () => {
           </Card>
         </div>
 
-        {/* Live Indicator & Play/Pause */}
+        {/* Live Indicator */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             {isLive ? (
@@ -247,7 +287,7 @@ const LiveMonitorPage = () => {
                   <span className="text-success font-semibold text-sm sm:text-base">LIVE</span>
                 </div>
                 <span className="text-muted-foreground hidden sm:inline">•</span>
-                <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">Streaming requests in real-time</span>
+                <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">Streaming from database</span>
               </>
             ) : (
               <>
@@ -266,12 +306,12 @@ const LiveMonitorPage = () => {
             {isLive ? (
               <>
                 <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Pause</span> Stream
+                Pause
               </>
             ) : (
               <>
                 <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                <span className="hidden sm:inline">Resume</span> Stream
+                Resume
               </>
             )}
           </Button>
@@ -293,10 +333,10 @@ const LiveMonitorPage = () => {
                 </div>
               </div>
               
-              {/* Game Type Pills - Scrollable on mobile */}
+              {/* Game Type Pills */}
               <div className="flex items-center gap-1 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
                 {games.map((game) => {
-                  const count = requests.filter(r => r.gameType === game).length;
+                  const count = requests.filter(r => r.gameType?.toLowerCase() === game).length;
                   const colors = getGameColor(game);
                   return (
                     <Badge 
@@ -337,9 +377,8 @@ const LiveMonitorPage = () => {
                             : "bg-muted/30 border-transparent hover:bg-muted/50"
                         )}
                       >
-                        {/* Mobile: 2 Row Layout */}
+                        {/* Mobile Layout */}
                         <div className="flex flex-col gap-1.5 sm:hidden">
-                          {/* Row 1: Status, Time, Game, Duration */}
                           <div className="flex items-center gap-2">
                             <div className={cn("w-6 h-6 rounded flex items-center justify-center shrink-0", statusConfig.bg)}>
                               <span className={statusConfig.color}>{statusConfig.icon}</span>
@@ -362,13 +401,8 @@ const LiveMonitorPage = () => {
                               </Badge>
                             </div>
                           </div>
-                          {/* Row 2: Endpoint, User, Domain */}
                           <div className="flex items-center gap-2 text-[10px] text-muted-foreground pl-8">
                             <span className="font-mono truncate flex-1">{request.endpoint}</span>
-                            <span className="flex items-center gap-0.5 shrink-0">
-                              <User className="w-2.5 h-2.5" />
-                              {request.username.split('_')[0]}
-                            </span>
                             <span className="flex items-center gap-0.5 shrink-0">
                               <Globe className="w-2.5 h-2.5" />
                               {request.domain.length > 12 ? request.domain.substring(0, 12) + '...' : request.domain}
@@ -376,45 +410,42 @@ const LiveMonitorPage = () => {
                           </div>
                         </div>
 
-                        {/* Desktop: Single Row Layout */}
-                        <div className="hidden sm:flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", statusConfig.bg)}>
-                              <span className={statusConfig.color}>{statusConfig.icon}</span>
-                            </div>
-                            <span className="text-xs text-muted-foreground font-mono min-w-[60px]">
-                              {formatTime(request.timestamp)}
-                            </span>
-                            <Badge variant="outline" className={cn("uppercase text-xs font-bold", gameColor.bg, gameColor.text, gameColor.border)}>
-                              {request.gameType}
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs">
-                              {request.duration}
-                            </Badge>
-                            <span className="font-mono text-xs text-muted-foreground truncate hidden lg:inline max-w-[180px]">
-                              {request.endpoint}
-                            </span>
+                        {/* Desktop Layout */}
+                        <div className="hidden sm:flex items-center gap-3">
+                          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", statusConfig.bg)}>
+                            <span className={statusConfig.color}>{statusConfig.icon}</span>
                           </div>
-
-                          <div className="flex items-center gap-3 shrink-0">
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <User className="w-3 h-3" />
-                              <span>{request.username}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Globe className="w-3 h-3" />
-                              <span className="max-w-[100px] truncate">{request.domain}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs">
-                              <Clock className="w-3 h-3 text-muted-foreground" />
-                              <span className={cn("font-mono font-medium", request.responseTime > 150 ? 'text-warning' : 'text-success')}>
-                                {request.responseTime}ms
-                              </span>
-                            </div>
-                            <Badge variant="outline" className={cn("text-xs font-bold min-w-[55px] justify-center", statusConfig.bg, statusConfig.color, statusConfig.border)}>
-                              {statusConfig.label}
-                            </Badge>
+                          
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono min-w-[70px]">
+                            <Clock className="w-3 h-3" />
+                            {formatTime(request.timestamp)}
                           </div>
+                          
+                          <Badge variant="outline" className={cn("uppercase text-xs", gameColor.bg, gameColor.text, gameColor.border)}>
+                            {request.gameType}
+                          </Badge>
+                          
+                          <Badge variant="secondary" className="text-xs">{request.duration}</Badge>
+                          
+                          <span className="font-mono text-xs text-foreground truncate flex-1 max-w-[200px]">
+                            {request.endpoint}
+                          </span>
+                          
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Globe className="w-3 h-3" />
+                            <span className="truncate max-w-[100px]">{request.domain}</span>
+                          </div>
+                          
+                          <span className={cn(
+                            "text-xs font-mono min-w-[50px] text-right",
+                            request.responseTime > 150 ? 'text-warning' : 'text-success'
+                          )}>
+                            {request.responseTime}ms
+                          </span>
+                          
+                          <Badge variant="outline" className={cn("text-xs font-bold min-w-[60px] justify-center", statusConfig.bg, statusConfig.color, statusConfig.border)}>
+                            {statusConfig.label}
+                          </Badge>
                         </div>
                       </div>
                     );
@@ -424,32 +455,6 @@ const LiveMonitorPage = () => {
             </ScrollArea>
           </CardContent>
         </Card>
-
-        {/* Game Distribution - Horizontal Scroll on Mobile */}
-        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 pb-2">
-          <div className="flex sm:grid sm:grid-cols-5 gap-2 sm:gap-3 min-w-max sm:min-w-0">
-            {games.map((game) => {
-              const count = requests.filter(r => r.gameType === game).length;
-              const colors = getGameColor(game);
-              const percentage = requests.length > 0 ? Math.round((count / requests.length) * 100) : 0;
-              
-              return (
-                <Card key={game} className={cn("border relative overflow-hidden w-[100px] sm:w-auto shrink-0", colors.border)}>
-                  <div className={cn("absolute inset-0", colors.bg)} />
-                  <CardContent className="p-3 sm:p-4 relative">
-                    <div className="text-center">
-                      <Badge variant="outline" className={cn("uppercase mb-1 sm:mb-2 font-bold text-[10px] sm:text-xs", colors.text, colors.border)}>
-                        {game}
-                      </Badge>
-                      <p className={cn("text-xl sm:text-2xl font-bold", colors.text)}>{count}</p>
-                      <p className="text-[10px] sm:text-xs text-muted-foreground">{percentage}%</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
       </div>
     </DashboardLayout>
   );

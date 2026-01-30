@@ -1,33 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { useApiData } from '@/contexts/ApiDataContext';
-import { formatDate, getDaysUntilExpiry, isExpired } from '@/lib/mockData';
-import { ApiKey, GameType, GameDuration } from '@/types';
-import { Key, Plus, Search, Copy, Trash2, RefreshCw, Clock, Globe, Server, Shield, CheckCircle, AlertCircle, Zap, User, Calendar, Activity, Eye, EyeOff, MoreVertical, Edit } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Key, Plus, Search, Copy, Trash2, RefreshCw, Clock, Globe, Shield, CheckCircle, AlertCircle, Zap, User, Calendar, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Game Types with their available durations and colors
-const gameTypesConfig: Record<GameType, { label: string; color: string; bgColor: string; durations: { value: string; label: string; typeId: string }[] }> = {
+type GameType = 'wingo' | 'k3' | '5d' | 'trx' | 'numeric';
+
+interface ApiKeyData {
+  id: string;
+  api_key: string;
+  key_name: string;
+  user_id: string;
+  status: string;
+  daily_limit: number | null;
+  calls_today: number | null;
+  calls_total: number | null;
+  expires_at: string | null;
+  created_at: string | null;
+  username?: string;
+  email?: string;
+}
+
+interface UserProfile {
+  user_id: string;
+  username: string | null;
+  email: string | null;
+}
+
+const gameTypesConfig: Record<GameType, { label: string; color: string; bgColor: string; durations: { value: string; label: string }[] }> = {
   wingo: {
     label: 'WinGo',
     color: 'text-blue-400',
     bgColor: 'bg-blue-500/20 border-blue-500/30',
     durations: [
-      { value: '30sec', label: '30 Sec', typeId: 'wg30s' },
-      { value: '1min', label: '1 Min', typeId: 'wg1' },
-      { value: '3min', label: '3 Min', typeId: 'wg3' },
-      { value: '5min', label: '5 Min', typeId: 'wg5' },
+      { value: '30sec', label: '30 Sec' },
+      { value: '1min', label: '1 Min' },
+      { value: '3min', label: '3 Min' },
+      { value: '5min', label: '5 Min' },
     ]
   },
   k3: {
@@ -35,10 +54,10 @@ const gameTypesConfig: Record<GameType, { label: string; color: string; bgColor:
     color: 'text-emerald-400',
     bgColor: 'bg-emerald-500/20 border-emerald-500/30',
     durations: [
-      { value: '1min', label: '1 Min', typeId: 'k31' },
-      { value: '3min', label: '3 Min', typeId: 'k33' },
-      { value: '5min', label: '5 Min', typeId: 'k35' },
-      { value: '10min', label: '10 Min', typeId: 'k310' },
+      { value: '1min', label: '1 Min' },
+      { value: '3min', label: '3 Min' },
+      { value: '5min', label: '5 Min' },
+      { value: '10min', label: '10 Min' },
     ]
   },
   '5d': {
@@ -46,10 +65,10 @@ const gameTypesConfig: Record<GameType, { label: string; color: string; bgColor:
     color: 'text-violet-400',
     bgColor: 'bg-violet-500/20 border-violet-500/30',
     durations: [
-      { value: '1min', label: '1 Min', typeId: '5d1' },
-      { value: '3min', label: '3 Min', typeId: '5d3' },
-      { value: '5min', label: '5 Min', typeId: '5d5' },
-      { value: '10min', label: '10 Min', typeId: '5d10' },
+      { value: '1min', label: '1 Min' },
+      { value: '3min', label: '3 Min' },
+      { value: '5min', label: '5 Min' },
+      { value: '10min', label: '10 Min' },
     ]
   },
   trx: {
@@ -57,10 +76,10 @@ const gameTypesConfig: Record<GameType, { label: string; color: string; bgColor:
     color: 'text-orange-400',
     bgColor: 'bg-orange-500/20 border-orange-500/30',
     durations: [
-      { value: '1min', label: '1 Min', typeId: 'trx1' },
-      { value: '3min', label: '3 Min', typeId: 'trx3' },
-      { value: '5min', label: '5 Min', typeId: 'trx5' },
-      { value: '10min', label: '10 Min', typeId: 'trx10' },
+      { value: '1min', label: '1 Min' },
+      { value: '3min', label: '3 Min' },
+      { value: '5min', label: '5 Min' },
+      { value: '10min', label: '10 Min' },
     ]
   },
   numeric: {
@@ -68,10 +87,10 @@ const gameTypesConfig: Record<GameType, { label: string; color: string; bgColor:
     color: 'text-pink-400',
     bgColor: 'bg-pink-500/20 border-pink-500/30',
     durations: [
-      { value: '1min', label: '1 Min', typeId: '1' },
-      { value: '3min', label: '3 Min', typeId: '2' },
-      { value: '5min', label: '5 Min', typeId: '3' },
-      { value: '30min', label: '30 Min', typeId: '30' },
+      { value: '1min', label: '1 Min' },
+      { value: '3min', label: '3 Min' },
+      { value: '5min', label: '5 Min' },
+      { value: '30min', label: '30 Min' },
     ]
   }
 };
@@ -86,8 +105,10 @@ const validityOptions = [
   { value: 365, label: '1 Year' },
 ];
 
-const ApiKeysPage = () => {
-  const { apiKeys: keys, users, addApiKey, updateApiKey, deleteApiKey: removeApiKey, generateApiKey, addActivityLog, addTelegramLog } = useApiData();
+const ApiKeysPage: React.FC = () => {
+  const [keys, setKeys] = useState<ApiKeyData[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDurations, setSelectedDurations] = useState<string[]>(['1min']);
@@ -97,30 +118,99 @@ const ApiKeysPage = () => {
     userId: '',
     gameType: 'wingo' as GameType,
     domain: '',
-    ipWhitelist: '',
-    domainWhitelist: '',
     validityDays: 30,
     allowAllDurations: true,
   });
   const { toast } = useToast();
 
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch API keys
+      const { data: keysData, error: keysError } = await supabase
+        .from('api_keys')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (keysError) throw keysError;
+
+      // Fetch profiles
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, username, email');
+
+      if (profilesError) throw profilesError;
+
+      // Map profiles to a lookup
+      const profilesMap = new Map(profilesData?.map(p => [p.user_id, p]) || []);
+
+      // Enhance keys with user info
+      const enhancedKeys: ApiKeyData[] = (keysData || []).map(key => ({
+        ...key,
+        username: profilesMap.get(key.user_id)?.username || 'Unknown',
+        email: profilesMap.get(key.user_id)?.email || '',
+      }));
+
+      setKeys(enhancedKeys);
+      setUsers(profilesData || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({ title: 'Error', description: 'Failed to load data', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const generateApiKey = (): string => {
+    const chars = 'abcdef0123456789';
+    let key = 'HYPER_';
+    for (let i = 0; i < 48; i++) {
+      key += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return key;
+  };
+
+  const isExpired = (expiresAt: string | null): boolean => {
+    if (!expiresAt) return false;
+    return new Date(expiresAt) < new Date();
+  };
+
+  const getDaysUntilExpiry = (expiresAt: string | null): number => {
+    if (!expiresAt) return 999;
+    const now = new Date();
+    const expiry = new Date(expiresAt);
+    const diffTime = expiry.getTime() - now.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+  };
+
   const getFilteredKeys = () => {
     let filtered = keys.filter(
       (key) =>
-        key.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        key.domain.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        key.gameType.toLowerCase().includes(searchQuery.toLowerCase())
+        key.api_key.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        key.key_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (key.username?.toLowerCase().includes(searchQuery.toLowerCase()) || false)
     );
 
     switch (filterStatus) {
       case 'active':
-        filtered = filtered.filter(k => k.isActive && !isExpired(k.expiresAt));
+        filtered = filtered.filter(k => k.status === 'active' && !isExpired(k.expires_at));
         break;
       case 'expired':
-        filtered = filtered.filter(k => isExpired(k.expiresAt));
+        filtered = filtered.filter(k => isExpired(k.expires_at));
         break;
       case 'expiring':
-        filtered = filtered.filter(k => getDaysUntilExpiry(k.expiresAt) <= 7 && getDaysUntilExpiry(k.expiresAt) > 0);
+        filtered = filtered.filter(k => getDaysUntilExpiry(k.expires_at) <= 7 && getDaysUntilExpiry(k.expires_at) > 0);
         break;
     }
     return filtered;
@@ -138,118 +228,58 @@ const ApiKeysPage = () => {
     }
   };
 
-  const handleAllowAllDurationsChange = (checked: boolean) => {
-    setFormData({ ...formData, allowAllDurations: checked });
-    if (checked) {
-      setSelectedDurations(currentGameConfig.durations.map(d => d.value));
-    } else {
-      setSelectedDurations([currentGameConfig.durations[0].value]);
-    }
-  };
-
-  const toggleDuration = (duration: string) => {
-    if (formData.allowAllDurations) return;
-    
-    if (selectedDurations.includes(duration)) {
-      if (selectedDurations.length > 1) {
-        setSelectedDurations(selectedDurations.filter(d => d !== duration));
-      }
-    } else {
-      setSelectedDurations([...selectedDurations, duration]);
-    }
-  };
-
-  const validateIpAddress = (ip: string): boolean => {
-    const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-    const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
-    const wildcardRegex = /^(\d{1,3}\.){2,3}\*$/;
-    return ipv4Regex.test(ip) || ipv6Regex.test(ip) || wildcardRegex.test(ip);
-  };
-
-  const validateDomain = (domain: string): boolean => {
-    const domainRegex = /^(\*\.)?([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
-    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
-    return domainRegex.test(domain) || ipRegex.test(domain);
-  };
-
-  const handleGenerateKey = () => {
+  const handleGenerateKey = async () => {
     if (!formData.userId) {
-      toast({ title: '❌ Error', description: 'Please select a user', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Please select a user', variant: 'destructive' });
       return;
     }
     if (!formData.domain) {
-      toast({ title: '❌ Error', description: 'Primary domain is required', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Domain/Key name is required', variant: 'destructive' });
       return;
     }
 
-    const ipList = formData.ipWhitelist.split(',').map(ip => ip.trim()).filter(Boolean);
-    for (const ip of ipList) {
-      if (!validateIpAddress(ip)) {
-        toast({ title: '❌ Invalid IP', description: `"${ip}" is not a valid IP address`, variant: 'destructive' });
-        return;
-      }
+    try {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + formData.validityDays);
+
+      const newKey = {
+        api_key: generateApiKey(),
+        key_name: `${currentGameConfig.label} - ${formData.domain}`,
+        user_id: formData.userId,
+        status: 'active',
+        daily_limit: 1000,
+        expires_at: expiresAt.toISOString(),
+      };
+
+      const { error } = await supabase.from('api_keys').insert(newKey);
+
+      if (error) throw error;
+
+      // Log activity
+      await supabase.from('activity_logs').insert({
+        action: 'CREATE_KEY',
+        details: { game: currentGameConfig.label, domain: formData.domain },
+      });
+
+      toast({
+        title: '✅ API Key Generated!',
+        description: `Key created for ${currentGameConfig.label}`,
+      });
+
+      setIsDialogOpen(false);
+      setFormData({
+        userId: '',
+        gameType: 'wingo',
+        domain: '',
+        validityDays: 30,
+        allowAllDurations: true,
+      });
+      
+      fetchData();
+    } catch (error) {
+      console.error('Error creating key:', error);
+      toast({ title: 'Error', description: 'Failed to create API key', variant: 'destructive' });
     }
-
-    const domainList = formData.domainWhitelist.split(',').map(d => d.trim()).filter(Boolean);
-    for (const domain of domainList) {
-      if (!validateDomain(domain)) {
-        toast({ title: '❌ Invalid Domain', description: `"${domain}" is not a valid domain`, variant: 'destructive' });
-        return;
-      }
-    }
-
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + formData.validityDays);
-
-    const durationsText = formData.allowAllDurations 
-      ? 'ALL' 
-      : selectedDurations.join(', ');
-
-    const newKey: ApiKey = {
-      id: Date.now().toString(),
-      key: generateApiKey(),
-      userId: formData.userId,
-      gameType: formData.gameType,
-      duration: durationsText as GameDuration,
-      domain: formData.domain,
-      ipWhitelist: ipList.length > 0 ? ipList : [formData.domain],
-      domainWhitelist: domainList.length > 0 ? domainList : [formData.domain],
-      validityDays: formData.validityDays,
-      expiresAt: expiresAt.toISOString(),
-      createdAt: new Date().toISOString(),
-      isActive: true,
-      totalCalls: 0,
-    };
-
-    // Use context to add key - this syncs across all pages
-    addApiKey(newKey);
-    
-    // Log the activity
-    const selectedUser = users.find(u => u.id === formData.userId);
-    addActivityLog('CREATE_KEY', `Created API key for ${selectedUser?.username || 'user'} (${currentGameConfig.label})`);
-    
-    // Log telegram notification (simulated)
-    if (selectedUser?.telegramId) {
-      addTelegramLog('new_key', selectedUser.telegramId, `New ${currentGameConfig.label} API Key Generated`);
-    }
-    
-    setIsDialogOpen(false);
-    
-    toast({
-      title: '✅ API Key Generated!',
-      description: `Key created for ${currentGameConfig.label}`,
-    });
-
-    setFormData({
-      userId: '',
-      gameType: 'wingo',
-      domain: '',
-      ipWhitelist: '',
-      domainWhitelist: '',
-      validityDays: 30,
-      allowAllDurations: true,
-    });
-    setSelectedDurations(['1min']);
   };
 
   const copyToClipboard = (text: string) => {
@@ -257,22 +287,38 @@ const ApiKeysPage = () => {
     toast({ title: '📋 Copied!', description: 'API key copied to clipboard' });
   };
 
-  const deleteKey = (keyId: string) => {
-    const key = keys.find(k => k.id === keyId);
-    const keyUser = key ? users.find(u => u.id === key.userId) : null;
-    removeApiKey(keyId);
-    addActivityLog('DELETE_KEY', `Deleted API key for ${keyUser?.username || 'user'} (${key?.gameType.toUpperCase() || 'unknown'})`);
-    toast({ title: '🗑️ Deleted', description: 'API key has been removed' });
+  const deleteKey = async (keyId: string) => {
+    try {
+      const { error } = await supabase.from('api_keys').delete().eq('id', keyId);
+      if (error) throw error;
+
+      await supabase.from('activity_logs').insert({
+        action: 'DELETE_KEY',
+        details: { keyId },
+      });
+
+      toast({ title: '🗑️ Deleted', description: 'API key has been removed' });
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting key:', error);
+      toast({ title: 'Error', description: 'Failed to delete API key', variant: 'destructive' });
+    }
   };
 
-  const toggleKeyStatus = (keyId: string) => {
-    const key = keys.find(k => k.id === keyId);
-    if (key) {
-      updateApiKey(keyId, { isActive: !key.isActive });
+  const toggleKeyStatus = async (keyId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      const { error } = await supabase.from('api_keys').update({ status: newStatus }).eq('id', keyId);
+      if (error) throw error;
+
       toast({ 
-        title: key.isActive ? '⏸️ Disabled' : '▶️ Enabled', 
-        description: `API key has been ${key.isActive ? 'disabled' : 'enabled'}` 
+        title: newStatus === 'active' ? '▶️ Enabled' : '⏸️ Disabled', 
+        description: `API key has been ${newStatus === 'active' ? 'enabled' : 'disabled'}` 
       });
+      fetchData();
+    } catch (error) {
+      console.error('Error updating key:', error);
+      toast({ title: 'Error', description: 'Failed to update API key', variant: 'destructive' });
     }
   };
 
@@ -280,38 +326,27 @@ const ApiKeysPage = () => {
     setShowKeyMap(prev => ({ ...prev, [keyId]: !prev[keyId] }));
   };
 
-  const getStatusBadge = (key: ApiKey) => {
-    if (isExpired(key.expiresAt)) {
+  const getStatusBadge = (key: ApiKeyData) => {
+    if (isExpired(key.expires_at)) {
       return <Badge className="bg-red-500/20 text-red-400 border border-red-500/30">Expired</Badge>;
     }
-    const days = getDaysUntilExpiry(key.expiresAt);
+    const days = getDaysUntilExpiry(key.expires_at);
     if (days <= 7) {
       return <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30">Expiring</Badge>;
     }
-    return key.isActive 
+    return key.status === 'active' 
       ? <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Active</Badge> 
       : <Badge className="bg-slate-500/20 text-slate-400 border border-slate-500/30">Disabled</Badge>;
   };
 
-  const getGameBadge = (gameType: GameType) => {
-    const config = gameTypesConfig[gameType];
-    return (
-      <Badge className={cn("uppercase font-bold border", config.bgColor, config.color)}>
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const maskKey = (key: string) => {
-    return key.slice(0, 8) + '••••••••••••••••' + key.slice(-4);
-  };
+  const maskKey = (key: string) => key.slice(0, 8) + '••••••••••••••••' + key.slice(-4);
 
   // Stats
   const stats = {
     total: keys.length,
-    active: keys.filter(k => k.isActive && !isExpired(k.expiresAt)).length,
-    expiring: keys.filter(k => getDaysUntilExpiry(k.expiresAt) <= 7 && getDaysUntilExpiry(k.expiresAt) > 0).length,
-    expired: keys.filter(k => isExpired(k.expiresAt)).length,
+    active: keys.filter(k => k.status === 'active' && !isExpired(k.expires_at)).length,
+    expiring: keys.filter(k => getDaysUntilExpiry(k.expires_at) <= 7 && getDaysUntilExpiry(k.expires_at) > 0).length,
+    expired: keys.filter(k => isExpired(k.expires_at)).length,
   };
 
   return (
@@ -326,311 +361,174 @@ const ApiKeysPage = () => {
               </div>
               <div>
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">API Keys</h1>
-                <p className="text-xs sm:text-sm text-muted-foreground">Manage API keys with security whitelisting</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">Manage API keys from Supabase</p>
               </div>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gradient-primary text-primary-foreground shadow-lg shadow-primary/25 w-full sm:w-auto">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Generate Key
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto glass-card">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                    <Key className="w-5 h-5 text-primary" />
-                    Generate New API Key
-                  </DialogTitle>
-                  <DialogDescription>
-                    Create a new API key with game type and security settings
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-5 py-4">
-                  {/* User Selection */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold flex items-center gap-2">
-                      <User className="w-4 h-4 text-primary" />
-                      Select User *
-                    </Label>
-                    <Select value={formData.userId} onValueChange={(v) => setFormData({ ...formData, userId: v })}>
-                      <SelectTrigger className="h-11 bg-background/50">
-                        <SelectValue placeholder="Choose a user" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {users.filter(u => u.role === 'user').map((user) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{user.username}</span>
-                              <span className="text-muted-foreground text-xs">({user.email})</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Separator className="bg-border/50" />
-
-                  {/* Game Type */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-semibold flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-primary" />
-                      Game Type *
-                    </Label>
-                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                      {(Object.keys(gameTypesConfig) as GameType[]).map((type) => (
-                        <Button
-                          key={type}
-                          type="button"
-                          variant={formData.gameType === type ? 'default' : 'outline'}
-                          className={cn(
-                            "h-10 text-xs sm:text-sm transition-all",
-                            formData.gameType === type 
-                              ? cn("border", gameTypesConfig[type].bgColor, gameTypesConfig[type].color, "hover:opacity-90") 
-                              : "bg-background/50"
-                          )}
-                          onClick={() => handleGameTypeChange(type)}
-                        >
-                          {gameTypesConfig[type].label}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Duration Selection */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <Label className="text-sm font-semibold flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-primary" />
-                        Durations
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={fetchData} disabled={isLoading}>
+                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gradient-primary text-primary-foreground shadow-lg shadow-primary/25">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Generate Key
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg glass-card">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Key className="w-5 h-5 text-primary" />
+                      Generate New API Key
+                    </DialogTitle>
+                    <DialogDescription>Create a new API key for a user</DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 py-4">
+                    {/* User Selection */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-primary" />
+                        Select User *
                       </Label>
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="allowAll"
-                          checked={formData.allowAllDurations}
-                          onCheckedChange={handleAllowAllDurationsChange}
-                        />
-                        <Label htmlFor="allowAll" className="text-xs cursor-pointer text-muted-foreground">
-                          All Durations
-                        </Label>
+                      <Select value={formData.userId} onValueChange={(v) => setFormData({ ...formData, userId: v })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a user" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {users.map((user) => (
+                            <SelectItem key={user.user_id} value={user.user_id}>
+                              <span className="font-medium">{user.username || 'Unknown'}</span>
+                              <span className="text-muted-foreground text-xs ml-2">({user.email})</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Separator />
+
+                    {/* Game Type */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-primary" />
+                        Game Type *
+                      </Label>
+                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                        {(Object.keys(gameTypesConfig) as GameType[]).map((type) => (
+                          <Button
+                            key={type}
+                            type="button"
+                            variant={formData.gameType === type ? 'default' : 'outline'}
+                            className={cn(
+                              "h-10 text-xs",
+                              formData.gameType === type && cn("border", gameTypesConfig[type].bgColor, gameTypesConfig[type].color)
+                            )}
+                            onClick={() => handleGameTypeChange(type)}
+                          >
+                            {gameTypesConfig[type].label}
+                          </Button>
+                        ))}
                       </div>
                     </div>
-                    
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {currentGameConfig.durations.map((dur) => {
-                        const isSelected = formData.allowAllDurations || selectedDurations.includes(dur.value);
-                        return (
-                          <Button
-                            key={dur.value}
-                            type="button"
-                            variant={isSelected ? 'default' : 'outline'}
-                            className={cn(
-                              "h-auto py-2.5 flex flex-col gap-0.5 transition-all",
-                              isSelected 
-                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30" 
-                                : "bg-background/50"
-                            )}
-                            onClick={() => toggleDuration(dur.value)}
-                            disabled={formData.allowAllDurations}
-                          >
-                            <span className="font-semibold text-xs">{dur.label}</span>
-                            <span className="text-[10px] opacity-70">ID: {dur.typeId}</span>
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </div>
 
-                  <Separator className="bg-border/50" />
-
-                  {/* Validity */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-primary" />
-                      Validity Period *
-                    </Label>
-                    <Select value={formData.validityDays.toString()} onValueChange={(v) => setFormData({ ...formData, validityDays: parseInt(v) })}>
-                      <SelectTrigger className="h-11 bg-background/50">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {validityOptions.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value.toString()}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">
-                      Expires: {new Date(Date.now() + formData.validityDays * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN')}
-                    </p>
-                  </div>
-
-                  <Separator className="bg-border/50" />
-
-                  {/* Security */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-primary" />
-                      <Label className="text-sm font-semibold">Security Whitelisting</Label>
-                    </div>
-
+                    {/* Domain */}
                     <div className="space-y-2">
-                      <Label htmlFor="domain" className="text-xs">Primary Domain / IP *</Label>
+                      <Label className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-primary" />
+                        Domain / Key Name *
+                      </Label>
                       <Input
-                        id="domain"
                         value={formData.domain}
                         onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-                        placeholder="example.com or 192.168.1.1"
-                        className="h-10 font-mono text-xs sm:text-sm bg-background/50"
+                        placeholder="example.com or key description"
                       />
                     </div>
 
+                    {/* Validity */}
                     <div className="space-y-2">
-                      <Label htmlFor="ipWhitelist" className="text-xs">
-                        IP Whitelist <span className="text-muted-foreground">(comma separated)</span>
+                      <Label className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        Validity Period
                       </Label>
-                      <Textarea
-                        id="ipWhitelist"
-                        value={formData.ipWhitelist}
-                        onChange={(e) => setFormData({ ...formData, ipWhitelist: e.target.value })}
-                        placeholder="192.168.1.1, 10.0.0.1"
-                        rows={2}
-                        className="font-mono text-xs sm:text-sm bg-background/50 resize-none"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="domainWhitelist" className="text-xs">
-                        Domain Whitelist <span className="text-muted-foreground">(comma separated)</span>
-                      </Label>
-                      <Textarea
-                        id="domainWhitelist"
-                        value={formData.domainWhitelist}
-                        onChange={(e) => setFormData({ ...formData, domainWhitelist: e.target.value })}
-                        placeholder="example.com, *.example.com"
-                        rows={2}
-                        className="font-mono text-xs sm:text-sm bg-background/50 resize-none"
-                      />
+                      <Select 
+                        value={formData.validityDays.toString()} 
+                        onValueChange={(v) => setFormData({ ...formData, validityDays: parseInt(v) })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {validityOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value.toString()}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
-                  {/* Preview */}
-                  <Card className="bg-muted/30 border-border/50">
-                    <CardContent className="p-3 sm:p-4">
-                      <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Game:</span>
-                          {getGameBadge(formData.gameType)}
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Durations:</span>
-                          <span className="font-medium">{formData.allowAllDurations ? 'ALL' : selectedDurations.length}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Validity:</span>
-                          <span className="font-medium">{formData.validityDays} days</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">IPs:</span>
-                          <span className="font-medium">{formData.ipWhitelist.split(',').filter(Boolean).length || 1}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <DialogFooter className="gap-2 sm:gap-0">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto">
-                    Cancel
-                  </Button>
-                  <Button onClick={handleGenerateKey} className="gradient-primary text-primary-foreground w-full sm:w-auto">
-                    <Key className="w-4 h-4 mr-2" />
-                    Generate
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                    <Button className="gradient-primary text-primary-foreground" onClick={handleGenerateKey}>
+                      <Key className="w-4 h-4 mr-2" />
+                      Generate
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-          <Card 
-            className={cn(
-              "glass-card cursor-pointer transition-all hover:scale-[1.02]",
-              filterStatus === 'all' && "ring-2 ring-primary"
-            )}
-            onClick={() => setFilterStatus('all')}
-          >
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="p-2 rounded-lg bg-primary/20">
-                  <Key className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Card className={cn("cursor-pointer transition-all", filterStatus === 'all' && "ring-2 ring-primary")} onClick={() => setFilterStatus('all')}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xl sm:text-2xl font-bold text-foreground">{stats.total}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Total Keys</p>
+                  <p className="text-xs text-muted-foreground">Total Keys</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.total}</p>
                 </div>
+                <Key className="w-8 h-8 text-primary opacity-50" />
               </div>
             </CardContent>
           </Card>
-          <Card 
-            className={cn(
-              "glass-card cursor-pointer transition-all hover:scale-[1.02]",
-              filterStatus === 'active' && "ring-2 ring-emerald-500"
-            )}
-            onClick={() => setFilterStatus('active')}
-          >
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="p-2 rounded-lg bg-emerald-500/20">
-                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
-                </div>
+          
+          <Card className={cn("cursor-pointer transition-all", filterStatus === 'active' && "ring-2 ring-emerald-500")} onClick={() => setFilterStatus('active')}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xl sm:text-2xl font-bold text-emerald-400">{stats.active}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Active</p>
+                  <p className="text-xs text-muted-foreground">Active</p>
+                  <p className="text-2xl font-bold text-emerald-500">{stats.active}</p>
                 </div>
+                <CheckCircle className="w-8 h-8 text-emerald-500 opacity-50" />
               </div>
             </CardContent>
           </Card>
-          <Card 
-            className={cn(
-              "glass-card cursor-pointer transition-all hover:scale-[1.02]",
-              filterStatus === 'expiring' && "ring-2 ring-amber-500"
-            )}
-            onClick={() => setFilterStatus('expiring')}
-          >
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/20">
-                  <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
-                </div>
+          
+          <Card className={cn("cursor-pointer transition-all", filterStatus === 'expiring' && "ring-2 ring-amber-500")} onClick={() => setFilterStatus('expiring')}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xl sm:text-2xl font-bold text-amber-400">{stats.expiring}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Expiring</p>
+                  <p className="text-xs text-muted-foreground">Expiring</p>
+                  <p className="text-2xl font-bold text-amber-500">{stats.expiring}</p>
                 </div>
+                <Clock className="w-8 h-8 text-amber-500 opacity-50" />
               </div>
             </CardContent>
           </Card>
-          <Card 
-            className={cn(
-              "glass-card cursor-pointer transition-all hover:scale-[1.02]",
-              filterStatus === 'expired' && "ring-2 ring-red-500"
-            )}
-            onClick={() => setFilterStatus('expired')}
-          >
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="p-2 rounded-lg bg-red-500/20">
-                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
-                </div>
+          
+          <Card className={cn("cursor-pointer transition-all", filterStatus === 'expired' && "ring-2 ring-red-500")} onClick={() => setFilterStatus('expired')}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xl sm:text-2xl font-bold text-red-400">{stats.expired}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground">Expired</p>
+                  <p className="text-xs text-muted-foreground">Expired</p>
+                  <p className="text-2xl font-bold text-red-500">{stats.expired}</p>
                 </div>
+                <AlertCircle className="w-8 h-8 text-red-500 opacity-50" />
               </div>
             </CardContent>
           </Card>
@@ -640,183 +538,93 @@ const ApiKeysPage = () => {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search by key, domain, or game type..."
+            placeholder="Search by key, name, or user..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-10 sm:h-11 bg-background/50 text-sm"
+            className="pl-10"
           />
         </div>
 
         {/* Keys List */}
         <div className="space-y-3">
-          {filteredKeys.map((key) => {
-            const gameConfig = gameTypesConfig[key.gameType];
-            const isShown = showKeyMap[key.id];
-            
-            return (
-              <Card 
-                key={key.id} 
-                className={cn(
-                  "glass-card overflow-hidden transition-all hover:shadow-lg",
-                  !key.isActive && "opacity-60"
-                )}
-              >
-                <CardContent className="p-0">
-                  {/* Mobile Layout */}
-                  <div className="sm:hidden p-3 space-y-3">
-                    {/* Top Row - Badges */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {getGameBadge(key.gameType)}
-                        <Badge variant="outline" className="font-mono text-[10px]">{key.duration}</Badge>
-                        {getStatusBadge(key)}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => toggleKeyStatus(key.id)}
-                        >
-                          {key.isActive ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive"
-                          onClick={() => deleteKey(key.id)}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* API Key */}
-                    <div className="flex items-center gap-2 bg-muted/30 rounded-lg p-2">
-                      <code className="text-[10px] font-mono text-foreground flex-1 truncate">
-                        {isShown ? key.key : maskKey(key.key)}
-                      </code>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleShowKey(key.id)}>
-                        {isShown ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyToClipboard(key.key)}>
-                        <Copy className="w-3 h-3" />
-                      </Button>
-                    </div>
-
-                    {/* Info Grid */}
-                    <div className="grid grid-cols-2 gap-2 text-[10px]">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Globe className="w-3 h-3 text-primary" />
-                        <span className="truncate">{key.domain}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Clock className="w-3 h-3 text-amber-400" />
-                        <span>{getDaysUntilExpiry(key.expiresAt)}d left</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Activity className="w-3 h-3 text-emerald-400" />
-                        <span>{key.totalCalls.toLocaleString()} calls</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Shield className="w-3 h-3 text-violet-400" />
-                        <span>{key.ipWhitelist.length} IPs</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Desktop Layout */}
-                  <div className="hidden sm:flex">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <RefreshCw className="w-8 h-8 animate-spin mx-auto text-primary mb-4" />
+              <p className="text-muted-foreground">Loading API keys...</p>
+            </div>
+          ) : filteredKeys.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Key className="w-12 h-12 mx-auto text-muted-foreground opacity-50 mb-4" />
+                <p className="text-lg font-medium text-foreground">No API keys found</p>
+                <p className="text-sm text-muted-foreground">
+                  {searchQuery ? 'Try adjusting your search' : 'Generate your first API key'}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredKeys.map((key) => (
+              <Card key={key.id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     {/* Key Info */}
-                    <div className="flex-1 p-4 space-y-3">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-2.5 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {getGameBadge(key.gameType)}
-                            <Badge variant="outline" className="font-mono text-xs">{key.duration}</Badge>
-                            {getStatusBadge(key)}
-                          </div>
-                          <div className="flex items-center gap-2 bg-muted/30 rounded-lg p-2.5 max-w-xl">
-                            <code className="text-xs font-mono text-foreground flex-1 truncate">
-                              {isShown ? key.key : maskKey(key.key)}
-                            </code>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleShowKey(key.id)}>
-                              {isShown ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(key.key)}>
-                              <Copy className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </div>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {getStatusBadge(key)}
+                        <span className="text-sm font-medium text-foreground truncate">{key.key_name}</span>
                       </div>
-
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Globe className="w-4 h-4 text-primary shrink-0" />
-                          <span className="truncate">{key.domain}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-                          <span>{getDaysUntilExpiry(key.expiresAt)} days left</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Activity className="w-4 h-4 text-emerald-400 shrink-0" />
-                          <span>{key.totalCalls.toLocaleString()} calls</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Shield className="w-4 h-4 text-violet-400 shrink-0" />
-                          <span>{key.ipWhitelist.length} IPs, {key.domainWhitelist.length} domains</span>
-                        </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs font-mono bg-muted px-2 py-1 rounded text-foreground">
+                          {showKeyMap[key.id] ? key.api_key : maskKey(key.api_key)}
+                        </code>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleShowKey(key.id)}>
+                          {showKeyMap[key.id] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copyToClipboard(key.api_key)}>
+                          <Copy className="w-3 h-3" />
+                        </Button>
                       </div>
-
-                      <div className="text-[10px] text-muted-foreground flex gap-4">
-                        <span>Created: {formatDate(key.createdAt)}</span>
-                        <span>Expires: {formatDate(key.expiresAt)}</span>
+                      
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          {key.username}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          Expires: {formatDate(key.expires_at)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Shield className="w-3 h-3" />
+                          {getDaysUntilExpiry(key.expires_at)} days left
+                        </span>
                       </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-col justify-center gap-2 p-4 bg-muted/20 border-l border-border/50 min-w-[100px]">
+                    <div className="flex items-center gap-2">
                       <Button
-                        variant={key.isActive ? 'outline' : 'default'}
+                        variant="outline"
                         size="sm"
-                        onClick={() => toggleKeyStatus(key.id)}
-                        className="text-xs"
+                        onClick={() => toggleKeyStatus(key.id, key.status)}
                       >
-                        {key.isActive ? 'Disable' : 'Enable'}
+                        {key.status === 'active' ? 'Disable' : 'Enable'}
                       </Button>
                       <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => deleteKey(key.id)}
-                        className="text-xs"
                       >
-                        <Trash2 className="w-3.5 h-3.5 mr-1" />
-                        Delete
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
+            ))
+          )}
         </div>
-
-        {filteredKeys.length === 0 && (
-          <Card className="glass-card">
-            <CardContent className="py-12 text-center">
-              <div className="p-4 rounded-full bg-muted/30 w-fit mx-auto mb-4">
-                <Key className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <p className="text-base font-medium">No API keys found</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {filterStatus !== 'all' 
-                  ? 'Try changing the filter or search query' 
-                  : 'Create your first API key using the button above'}
-              </p>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </DashboardLayout>
   );
