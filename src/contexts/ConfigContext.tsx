@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SiteConfig {
   siteName: string;
@@ -15,6 +16,7 @@ interface SiteConfig {
   userApiEndpoint: string;
   telegramBotToken: string;
   adminTelegramId: string;
+  adminTelegramUsername: string;
   // Maintenance Mode
   maintenanceMode: boolean;
   maintenanceMessage: string;
@@ -24,6 +26,8 @@ interface SiteConfig {
 interface ConfigContextType {
   config: SiteConfig;
   updateConfig: (updates: Partial<SiteConfig>) => void;
+  refreshConfig: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const defaultConfig: SiteConfig = {
@@ -39,56 +43,133 @@ const defaultConfig: SiteConfig = {
   // User-facing - Your custom domain
   userApiDomain: 'https://trend.hyperapi.in',
   userApiEndpoint: '',
-  telegramBotToken: '7843243355:AAFaHx7XrIAehoIqVRw83uEkZGjT8G75HO8',
+  telegramBotToken: '',
   adminTelegramId: '1896145195',
+  adminTelegramUsername: '@Hyperdeveloperr',
   // Maintenance Mode
   maintenanceMode: false,
   maintenanceMessage: 'System is under maintenance. Please try again later.',
-  ownerTelegramId: 'Hyperdeveloperr',
+  ownerTelegramId: '@Hyperdeveloperr',
 };
 
-// Config version - increment this to force update cached values
-const CONFIG_VERSION = 2;
+// Settings key to config key mapping
+const settingsKeyMap: Record<string, keyof SiteConfig> = {
+  'site_name': 'siteName',
+  'site_description': 'siteDescription',
+  'support_email': 'supportEmail',
+  'admin_email': 'adminEmail',
+  'logo_url': 'logoUrl',
+  'favicon_url': 'faviconUrl',
+  'api_domain': 'apiDomain',
+  'api_endpoint': 'apiEndpoint',
+  'user_api_domain': 'userApiDomain',
+  'user_api_endpoint': 'userApiEndpoint',
+  'telegram_bot_token': 'telegramBotToken',
+  'admin_telegram_id': 'adminTelegramId',
+  'admin_telegram_username': 'adminTelegramUsername',
+  'maintenance_mode': 'maintenanceMode',
+  'maintenance_message': 'maintenanceMessage',
+  'owner_telegram_id': 'ownerTelegramId',
+};
 
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
 
 export const ConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [config, setConfig] = useState<SiteConfig>(() => {
-    const stored = localStorage.getItem('hyper_config');
-    const storedVersion = localStorage.getItem('hyper_config_version');
-    
-    // If version mismatch or no version, use defaults and update storage
-    if (!storedVersion || parseInt(storedVersion) < CONFIG_VERSION) {
-      localStorage.setItem('hyper_config', JSON.stringify(defaultConfig));
-      localStorage.setItem('hyper_config_version', CONFIG_VERSION.toString());
-      return defaultConfig;
-    }
-    
-    if (stored) {
-      try {
-        const parsedConfig = JSON.parse(stored);
-        // Always ensure userApiDomain is correct (override old cached values)
-        return { 
-          ...defaultConfig, 
-          ...parsedConfig,
-          userApiDomain: 'https://trend.hyperapi.in',
-          userApiEndpoint: ''
-        };
-      } catch {
-        return defaultConfig;
-      }
-    }
-    return defaultConfig;
-  });
+  const [config, setConfig] = useState<SiteConfig>(defaultConfig);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const updateConfig = (updates: Partial<SiteConfig>) => {
+  // Fetch settings from Supabase
+  const fetchSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('key, value');
+
+      if (error) {
+        console.error('Error fetching settings:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        const updates: Partial<SiteConfig> = {};
+        
+        data.forEach((setting) => {
+          const configKey = settingsKeyMap[setting.key];
+          if (configKey && setting.value !== null) {
+            // Handle boolean values
+            if (configKey === 'maintenanceMode') {
+              updates[configKey] = setting.value === 'true';
+            } else {
+              (updates as any)[configKey] = setting.value;
+            }
+          }
+        });
+
+        setConfig(prev => ({ ...prev, ...updates }));
+      }
+    } catch (err) {
+      console.error('Failed to fetch settings:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial fetch and realtime subscription
+  useEffect(() => {
+    fetchSettings();
+
+    // Subscribe to settings changes
+    const channel = supabase
+      .channel('settings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'settings',
+        },
+        (payload) => {
+          console.log('Settings changed:', payload);
+          // Refresh config on any settings change
+          fetchSettings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const updateConfig = async (updates: Partial<SiteConfig>) => {
+    // Update local state immediately
     const newConfig = { ...config, ...updates };
     setConfig(newConfig);
-    localStorage.setItem('hyper_config', JSON.stringify(newConfig));
+
+    // Save to Supabase
+    const reverseKeyMap: Record<string, string> = {};
+    Object.entries(settingsKeyMap).forEach(([dbKey, configKey]) => {
+      reverseKeyMap[configKey] = dbKey;
+    });
+
+    for (const [key, value] of Object.entries(updates)) {
+      const dbKey = reverseKeyMap[key];
+      if (dbKey) {
+        const stringValue = typeof value === 'boolean' ? String(value) : value;
+        await supabase
+          .from('settings')
+          .upsert({ key: dbKey, value: stringValue as string }, { onConflict: 'key' });
+      }
+    }
+  };
+
+  const refreshConfig = async () => {
+    setIsLoading(true);
+    await fetchSettings();
   };
 
   return (
-    <ConfigContext.Provider value={{ config, updateConfig }}>
+    <ConfigContext.Provider value={{ config, updateConfig, refreshConfig, isLoading }}>
       {children}
     </ConfigContext.Provider>
   );
