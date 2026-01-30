@@ -38,8 +38,11 @@ const UsersPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
   const [resetUser, setResetUser] = useState<UserData | null>(null);
+  const [deleteUser, setDeleteUser] = useState<UserData | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState('');
   const [resetPassword, setResetPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -303,12 +306,43 @@ const UsersPage = () => {
     setIsDialogOpen(false);
   };
 
-  const handleDelete = async (userId: string) => {
-    // Note: Deleting users from auth requires admin API - for now just show a message
-    toast({ 
-      title: 'Info', 
-      description: 'User deletion requires manual removal from the database',
-    });
+  const openDeleteDialog = (user: UserData) => {
+    setDeleteUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteUser) return;
+
+    setIsDeleting(true);
+
+    try {
+      const response = await supabase.functions.invoke('delete-user', {
+        body: { userId: deleteUser.user_id },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to delete user');
+      }
+
+      toast({ 
+        title: '✅ User Deleted', 
+        description: `${deleteUser.username} has been removed successfully`,
+      });
+      
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Failed to delete user', 
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+      setDeleteUser(null);
+    }
   };
 
   return (
@@ -570,7 +604,7 @@ const UsersPage = () => {
                         variant="ghost"
                         size="icon"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(user.id)}
+                        onClick={() => openDeleteDialog(user)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -665,6 +699,61 @@ const UsersPage = () => {
                   <>
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Reset Password
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 className="w-5 h-5" />
+                Delete User
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this user? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
+                    <span className="text-destructive font-bold">
+                      {deleteUser?.username.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium">{deleteUser?.username}</p>
+                    <p className="text-xs text-muted-foreground">{deleteUser?.email}</p>
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mt-4">
+                This will permanently remove the user account, profile, roles, and all associated data.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isDeleting}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete User
                   </>
                 )}
               </Button>
