@@ -8,30 +8,28 @@ const corsHeaders = {
 
 // TypeId to upstream typeId mapping
 // User-facing typeId -> Upstream typeId
+// New upstream /hypersoftsxdr uses: wg1, wg3, wg5, wg30, k31, k33, k35, k310, 5d1, 5d3, 5d5, 5d10, trx1, trx3, trx5, trx10
 const TYPE_ID_MAP: Record<string, { upstreamId: string; game: string; duration: string }> = {
-  // WinGo
-  'wg30s': { upstreamId: '1', game: 'wingo', duration: '30s' },
-  'wg1': { upstreamId: '2', game: 'wingo', duration: '1min' },
-  'wg3': { upstreamId: '3', game: 'wingo', duration: '3min' },
-  'wg5': { upstreamId: '4', game: 'wingo', duration: '5min' },
-  // K3
-  'k31': { upstreamId: '5', game: 'k3', duration: '1min' },
-  'k33': { upstreamId: '6', game: 'k3', duration: '3min' },
-  'k35': { upstreamId: '7', game: 'k3', duration: '5min' },
-  'k310': { upstreamId: '8', game: 'k3', duration: '10min' },
-  // 5D
-  '5d1': { upstreamId: '9', game: '5d', duration: '1min' },
-  '5d3': { upstreamId: '10', game: '5d', duration: '3min' },
-  '5d5': { upstreamId: '11', game: '5d', duration: '5min' },
-  '5d10': { upstreamId: '12', game: '5d', duration: '10min' },
-  // TRX
-  'trx1': { upstreamId: '13', game: 'trx', duration: '1min' },
-  'trx3': { upstreamId: '14', game: 'trx', duration: '3min' },
-  'trx5': { upstreamId: '15', game: 'trx', duration: '5min' },
-  // Numeric
-  'num1': { upstreamId: '16', game: 'numeric', duration: '1min' },
-  'num3': { upstreamId: '17', game: 'numeric', duration: '3min' },
-  'num5': { upstreamId: '18', game: 'numeric', duration: '5min' },
+  // WinGo - upstream accepts: 1, 2, 3, 30 or wg1, wg3, wg5, wg30
+  'wg30s': { upstreamId: 'wg30', game: 'wingo', duration: '30s' },
+  'wg1': { upstreamId: 'wg1', game: 'wingo', duration: '1min' },
+  'wg3': { upstreamId: 'wg3', game: 'wingo', duration: '3min' },
+  'wg5': { upstreamId: 'wg5', game: 'wingo', duration: '5min' },
+  // K3 - upstream accepts: k31, k33, k35, k310
+  'k31': { upstreamId: 'k31', game: 'k3', duration: '1min' },
+  'k33': { upstreamId: 'k33', game: 'k3', duration: '3min' },
+  'k35': { upstreamId: 'k35', game: 'k3', duration: '5min' },
+  'k310': { upstreamId: 'k310', game: 'k3', duration: '10min' },
+  // 5D - upstream accepts: 5d1, 5d3, 5d5, 5d10
+  '5d1': { upstreamId: '5d1', game: '5d', duration: '1min' },
+  '5d3': { upstreamId: '5d3', game: '5d', duration: '3min' },
+  '5d5': { upstreamId: '5d5', game: '5d', duration: '5min' },
+  '5d10': { upstreamId: '5d10', game: '5d', duration: '10min' },
+  // TRX - upstream accepts: trx1, trx3, trx5, trx10
+  'trx1': { upstreamId: 'trx1', game: 'trx', duration: '1min' },
+  'trx3': { upstreamId: 'trx3', game: 'trx', duration: '3min' },
+  'trx5': { upstreamId: 'trx5', game: 'trx', duration: '5min' },
+  'trx10': { upstreamId: 'trx10', game: 'trx', duration: '10min' },
 };
 
 // Upstream API configuration
