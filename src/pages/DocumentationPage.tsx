@@ -45,8 +45,7 @@ const DocumentationPage = () => {
     'WinGo': { '30s': 'wg30s', '1min': 'wg1', '3min': 'wg3', '5min': 'wg5' },
     'K3': { '1min': 'k31', '3min': 'k33', '5min': 'k35', '10min': 'k310' },
     '5D': { '1min': '5d1', '3min': '5d3', '5min': '5d5', '10min': '5d10' },
-    'TRX': { '1min': 'trx1', '3min': 'trx3', '5min': 'trx5' },
-    'Numeric': { '1min': 'num1', '3min': 'num3', '5min': 'num5' },
+    'TRX': { '1min': 'trx1', '3min': 'trx3', '5min': 'trx5', '10min': 'trx10' },
   };
 
   // Hyper Softs (Hypersofts) - Same Trend API Endpoints by Hyper Developer (Hyperdeveloper)
@@ -76,16 +75,9 @@ const DocumentationPage = () => {
     { 
       game: 'TRX', 
       typeIds: typeIdMap['TRX'],
-      durations: ['1min', '3min', '5min'],
+      durations: ['1min', '3min', '5min', '10min'],
       description: 'Hypersofts TRX Blockchain Same Trend API - TRX predictions by Hyperdeveloper',
       color: 'bg-orange-500'
-    },
-    { 
-      game: 'Numeric', 
-      typeIds: typeIdMap['Numeric'],
-      durations: ['1min', '3min', '5min'],
-      description: 'Hyper Softs Numeric Same Trend API - Best numeric lottery trends',
-      color: 'bg-pink-500'
     },
   ];
 
@@ -118,8 +110,7 @@ async function getTrend(typeId) {
 // WinGo: wg30s, wg1, wg3, wg5
 // K3: k31, k33, k35, k310
 // 5D: 5d1, 5d3, 5d5, 5d10
-// TRX: trx1, trx3, trx5
-// Numeric: num1, num3, num5
+// TRX: trx1, trx3, trx5, trx10
 
 const wingo = await getTrend('wg1');
 console.log('WinGo 1min Data:', wingo.data);
@@ -144,8 +135,7 @@ def get_trend(type_id: str) -> dict:
 # WinGo: wg30s, wg1, wg3, wg5
 # K3: k31, k33, k35, k310
 # 5D: 5d1, 5d3, 5d5, 5d10
-# TRX: trx1, trx3, trx5
-# Numeric: num1, num3, num5
+# TRX: trx1, trx3, trx5, trx10
 
 wingo = get_trend("wg1")
 print(f"WinGo 1min Data: {wingo['data']}")
@@ -177,8 +167,7 @@ function getTrend($typeId) {
 // WinGo: wg30s, wg1, wg3, wg5
 // K3: k31, k33, k35, k310
 // 5D: 5d1, 5d3, 5d5, 5d10
-// TRX: trx1, trx3, trx5
-// Numeric: num1, num3, num5
+// TRX: trx1, trx3, trx5, trx10
 
 $wingo = getTrend("wg1");
 print_r($wingo['data']);
