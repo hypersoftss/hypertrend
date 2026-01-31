@@ -36,7 +36,7 @@ const TYPE_ID_MAP: Record<string, { upstreamId: string; game: string; duration: 
 
 // Upstream API configuration
 const UPSTREAM_API = 'https://betapi.space';
-const UPSTREAM_ENDPOINT = '/Xdrtrend';
+const UPSTREAM_ENDPOINT = '/hypersoftsxdr';
 
 // Helper to send admin notification
 async function notifyAdmin(
