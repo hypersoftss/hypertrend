@@ -112,11 +112,13 @@ async function getTrend(typeId) {
 // 5D: 5d1, 5d3, 5d5, 5d10
 // TRX: trx1, trx3, trx5, trx10
 
+// Response is direct upstream data (no wrapper)
 const wingo = await getTrend('wg1');
-console.log('WinGo 1min Data:', wingo.data);
+console.log('WinGo 1min Period:', wingo.period);
+console.log('WinGo 1min Number:', wingo.number);
 
 const k3 = await getTrend('k33');
-console.log('K3 3min Data:', k3.data);`,
+console.log('K3 3min Data:', k3);`,
     
     python: `import requests
 
@@ -137,11 +139,13 @@ def get_trend(type_id: str) -> dict:
 # 5D: 5d1, 5d3, 5d5, 5d10
 # TRX: trx1, trx3, trx5, trx10
 
+# Response is direct upstream data (no wrapper)
 wingo = get_trend("wg1")
-print(f"WinGo 1min Data: {wingo['data']}")
+print(f"WinGo 1min Period: {wingo['period']}")
+print(f"WinGo 1min Number: {wingo['number']}")
 
 k3 = get_trend("k33")
-print(f"K3 3min Data: {k3['data']}")`,
+print(f"K3 3min Data: {k3}")`,
     
     php: `<?php
 $API_KEY = "your_api_key_here";
@@ -169,11 +173,13 @@ function getTrend($typeId) {
 // 5D: 5d1, 5d3, 5d5, 5d10
 // TRX: trx1, trx3, trx5, trx10
 
+// Response is direct upstream data (no wrapper)
 $wingo = getTrend("wg1");
-print_r($wingo['data']);
+echo "WinGo 1min Period: " . $wingo['period'];
+echo "WinGo 1min Number: " . $wingo['number'];
 
 $k3 = getTrend("k33");
-print_r($k3['data']);
+print_r($k3);
 ?>`,
   };
   const errorCodes = [
@@ -520,29 +526,41 @@ print_r($k3['data']);
                     <FileText className="w-5 h-5 text-primary" />
                     Response Format
                   </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">Standard JSON response structure</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm">Direct upstream JSON response (same as original API)</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
+                  <div className="p-3 rounded-lg bg-success/10 border border-success/30">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-success mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">Direct Pass-Through Response</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          API returns the exact same response as the upstream source - no wrapper, no modifications. Just pure data!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="relative">
-                    <ScrollArea className="h-[200px] rounded-lg border">
+                    <ScrollArea className="h-[250px] rounded-lg border">
                       <pre className="p-3 text-[10px] sm:text-xs">
-                        <code>{`{
-  "success": true,
-  "game": "wingo",
-  "duration": "1min",
-  "game_name": "WinGo 1 Minute",
-  "data": {
-    "period": "20240128001",
-    "result": 5,
-    "color": "green",
-    "size": "small",
-    // ... more trend data
-  },
-  "meta": {
-    "response_time_ms": 45,
-    "timestamp": "2024-01-28T10:30:00+00:00",
-    "powered_by": "${config.siteName} API"
-  }
+                        <code>{`// Success Response (HTTP 200)
+// Returns upstream data directly - same format as original API
+{
+  "period": "20240128001234",
+  "number": 5,
+  "colour": "green", 
+  "big_small": "small",
+  // ... exact upstream data fields
+}
+
+// Error Response (HTTP 4xx/5xx)
+{
+  "success": false,
+  "error": "IP not authorized",
+  "message": "⚠️ Your IP is not whitelisted! Please contact admin on Telegram: ${config.adminTelegramUsername || '@Hyperdeveloperr'}",
+  "your_ip": "123.45.67.89",
+  "contact_admin_telegram": "${config.adminTelegramUsername || '@Hyperdeveloperr'}"
 }`}</code>
                       </pre>
                     </ScrollArea>
@@ -550,10 +568,31 @@ print_r($k3['data']);
                       variant="secondary" 
                       size="sm" 
                       className="absolute top-2 right-2 h-7 text-xs gap-1"
-                      onClick={() => copyCode(`{"success":true,"game":"wingo","duration":"1min","data":{}}`, 'response')}
+                      onClick={() => copyCode(`{"period":"20240128001234","number":5,"colour":"green","big_small":"small"}`, 'response')}
                     >
                       <Copy className="w-3 h-3" />
                     </Button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg border bg-muted/20">
+                      <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-success" />
+                        Success (200)
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        Direct upstream JSON - no wrapper. Parse directly as your data!
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-lg border bg-muted/20">
+                      <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-warning" />
+                        Error (4xx/5xx)
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        Includes your_ip, error message, and admin contact for support.
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
