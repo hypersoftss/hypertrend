@@ -524,15 +524,8 @@ Deno.serve(async (req) => {
       domain: requestDomain || 'direct',
     });
 
-    // Return successful response
-    return new Response(JSON.stringify({
-      success: true,
-      typeId: typeId,
-      game: typeConfig.game,
-      duration: typeConfig.duration,
-      timestamp: new Date().toISOString(),
-      data: upstreamData,
-    }), {
+    // Return successful response - Pass through upstream data directly (same format as original API)
+    return new Response(JSON.stringify(upstreamData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
