@@ -447,19 +447,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check daily limit
-    if (keyData.daily_limit && keyData.calls_today >= keyData.daily_limit) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Rate limit exceeded',
-        message: 'You have exceeded your daily API call limit',
-        your_ip: clientIp,
-      }), {
-        status: 429,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     // Fetch data from upstream API
     const startTime = Date.now();
     const upstreamUrl = `${UPSTREAM_API}${UPSTREAM_ENDPOINT}?typeId=${typeConfig.upstreamId}`;
