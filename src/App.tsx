@@ -36,6 +36,7 @@ import TelegramLogsPage from "@/pages/admin/TelegramLogsPage";
 import ActivityLogsPage from "@/pages/admin/ActivityLogsPage";
 import CoinManagementPage from "@/pages/admin/CoinManagementPage";
 import CoinPackagesPage from "@/pages/admin/CoinPackagesPage";
+import PaymentApprovalsPage from "@/pages/admin/PaymentApprovalsPage";
 
 // User Pages
 import UserKeysPage from "@/pages/user/UserKeysPage";
@@ -91,6 +92,7 @@ const App = () => (
                     <Route path="/admin/activity-logs" element={<ActivityLogsPage />} />
                     <Route path="/admin/coins" element={<CoinManagementPage />} />
                     <Route path="/admin/coin-packages" element={<CoinPackagesPage />} />
+                    <Route path="/admin/payment-approvals" element={<PaymentApprovalsPage />} />
                     <Route path="/admin/reminder" element={<ManualReminderPage />} />
                     <Route path="/admin/settings" element={<SettingsPage />} />
                     <Route path="/admin/download" element={<BackendDownloadPage />} />

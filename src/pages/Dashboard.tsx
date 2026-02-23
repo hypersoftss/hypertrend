@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   Users, Key, Clock, Activity, TrendingUp, AlertTriangle, CheckCircle, XCircle, 
   BarChart3, ArrowRight, Heart, Zap, Timer, Shield, ArrowUpRight, ArrowDownRight,
-  History, Server, Loader2
+  History, Server, Loader2, Coins, TrendingDown
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -45,6 +45,7 @@ interface ApiKeyItem {
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const isReseller = user?.role === 'reseller';
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
@@ -57,6 +58,7 @@ const Dashboard: React.FC = () => {
   const [recentLogs, setRecentLogs] = useState<ApiLogItem[]>([]);
   const [userKeys, setUserKeys] = useState<ApiKeyItem[]>([]);
   const [expiringKeys, setExpiringKeys] = useState<ApiKeyItem[]>([]);
+  const [resellerStats, setResellerStats] = useState({ coinBalance: 0, coinCostPerKey: 500, totalSpent: 0, keysCreated: 0 });
   const [systemHealth, setSystemHealth] = useState({
     apiServer: 'healthy',
     database: 'healthy',
@@ -140,9 +142,10 @@ const Dashboard: React.FC = () => {
           });
 
         } else if (!isDemoUser) {
-          // Real Supabase user: Fetch their data
-          const [keysRes] = await Promise.all([
-            supabase.from('api_keys').select('*').eq('user_id', user.id)
+          // Real Supabase user (user or reseller): Fetch their data
+          const [keysRes, profileRes] = await Promise.all([
+            supabase.from('api_keys').select('*').eq('user_id', user.id),
+            supabase.from('profiles').select('coin_balance, coin_cost_per_key').eq('user_id', user.id).single(),
           ]);
 
           const myKeys = keysRes.data || [];
@@ -172,6 +175,23 @@ const Dashboard: React.FC = () => {
             todayApiCalls: totalCalls,
             totalApiCalls: myKeys.reduce((sum, k) => sum + (k.calls_total || 0), 0)
           });
+
+          // Reseller-specific stats
+          if (isReseller) {
+            const { data: txData } = await supabase
+              .from('coin_transactions')
+              .select('amount, type')
+              .eq('user_id', user.id)
+              .eq('type', 'debit');
+            
+            const totalSpent = (txData || []).reduce((sum, t) => sum + t.amount, 0);
+            setResellerStats({
+              coinBalance: profileRes.data?.coin_balance ?? 0,
+              coinCostPerKey: profileRes.data?.coin_cost_per_key ?? 500,
+              totalSpent,
+              keysCreated: myKeys.length,
+            });
+          }
         } else {
           // Demo user: Show placeholder data
           setStats({
@@ -275,6 +295,54 @@ const Dashboard: React.FC = () => {
               icon={Activity}
               trend={{ value: 12, isPositive: true }}
             />
+          </div>
+        ) : isReseller ? (
+          /* Reseller Stats */
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <Card className="bg-gradient-to-br from-amber-500/20 to-amber-600/10 border-amber-500/30">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/20"><Coins className="w-5 h-5 text-amber-400" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{resellerStats.coinBalance}</p>
+                    <p className="text-xs text-muted-foreground">Coin Balance</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="glass">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/20"><Key className="w-5 h-5 text-primary" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{resellerStats.keysCreated}</p>
+                    <p className="text-xs text-muted-foreground">Keys Created</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="glass">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-red-500/20"><TrendingDown className="w-5 h-5 text-red-400" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{resellerStats.totalSpent}</p>
+                    <p className="text-xs text-muted-foreground">Total Spent</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="glass">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/20"><TrendingUp className="w-5 h-5 text-emerald-400" /></div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{Math.floor(resellerStats.coinBalance / resellerStats.coinCostPerKey)}</p>
+                    <p className="text-xs text-muted-foreground">Keys Can Create</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : (
           /* User Stats - Enhanced */
@@ -450,7 +518,7 @@ const Dashboard: React.FC = () => {
                   <Activity className="w-5 h-5 text-primary" />
                   Recent Activity
                 </CardTitle>
-                <Link to={isAdmin ? "/admin/logs" : "/user/logs"}>
+                <Link to={isAdmin ? "/admin/logs" : isReseller ? "/reseller/logs" : "/user/logs"}>
                   <Button variant="ghost" size="sm" className="text-xs h-8">
                     View All <ArrowRight className="w-3 h-3 ml-1" />
                   </Button>
@@ -557,7 +625,7 @@ const Dashboard: React.FC = () => {
                     <Key className="w-5 h-5 text-primary" />
                     My API Keys
                   </CardTitle>
-                  <Link to="/user/keys">
+                  <Link to={isReseller ? "/reseller/keys" : "/user/keys"}>
                     <Button variant="ghost" size="sm" className="text-xs h-8">
                       View All <ArrowRight className="w-3 h-3 ml-1" />
                     </Button>

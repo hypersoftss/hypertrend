@@ -50,6 +50,7 @@ import {
   TrendingUp,
   Coins,
   Package,
+  CreditCard,
 } from 'lucide-react';
 
 interface NavItem {
@@ -108,6 +109,7 @@ const adminStandaloneItems: NavItem[] = [
   { title: 'API Logs', href: '/admin/logs', icon: FileText, adminOnly: true },
   { title: 'Coin Management', href: '/admin/coins', icon: Coins, adminOnly: true },
   { title: 'Coin Packages', href: '/admin/coin-packages', icon: Package, adminOnly: true },
+  { title: 'Payment Approvals', href: '/admin/payment-approvals', icon: CreditCard, adminOnly: true },
   { title: 'Manual Reminder', href: '/admin/reminder', icon: Bell, adminOnly: true },
   { title: 'Settings', href: '/admin/settings', icon: Settings, adminOnly: true },
   { title: 'Documentation', href: '/docs', icon: BookOpen },
