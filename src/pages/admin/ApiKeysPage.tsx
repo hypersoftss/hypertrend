@@ -351,6 +351,14 @@ const ApiKeysPage: React.FC = () => {
 
   const deleteKey = async (keyId: string) => {
     try {
+      // Delete related records first (foreign key dependencies)
+      await Promise.all([
+        supabase.from('allowed_ips').delete().eq('api_key_id', keyId),
+        supabase.from('allowed_domains').delete().eq('api_key_id', keyId),
+        supabase.from('api_logs').delete().eq('api_key_id', keyId),
+        supabase.from('coin_transactions').delete().eq('api_key_id', keyId),
+      ]);
+
       const { error } = await supabase.from('api_keys').delete().eq('id', keyId);
       if (error) throw error;
 
