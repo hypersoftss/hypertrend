@@ -149,13 +149,13 @@ const UsersPage = () => {
     toast({ title: '📋 Copied!', description: 'Password copied to clipboard' });
   };
 
-  const sendCredentialsViaTelegram = async (username: string, password: string, telegramId: string, isReset: boolean = false) => {
+  const sendCredentialsViaTelegram = async (email: string, password: string, telegramId: string, isReset: boolean = false) => {
     if (!telegramId) return false;
 
     const message = isReset 
       ? `🔄 *Password Reset*
 
-👤 *Username:* \`${username}\`
+📧 *Email:* \`${email}\`
 🔑 *New Password:* \`${password}\`
 
 🌐 *Login URL:* ${window.location.origin}/login
@@ -165,7 +165,7 @@ const UsersPage = () => {
 — Hyper Softs Team`
       : `🔐 *Your Login Credentials*
 
-👤 *Username:* \`${username}\`
+📧 *Email:* \`${email}\`
 🔑 *Password:* \`${password}\`
 
 🌐 *Login URL:* ${window.location.origin}/login
@@ -282,7 +282,7 @@ const UsersPage = () => {
 
         // Send credentials via Telegram if enabled
         if (sendViaTelegram && formData.telegramId) {
-          const sent = await sendCredentialsViaTelegram(formData.username, generatedPassword, formData.telegramId);
+          const sent = await sendCredentialsViaTelegram(formData.email, generatedPassword, formData.telegramId);
           
           if (sent) {
             toast({ 

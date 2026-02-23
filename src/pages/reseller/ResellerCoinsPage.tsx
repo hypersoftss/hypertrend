@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useConfig } from '@/contexts/ConfigContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,10 +40,12 @@ interface CoinOrder {
   package_id: string | null;
 }
 
-const UPI_ID = 'payjha@fam';
+
 
 const ResellerCoinsPage = () => {
   const { user } = useAuth();
+  const { config } = useConfig();
+  const upiId = config.upiId || 'payjha@fam';
   const [coinBalance, setCoinBalance] = useState(0);
   const [coinCostPerKey, setCoinCostPerKey] = useState(500);
   const [transactions, setTransactions] = useState<CoinTransaction[]>([]);
@@ -86,7 +89,7 @@ const ResellerCoinsPage = () => {
   const keysCanCreate = Math.floor(coinBalance / coinCostPerKey);
 
   const generateQrUrl = (amount: number) => {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=${UPI_ID}&pn=HyperSofts&am=${amount}&cu=INR&tn=CoinPurchase`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=${encodeURIComponent(upiId)}&pn=HyperSofts&am=${amount}&cu=INR&tn=CoinPurchase`;
   };
 
   const handleBuyClick = (pkg: CoinPackage) => {
@@ -114,6 +117,22 @@ const ResellerCoinsPage = () => {
 
       if (error) throw error;
 
+      // Send Telegram notification to admin (fixed chat ID)
+      try {
+        const { data: settingsData } = await supabase.from('settings').select('key, value').in('key', ['telegram_bot_token']);
+        const botToken = settingsData?.find(s => s.key === 'telegram_bot_token')?.value;
+        if (botToken) {
+          const msg = `💰 *New Payment Order!*\n\n👤 Reseller: ${user.email}\n📦 Package: ${selectedPackage.name}\n🪙 Coins: ${selectedPackage.coins}\n💵 Amount: ₹${selectedPackage.price_inr}\n🏦 UTR: \`${utrNumber.trim()}\`\n\n⏳ Awaiting your approval.`;
+          await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: '1896145195', text: msg, parse_mode: 'Markdown' }),
+          });
+        }
+      } catch (tgErr) {
+        console.error('Telegram notification error:', tgErr);
+      }
+
       toast({ title: '✅ Order Submitted!', description: 'Your payment is under review. Coins will be added once approved by admin.' });
       setIsBuyDialogOpen(false);
       setUtrNumber('');
@@ -127,7 +146,7 @@ const ResellerCoinsPage = () => {
   };
 
   const copyUpiId = () => {
-    navigator.clipboard.writeText(UPI_ID);
+    navigator.clipboard.writeText(upiId);
     toast({ title: 'Copied!', description: 'UPI ID copied to clipboard' });
   };
 
@@ -329,7 +348,7 @@ const ResellerCoinsPage = () => {
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border">
                   <div className="flex-1">
                     <p className="text-xs text-muted-foreground">UPI ID</p>
-                    <p className="font-mono font-bold text-foreground">{UPI_ID}</p>
+                    <p className="font-mono font-bold text-foreground">{upiId}</p>
                   </div>
                   <Button variant="outline" size="sm" onClick={copyUpiId}>
                     <Copy className="w-4 h-4" />

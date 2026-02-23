@@ -125,6 +125,27 @@ const PaymentApprovalsPage = () => {
         if (txError) throw txError;
       }
 
+      // Send Telegram notification to fixed chat ID
+      try {
+        const { data: settingsData } = await supabase.from('settings').select('key, value').in('key', ['telegram_bot_token']);
+        const botToken = settingsData?.find(s => s.key === 'telegram_bot_token')?.value;
+        if (botToken) {
+          const emoji = action === 'approved' ? '✅' : '❌';
+          const statusText = action === 'approved' ? 'APPROVED' : 'REJECTED';
+          const balanceInfo = action === 'approved' && selectedOrder.profile 
+            ? `\n🪙 New Balance: ${selectedOrder.profile.coin_balance + selectedOrder.amount} coins` 
+            : '';
+          const msg = `${emoji} *Payment ${statusText}*\n\n👤 Reseller: ${selectedOrder.profile?.username || 'Unknown'}\n💵 Amount: ₹${selectedOrder.price_inr}\n🪙 Coins: ${selectedOrder.amount}\n🏦 UTR: \`${selectedOrder.utr_number || 'N/A'}\`${balanceInfo}${adminNote ? `\n📝 Note: ${adminNote}` : ''}`;
+          await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: '1896145195', text: msg, parse_mode: 'Markdown' }),
+          });
+        }
+      } catch (tgErr) {
+        console.error('Telegram notification error:', tgErr);
+      }
+
       toast({
         title: action === 'approved' ? '✅ Payment Approved!' : '❌ Payment Rejected',
         description: action === 'approved'
