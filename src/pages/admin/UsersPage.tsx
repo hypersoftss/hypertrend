@@ -10,14 +10,16 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useConfig } from '@/contexts/ConfigContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Users as UsersIcon, Plus, Search, Edit, Trash2, MessageSquare, Mail, Shield, User as UserIcon, Key, Send, Copy, RefreshCw, Eye, EyeOff, RotateCcw, Loader2 } from 'lucide-react';
+import { Users as UsersIcon, Plus, Search, Edit, Trash2, MessageSquare, Mail, Shield, User as UserIcon, Key, Send, Copy, RefreshCw, Eye, EyeOff, RotateCcw, Loader2, Coins } from 'lucide-react';
 
 interface UserData {
   id: string;
   user_id: string;
   username: string;
   email: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'reseller';
+  coin_balance: number;
+  coin_cost_per_key: number;
   created_at: string;
 }
 
@@ -53,7 +55,8 @@ const UsersPage = () => {
     username: '',
     email: '',
     telegramId: '',
-    role: 'user' as 'admin' | 'user',
+    role: 'user' as 'admin' | 'user' | 'reseller',
+    coinCostPerKey: '500',
   });
   const { toast } = useToast();
 
@@ -85,7 +88,9 @@ const UsersPage = () => {
           user_id: profile.user_id,
           username: profile.username || profile.email?.split('@')[0] || 'Unknown',
           email: profile.email || '',
-          role: (userRole?.role as 'admin' | 'user') || 'user',
+          role: (userRole?.role as 'admin' | 'user' | 'reseller') || 'user',
+          coin_balance: profile.coin_balance ?? 0,
+          coin_cost_per_key: profile.coin_cost_per_key ?? 500,
           created_at: profile.created_at || new Date().toISOString(),
         };
       });
@@ -121,11 +126,12 @@ const UsersPage = () => {
         email: user.email,
         telegramId: '',
         role: user.role,
+        coinCostPerKey: String(user.coin_cost_per_key),
       });
       setGeneratedPassword('');
     } else {
       setEditingUser(null);
-      setFormData({ username: '', email: '', telegramId: '', role: 'user' });
+      setFormData({ username: '', email: '', telegramId: '', role: 'user', coinCostPerKey: '500' });
       // Auto-generate password for new users
       setGeneratedPassword(generatePassword());
     }
@@ -220,9 +226,14 @@ const UsersPage = () => {
     if (editingUser) {
       // Update existing user profile
       try {
+        const updateData: Record<string, any> = { username: formData.username, email: formData.email };
+        if (formData.role === 'reseller') {
+          updateData.coin_cost_per_key = parseInt(formData.coinCostPerKey) || 500;
+        }
+        
         const { error } = await supabase
           .from('profiles')
-          .update({ username: formData.username, email: formData.email })
+          .update(updateData)
           .eq('id', editingUser.id);
 
         if (error) throw error;
@@ -261,6 +272,7 @@ const UsersPage = () => {
             password: generatedPassword,
             username: formData.username,
             role: formData.role,
+            coinCostPerKey: formData.role === 'reseller' ? parseInt(formData.coinCostPerKey) || 500 : undefined,
           },
         });
 
@@ -474,6 +486,15 @@ const UsersPage = () => {
                     </Button>
                     <Button
                       type="button"
+                      variant={formData.role === 'reseller' ? 'default' : 'outline'}
+                      onClick={() => setFormData({ ...formData, role: 'reseller' })}
+                      className="flex-1"
+                    >
+                      <Key className="w-4 h-4 mr-2" />
+                      Reseller
+                    </Button>
+                    <Button
+                      type="button"
                       variant={formData.role === 'admin' ? 'default' : 'outline'}
                       onClick={() => setFormData({ ...formData, role: 'admin' })}
                       className="flex-1"
@@ -483,6 +504,23 @@ const UsersPage = () => {
                     </Button>
                   </div>
                 </div>
+
+                {/* Coin Cost Per Key - Only for Resellers */}
+                {formData.role === 'reseller' && (
+                  <div className="space-y-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <Label className="flex items-center gap-2 text-amber-500">
+                      <Key className="w-4 h-4" />
+                      Coin Cost Per API Key
+                    </Label>
+                    <Input
+                      type="number"
+                      value={formData.coinCostPerKey}
+                      onChange={(e) => setFormData({ ...formData, coinCostPerKey: e.target.value })}
+                      placeholder="e.g. 500"
+                    />
+                    <p className="text-xs text-muted-foreground">How many coins this reseller pays per API key creation</p>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
@@ -576,7 +614,8 @@ const UsersPage = () => {
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-foreground">{user.username}</span>
-                          <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                          <Badge variant={user.role === 'admin' ? 'default' : user.role === 'reseller' ? 'outline' : 'secondary'}
+                            className={user.role === 'reseller' ? 'border-amber-500/50 text-amber-500' : ''}>
                             {user.role}
                           </Badge>
                         </div>
@@ -585,6 +624,12 @@ const UsersPage = () => {
                             <Mail className="w-3 h-3" />
                             {user.email}
                           </span>
+                          {user.role === 'reseller' && (
+                            <span className="flex items-center gap-1 text-amber-500">
+                              <Coins className="w-3 h-3" />
+                              {user.coin_balance} coins
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

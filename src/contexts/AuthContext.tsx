@@ -7,10 +7,12 @@ interface AppUser {
   username: string;
   email: string;
   telegramId?: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'reseller';
   isActive: boolean;
   createdAt: string;
   lastLogin?: string;
+  coinBalance?: number;
+  coinCostPerKey?: number;
 }
 
 interface AuthState {
@@ -57,10 +59,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         id: authUser.id,
         username: profile?.username || authUser.email?.split('@')[0] || 'User',
         email: authUser.email || '',
-        role: (roleData?.role as 'admin' | 'user') || 'user',
+        role: (roleData?.role as 'admin' | 'user' | 'reseller') || 'user',
         isActive: true,
         createdAt: authUser.created_at || new Date().toISOString(),
         lastLogin: new Date().toISOString(),
+        coinBalance: profile?.coin_balance ?? 0,
+        coinCostPerKey: profile?.coin_cost_per_key ?? 500,
       };
     } catch (error) {
       console.error('Error fetching user data:', error);
