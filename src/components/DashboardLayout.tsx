@@ -8,6 +8,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useConfig } from '@/contexts/ConfigContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -141,6 +142,7 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   
   const isAdmin = user?.role === 'admin';
   const isReseller = user?.role === 'reseller';
@@ -160,6 +162,26 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
       }
     }
   }, [location.pathname, navGroups]);
+
+  // Fetch pending orders count for admin badge
+  useEffect(() => {
+    if (!isAdmin) return;
+    const fetchPending = async () => {
+      const { count } = await supabase
+        .from('coin_orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      setPendingOrdersCount(count || 0);
+    };
+    fetchPending();
+
+    const channel = supabase
+      .channel('pending_orders_badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'coin_orders' }, () => fetchPending())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin]);
 
   const toggleGroup = (groupTitle: string) => {
     setOpenGroup(prev => prev === groupTitle ? null : groupTitle);
@@ -284,6 +306,11 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
           >
             <item.icon className="w-5 h-5" />
             {item.title}
+            {item.href === '/admin/payment-approvals' && pendingOrdersCount > 0 && (
+              <span className="ml-auto inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded-full bg-destructive text-destructive-foreground animate-pulse">
+                {pendingOrdersCount}
+              </span>
+            )}
           </Link>
         );
       })}
