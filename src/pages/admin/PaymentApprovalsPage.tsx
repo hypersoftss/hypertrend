@@ -80,6 +80,20 @@ const PaymentApprovalsPage = () => {
 
   useEffect(() => { fetchOrders(); }, [filter]);
 
+  // Realtime subscription for instant updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('coin_orders_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'coin_orders' },
+        () => { fetchOrders(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [filter]);
+
   const handleReview = (order: CoinOrder & { profile?: UserProfile }) => {
     setSelectedOrder(order);
     setAdminNote('');
