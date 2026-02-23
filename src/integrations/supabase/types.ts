@@ -191,8 +191,94 @@ export type Database = {
           },
         ]
       }
+      coin_packages: {
+        Row: {
+          coins: number
+          created_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price_inr: number
+          updated_at: string | null
+        }
+        Insert: {
+          coins: number
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price_inr: number
+          updated_at?: string | null
+        }
+        Update: {
+          coins?: number
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_inr?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      coin_transactions: {
+        Row: {
+          admin_id: string | null
+          amount: number
+          api_key_id: string | null
+          balance_after: number
+          created_at: string | null
+          id: string
+          package_id: string | null
+          reason: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          admin_id?: string | null
+          amount: number
+          api_key_id?: string | null
+          balance_after?: number
+          created_at?: string | null
+          id?: string
+          package_id?: string | null
+          reason: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          admin_id?: string | null
+          amount?: number
+          api_key_id?: string | null
+          balance_after?: number
+          created_at?: string | null
+          id?: string
+          package_id?: string | null
+          reason?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coin_transactions_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coin_transactions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "coin_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          coin_balance: number
+          coin_cost_per_key: number
           created_at: string | null
           email: string | null
           id: string
@@ -202,6 +288,8 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          coin_balance?: number
+          coin_cost_per_key?: number
           created_at?: string | null
           email?: string | null
           id?: string
@@ -211,6 +299,8 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          coin_balance?: number
+          coin_cost_per_key?: number
           created_at?: string | null
           email?: string | null
           id?: string
@@ -307,7 +397,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "reseller"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -435,7 +525,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "reseller"],
     },
   },
 } as const
