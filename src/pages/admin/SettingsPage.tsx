@@ -58,6 +58,7 @@ const SettingsPage = () => {
     maintenanceMode: config.maintenanceMode || false,
     maintenanceMessage: config.maintenanceMessage || 'System is under maintenance. Please try again later.',
     ownerTelegramId: config.ownerTelegramId || 'Hyperdeveloperr',
+    upiId: config.upiId || 'payjha@fam',
   });
   
   const [isSaving, setIsSaving] = useState(false);
@@ -88,6 +89,7 @@ const SettingsPage = () => {
       maintenanceMode: settings.maintenanceMode,
       maintenanceMessage: settings.maintenanceMessage,
       ownerTelegramId: settings.ownerTelegramId,
+      upiId: settings.upiId,
     });
     
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -283,6 +285,27 @@ const SettingsPage = () => {
                         <img src={settings.faviconUrl} alt="Favicon Preview" className="w-8 h-8 object-cover" />
                       </div>
                     )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* UPI Payment Settings */}
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold flex items-center gap-2">
+                    💳 UPI Payment Settings
+                  </Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="upiId">UPI ID</Label>
+                      <Input
+                        id="upiId"
+                        value={settings.upiId}
+                        onChange={(e) => setSettings({ ...settings, upiId: e.target.value })}
+                        placeholder="yourname@upi"
+                      />
+                      <p className="text-xs text-muted-foreground">Resellers will see this UPI ID and QR code for payment</p>
+                    </div>
                   </div>
                 </div>
 

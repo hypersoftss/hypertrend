@@ -21,6 +21,8 @@ interface SiteConfig {
   maintenanceMode: boolean;
   maintenanceMessage: string;
   ownerTelegramId: string;
+  // Payment
+  upiId: string;
 }
 
 interface ConfigContextType {
@@ -50,6 +52,8 @@ const defaultConfig: SiteConfig = {
   maintenanceMode: false,
   maintenanceMessage: 'System is under maintenance. Please try again later.',
   ownerTelegramId: '@Hyperdeveloperr',
+  // Payment
+  upiId: 'payjha@fam',
 };
 
 // Settings key to config key mapping
@@ -70,6 +74,7 @@ const settingsKeyMap: Record<string, keyof SiteConfig> = {
   'maintenance_mode': 'maintenanceMode',
   'maintenance_message': 'maintenanceMessage',
   'owner_telegram_id': 'ownerTelegramId',
+  'upi_id': 'upiId',
 };
 
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
