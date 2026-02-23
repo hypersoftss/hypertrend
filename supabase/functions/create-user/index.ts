@@ -11,7 +11,8 @@ interface CreateUserRequest {
   email: string;
   password: string;
   username: string;
-  role: "admin" | "user";
+  role: "admin" | "user" | "reseller";
+  coinCostPerKey?: number;
 }
 
 serve(async (req: Request) => {
@@ -64,7 +65,7 @@ serve(async (req: Request) => {
     }
 
     // Parse the request body
-    const { email, password, username, role }: CreateUserRequest = await req.json();
+    const { email, password, username, role, coinCostPerKey }: CreateUserRequest = await req.json();
 
     if (!email || !password || !username) {
       return new Response(
@@ -99,16 +100,27 @@ serve(async (req: Request) => {
 
     const newUserId = newUserData.user.id;
 
-    // If role is admin, update the user_roles table
-    if (role === "admin") {
+    // If role is admin or reseller, update the user_roles table
+    if (role === "admin" || role === "reseller") {
       const { error: updateRoleError } = await adminClient
         .from("user_roles")
-        .update({ role: "admin" })
+        .update({ role })
         .eq("user_id", newUserId);
 
       if (updateRoleError) {
         console.error("Error updating role:", updateRoleError);
-        // Don't fail the whole operation, just log it
+      }
+    }
+
+    // If reseller, set coin_cost_per_key
+    if (role === "reseller" && coinCostPerKey) {
+      const { error: costError } = await adminClient
+        .from("profiles")
+        .update({ coin_cost_per_key: coinCostPerKey })
+        .eq("user_id", newUserId);
+
+      if (costError) {
+        console.error("Error setting coin cost:", costError);
       }
     }
 

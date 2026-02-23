@@ -3,7 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ProtectedRouteProps {
-  requiredRole?: 'admin' | 'user';
+  requiredRole?: 'admin' | 'user' | 'reseller';
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) => {
@@ -26,6 +26,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRole }) => {
   }
 
   if (requiredRole && user?.role !== requiredRole && user?.role !== 'admin') {
+    // Resellers can access reseller routes
+    if (requiredRole === 'reseller' && user?.role === 'reseller') {
+      return <Outlet />;
+    }
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -48,6 +48,8 @@ import {
   X,
   History,
   TrendingUp,
+  Coins,
+  Package,
 } from 'lucide-react';
 
 interface NavItem {
@@ -56,6 +58,7 @@ interface NavItem {
   icon: React.ElementType;
   adminOnly?: boolean;
   userOnly?: boolean;
+  resellerOnly?: boolean;
 }
 
 interface NavGroup {
@@ -63,6 +66,7 @@ interface NavGroup {
   icon: React.ElementType;
   adminOnly?: boolean;
   userOnly?: boolean;
+  resellerOnly?: boolean;
   items: NavItem[];
 }
 
@@ -93,12 +97,17 @@ const adminNavGroups: NavGroup[] = [
 // Hyper Softs User Navigation - Simple flat list for Same Trend API users
 const userNavGroups: NavGroup[] = [];
 
+// Reseller Navigation Groups
+const resellerNavGroups: NavGroup[] = [];
+
 // Hyper Softs Admin Standalone Items - Hypersofts Management by Hyper Developer
 const adminStandaloneItems: NavItem[] = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { title: 'Users', href: '/admin/users', icon: Users, adminOnly: true },
   { title: 'API Keys', href: '/admin/keys', icon: Key, adminOnly: true },
   { title: 'API Logs', href: '/admin/logs', icon: FileText, adminOnly: true },
+  { title: 'Coin Management', href: '/admin/coins', icon: Coins, adminOnly: true },
+  { title: 'Coin Packages', href: '/admin/coin-packages', icon: Package, adminOnly: true },
   { title: 'Manual Reminder', href: '/admin/reminder', icon: Bell, adminOnly: true },
   { title: 'Settings', href: '/admin/settings', icon: Settings, adminOnly: true },
   { title: 'Documentation', href: '/docs', icon: BookOpen },
@@ -113,6 +122,15 @@ const userStandaloneItems: NavItem[] = [
   { title: 'Documentation', href: '/docs', icon: BookOpen },
 ];
 
+// Reseller Standalone Items
+const resellerStandaloneItems: NavItem[] = [
+  { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { title: 'My API Keys', href: '/reseller/keys', icon: Key },
+  { title: 'Coin Balance', href: '/reseller/coins', icon: Coins },
+  { title: 'Call Logs', href: '/reseller/logs', icon: History },
+  { title: 'Documentation', href: '/docs', icon: BookOpen },
+];
+
 // Hyper Softs Dashboard Layout - Same Trend API by Hyper Developer (Hyperdeveloper)
 const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
@@ -123,8 +141,9 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const isAdmin = user?.role === 'admin';
-  const navGroups = isAdmin ? adminNavGroups : userNavGroups;
-  const standaloneItems = isAdmin ? adminStandaloneItems : userStandaloneItems;
+  const isReseller = user?.role === 'reseller';
+  const navGroups = isAdmin ? adminNavGroups : isReseller ? resellerNavGroups : userNavGroups;
+  const standaloneItems = isAdmin ? adminStandaloneItems : isReseller ? resellerStandaloneItems : userStandaloneItems;
 
   // Track which group is open (accordion behavior)
   const [openGroup, setOpenGroup] = useState<string | null>(null);

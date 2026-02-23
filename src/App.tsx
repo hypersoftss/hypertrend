@@ -34,11 +34,18 @@ import AnalyticsPage from "@/pages/admin/AnalyticsPage";
 import DnsCheckerPage from "@/pages/admin/DnsCheckerPage";
 import TelegramLogsPage from "@/pages/admin/TelegramLogsPage";
 import ActivityLogsPage from "@/pages/admin/ActivityLogsPage";
+import CoinManagementPage from "@/pages/admin/CoinManagementPage";
+import CoinPackagesPage from "@/pages/admin/CoinPackagesPage";
 
 // User Pages
 import UserKeysPage from "@/pages/user/UserKeysPage";
 import UserLogsPage from "@/pages/user/UserLogsPage";
 import UserAnalyticsPage from "@/pages/user/UserAnalyticsPage";
+
+// Reseller Pages
+import ResellerKeysPage from "@/pages/reseller/ResellerKeysPage";
+import ResellerCoinsPage from "@/pages/reseller/ResellerCoinsPage";
+import ResellerLogsPage from "@/pages/reseller/ResellerLogsPage";
 
 const queryClient = new QueryClient();
 
@@ -82,9 +89,18 @@ const App = () => (
                     <Route path="/admin/dns-checker" element={<DnsCheckerPage />} />
                     <Route path="/admin/telegram-logs" element={<TelegramLogsPage />} />
                     <Route path="/admin/activity-logs" element={<ActivityLogsPage />} />
+                    <Route path="/admin/coins" element={<CoinManagementPage />} />
+                    <Route path="/admin/coin-packages" element={<CoinPackagesPage />} />
                     <Route path="/admin/reminder" element={<ManualReminderPage />} />
                     <Route path="/admin/settings" element={<SettingsPage />} />
                     <Route path="/admin/download" element={<BackendDownloadPage />} />
+                  </Route>
+
+                  {/* Protected Routes - Reseller */}
+                  <Route element={<ProtectedRoute requiredRole="reseller" />}>
+                    <Route path="/reseller/keys" element={<ResellerKeysPage />} />
+                    <Route path="/reseller/coins" element={<ResellerCoinsPage />} />
+                    <Route path="/reseller/logs" element={<ResellerLogsPage />} />
                   </Route>
 
                   {/* Catch-all */}
