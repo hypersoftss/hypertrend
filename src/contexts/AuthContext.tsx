@@ -102,45 +102,95 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setAuthState(prev => ({
-          ...prev,
-          session,
-          isAuthenticated: true,
-        }));
-        fetchUserData(session.user).then(userData => {
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (session?.user) {
           setAuthState(prev => ({
             ...prev,
-            user: userData,
+            session,
+            isAuthenticated: true,
+          }));
+          fetchUserData(session.user).then(userData => {
+            setAuthState(prev => ({
+              ...prev,
+              user: userData,
+              isLoading: false,
+            }));
+          });
+        } else {
+          setAuthState(prev => ({
+            ...prev,
             isLoading: false,
           }));
-        });
-      } else {
+        }
+      })
+      .catch(() => {
         setAuthState(prev => ({
           ...prev,
+          session: null,
+          user: null,
+          isAuthenticated: false,
           isLoading: false,
         }));
-      }
-    });
+      });
 
     return () => subscription.unsubscribe();
   }, []);
 
+  const clearStaleAuthState = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch {
+      // ignore
+    }
+
+    try {
+      const keysToDelete = Object.keys(localStorage).filter(
+        (key) => key.includes('supabase.auth.token') || key.startsWith('sb-')
+      );
+      keysToDelete.forEach((key) => localStorage.removeItem(key));
+    } catch {
+      // ignore
+    }
+  };
+
+  const isFetchLikeError = (message?: string) => {
+    const text = (message || '').toLowerCase();
+    return text.includes('failed to fetch') || text.includes('networkerror');
+  };
+
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      let { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
+      if (error && isFetchLikeError(error.message)) {
+        await clearStaleAuthState();
+
+        const retryResult = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        error = retryResult.error;
+      }
+
       if (error) {
+        if (isFetchLikeError(error.message)) {
+          return {
+            success: false,
+            error: 'Network/auth connection issue. Please disable VPN/Private DNS and try again.',
+          };
+        }
+
         return { success: false, error: error.message };
       }
 
       return { success: true };
-    } catch (error) {
-      return { success: false, error: 'An unexpected error occurred' };
+    } catch {
+      return { success: false, error: 'Network/auth connection issue. Please try again.' };
     }
   };
 
