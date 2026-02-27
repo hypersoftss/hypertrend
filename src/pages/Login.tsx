@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Moon, Sun, Lock, Mail, Zap, Eye, EyeOff, ArrowRight, Shield, AlertTriangle, MessageCircle, Wrench } from 'lucide-react';
+import { Moon, Sun, Lock, Mail, Zap, Eye, EyeOff, ArrowRight, Shield, AlertTriangle, MessageCircle, Wrench, Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 // Network Particle Animation Component
 const NetworkBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
@@ -127,6 +128,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [logoClickCount, setLogoClickCount] = useState(0);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const logoClickTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { login, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -136,6 +138,23 @@ const Login = () => {
 
   const isDark = theme === 'dark';
   const isMaintenanceMode = config.maintenanceMode;
+
+  // Check backend connectivity
+  useEffect(() => {
+    const checkConnection = async () => {
+      setConnectionStatus('checking');
+      try {
+        const { error } = await supabase.from('settings').select('key').limit(1);
+        setConnectionStatus(error ? 'offline' : 'online');
+      } catch {
+        setConnectionStatus('offline');
+      }
+    };
+
+    checkConnection();
+    const interval = setInterval(checkConnection, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -380,6 +399,25 @@ const Login = () => {
         </CardHeader>
 
         <CardContent className="pb-8 px-6">
+          {/* Connection Status */}
+          <div className={`mb-4 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+            connectionStatus === 'online' 
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+              : connectionStatus === 'offline'
+              ? 'bg-destructive/10 text-destructive border border-destructive/20'
+              : 'bg-muted text-muted-foreground border border-border'
+          }`}>
+            {connectionStatus === 'checking' && (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking server connection...</>
+            )}
+            {connectionStatus === 'online' && (
+              <><Wifi className="w-3.5 h-3.5" /> Server connected — Ready to sign in</>
+            )}
+            {connectionStatus === 'offline' && (
+              <><WifiOff className="w-3.5 h-3.5" /> Server unreachable — Check VPN/network</>
+            )}
+          </div>
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-foreground">
@@ -429,7 +467,7 @@ const Login = () => {
             <Button
               type="submit"
               className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all group mt-2"
-              disabled={isLoading}
+              disabled={isLoading || connectionStatus === 'offline'}
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
